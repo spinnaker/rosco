@@ -176,7 +176,7 @@ class BakeryController {
   @RequestMapping(value = "/{region}/cancel/{statusId}", method = RequestMethod.GET)
   String cancelBake(@PathVariable("region") String region, @PathVariable("statusId") String statusId) {
     if (bakeStore.cancelBakeById(statusId)) {
-      return "Canceled bake '$statusId'."
+      return "Cancelled bake '$statusId'."
     }
 
     // TODO(duftler): Instruct the scripting engine to kill the execution.

@@ -113,7 +113,7 @@ class BakePoller implements ApplicationListener<ContextRefreshedEvent> {
 
       bakeStore.updateBakeStatus(new BakeStatus(id: statusId,
                                                 resource_id: statusId,
-                                                state: BakeStatus.State.CANCELED,
+                                                state: BakeStatus.State.CANCELLED,
                                                 result: BakeStatus.Result.FAILURE))
     }
   }
