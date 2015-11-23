@@ -14,12 +14,12 @@ executionStatusToBakeStates:
       bakeState: PENDING
     - executionStatus: RUNNING
       bakeState: RUNNING
-    - executionStatus: CANCELED
-      bakeState: CANCELED
+    - executionStatus: CANCELLED
+      bakeState: CANCELLED
     - executionStatus: SUCCESSFUL
       bakeState: COMPLETED
     - executionStatus: FAILED
-      bakeState: CANCELED
+      bakeState: CANCELLED
 
 executionStatusToBakeResults:
   associations:

@@ -46,7 +46,7 @@ class BakeStatus implements Serializable {
   String resource_id
 
   static enum State {
-    PENDING, RUNNING, COMPLETED, SUSPENDED, CANCELED
+    PENDING, RUNNING, COMPLETED, SUSPENDED, CANCELLED
   }
 
   static enum Result {

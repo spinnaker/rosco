@@ -276,7 +276,7 @@ class BakeryControllerSpec extends Specification {
   }
 
   @Unroll
-  void 'create bake issues script command and returns new status when prior bake is suspended or canceled'() {
+  void 'create bake issues script command and returns new status when prior bake is suspended or cancelled'() {
     setup:
       def cloudProviderBakeHandlerRegistryMock = Mock(CloudProviderBakeHandlerRegistry)
       def cloudProviderBakeHandlerMock = Mock(CloudProviderBakeHandler)
@@ -308,7 +308,7 @@ class BakeryControllerSpec extends Specification {
       bakeStatus == new BakeStatus(id: SCRIPT_ID, resource_id: SCRIPT_ID, state: BakeStatus.State.PENDING)
 
     where:
-      bakeState << [BakeStatus.State.SUSPENDED, BakeStatus.State.CANCELED]
+      bakeState << [BakeStatus.State.SUSPENDED, BakeStatus.State.CANCELLED]
   }
 
   void 'create bake with rebake deletes existing status, issues script command and returns new status no matter the pre-existing status'() {
@@ -527,7 +527,7 @@ class BakeryControllerSpec extends Specification {
 
     then:
       1 * bakeStoreMock.cancelBakeById(SCRIPT_ID) >> true
-      response == "Canceled bake '$SCRIPT_ID'."
+      response == "Cancelled bake '$SCRIPT_ID'."
   }
 
   void 'cancel bake throws exception when bake id cannot be found'() {

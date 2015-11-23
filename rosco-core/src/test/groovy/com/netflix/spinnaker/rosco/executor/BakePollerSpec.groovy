@@ -87,7 +87,7 @@ class BakePollerSpec extends Specification {
       "PREPARING"      | BakeStatus.State.PENDING   | null
       "FETCHING_IMAGE" | BakeStatus.State.PENDING   | null
       "RUNNING"        | BakeStatus.State.RUNNING   | null
-      "FAILED"         | BakeStatus.State.CANCELED  | null
+      "FAILED"         | BakeStatus.State.CANCELLED | null
   }
 
   void 'scheduled update queries scripting engine and stores status, details and logs when complete'() {
@@ -165,7 +165,7 @@ class BakePollerSpec extends Specification {
       1 * bakeStoreMock.storeBakeError(SCRIPT_ID, "\"Some Rush error...\"")
       1 * bakeStoreMock.updateBakeStatus(new BakeStatus(id: SCRIPT_ID,
                                                         resource_id: SCRIPT_ID,
-                                                        state: BakeStatus.State.CANCELED,
+                                                        state: BakeStatus.State.CANCELLED,
                                                         result: BakeStatus.Result.FAILURE))
   }
 
