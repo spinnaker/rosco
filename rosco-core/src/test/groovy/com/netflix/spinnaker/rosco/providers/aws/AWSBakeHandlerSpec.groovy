@@ -749,7 +749,7 @@ class AWSBakeHandlerSpec extends Specification {
       String bakeKey = awsBakeHandler.produceBakeKey(REGION, bakeRequest)
 
     then:
-      bakeKey == "bake:aws:centos:kato-nflx-djangobase-enhanced_0.1-h12.170cdbd_all-mongodb:us-east-1:hvm:enhancedNWDisabled"
+      bakeKey == "bake:aws:centos:kato|nflx-djangobase-enhanced_0.1-h12.170cdbd_all|mongodb:us-east-1:hvm:enhancedNWDisabled"
   }
 
   void 'produce a default AWS bakeKey with base ami'() {
@@ -768,7 +768,7 @@ class AWSBakeHandlerSpec extends Specification {
       String bakeKey = awsBakeHandler.produceBakeKey(REGION, bakeRequest)
 
     then:
-      bakeKey == "bake:aws:centos:ami-123456:kato-nflx-djangobase-enhanced_0.1-h12.170cdbd_all-mongodb:us-east-1:hvm:enhancedNWDisabled"
+      bakeKey == "bake:aws:centos:ami-123456:kato|nflx-djangobase-enhanced_0.1-h12.170cdbd_all|mongodb:us-east-1:hvm:enhancedNWDisabled"
   }
 
   void 'produce a default AWS bakeKey with enhanced network enabled'() {
@@ -787,7 +787,7 @@ class AWSBakeHandlerSpec extends Specification {
       String bakeKey = awsBakeHandler.produceBakeKey(REGION, bakeRequest)
 
     then:
-      bakeKey == "bake:aws:centos:kato-nflx-djangobase-enhanced_0.1-h12.170cdbd_all-mongodb:us-east-1:hvm:enhancedNWEnabled"
+      bakeKey == "bake:aws:centos:kato|nflx-djangobase-enhanced_0.1-h12.170cdbd_all|mongodb:us-east-1:hvm:enhancedNWEnabled"
   }
 
   void 'produce a default AWS bakeKey with ami name'() {
@@ -805,7 +805,7 @@ class AWSBakeHandlerSpec extends Specification {
       String bakeKey = awsBakeHandler.produceBakeKey(REGION, bakeRequest)
 
     then:
-      bakeKey == "bake:aws:centos:kato-app:kato-nflx-djangobase-enhanced_0.1-h12.170cdbd_all-mongodb:us-east-1:hvm:enhancedNWDisabled"
+      bakeKey == "bake:aws:centos:kato-app:kato|nflx-djangobase-enhanced_0.1-h12.170cdbd_all|mongodb:us-east-1:hvm:enhancedNWDisabled"
   }
 
   void 'do not consider ami suffix when composing bake key'() {
@@ -830,7 +830,7 @@ class AWSBakeHandlerSpec extends Specification {
       String bakeKey2 = awsBakeHandler.produceBakeKey(REGION, bakeRequest2)
 
     then:
-      bakeKey1 == "bake:aws:centos:kato-nflx-djangobase-enhanced_0.1-h12.170cdbd_all-mongodb:us-east-1:hvm:enhancedNWDisabled"
+      bakeKey1 == "bake:aws:centos:kato|nflx-djangobase-enhanced_0.1-h12.170cdbd_all|mongodb:us-east-1:hvm:enhancedNWDisabled"
       bakeKey2 == bakeKey1
   }
 }

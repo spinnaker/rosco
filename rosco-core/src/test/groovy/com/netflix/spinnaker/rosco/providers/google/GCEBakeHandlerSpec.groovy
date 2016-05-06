@@ -521,7 +521,7 @@ class GCEBakeHandlerSpec extends Specification {
       String bakeKey = gceBakeHandler.produceBakeKey(REGION, bakeRequest)
 
     then:
-      bakeKey == "bake:gce:centos:kato-nflx-djangobase-enhanced_0.1-h12.170cdbd_all-mongodb"
+      bakeKey == "bake:gce:centos:kato|nflx-djangobase-enhanced_0.1-h12.170cdbd_all|mongodb"
   }
 
   void 'produce a default GCE bakeKey with base image'() {
@@ -539,7 +539,7 @@ class GCEBakeHandlerSpec extends Specification {
       String bakeKey = gceBakeHandler.produceBakeKey(REGION, bakeRequest)
 
     then:
-      bakeKey == "bake:gce:centos:my-base-image:kato-nflx-djangobase-enhanced_0.1-h12.170cdbd_all-mongodb"
+      bakeKey == "bake:gce:centos:my-base-image:kato|nflx-djangobase-enhanced_0.1-h12.170cdbd_all|mongodb"
   }
 
 }

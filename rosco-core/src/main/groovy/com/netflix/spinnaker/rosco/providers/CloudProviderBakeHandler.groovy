@@ -79,7 +79,7 @@ abstract class CloudProviderBakeHandler {
         bakeKey += ":$ami_name"
       }
 
-      String packages = package_name.tokenize().join('-')
+      String packages = package_name.tokenize().join('|')
       bakeKey += ":$packages"
 
       def providerSpecificBakeKeyComponent = produceProviderSpecificBakeKeyComponent(region, bakeRequest)
