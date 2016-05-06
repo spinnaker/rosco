@@ -39,35 +39,40 @@ public class DefaultImageNameFactory implements ImageNameFactory {
     def timestamp = clock.millis()
 
     List<String> packageNameList = bakeRequest?.package_name?.tokenize(" ")
-    def firstPackageName
-    PackageNameConverter.OsPackageName osPackageName
     String appVersionStr
-    AppVersion appVersion
+    String baseImagePackageName
 
     if (packageNameList) {
-      // For now, we only take into account the first package name when generating the appversion tag.
-      firstPackageName = packageNameList[0]
+      packageNameList.eachWithIndex { packageName, index ->
+        PackageNameConverter.OsPackageName osPackageName =
+          PackageNameConverter.buildOsPackageName(selectedOptions.baseImage.packageType, packageName)
 
-      // Passing in firstPackageName here to avoid tokenizing the package name list twice.
-      osPackageName = PackageNameConverter.buildOsPackageName(selectedOptions.baseImage.packageType, firstPackageName)
-      appVersionStr = PackageNameConverter.buildAppVersionStr(bakeRequest, osPackageName)
-      appVersion = AppVersion.parseName(appVersionStr)
+        if (osPackageName?.name) {
+          packageNameList[index] = osPackageName.name
 
-      if (!appVersion) {
-        if (appVersionStr) {
-          log.debug("AppVersion.parseName() was unable to parse appVersionStr=$appVersionStr.")
-        }
+          // If a version/release was specified, we need to include that when installing the package.
+          if (osPackageName?.version && osPackageName?.release) {
+            packageNameList[index] += "$selectedOptions.baseImage.packageType.versionDelimiter$osPackageName.version-$osPackageName.release"
+          }
 
-        // If appVersionStr could not be parsed to create AppVersion, clear it.
-        appVersionStr = null
-      }
+          // First package is special, its name and its attributes may be used to build the image name and add additional
+          // attributes (eg: appversion and build_host).
+          if (index == 0) {
+            // We need to replace the original fully-qualified package name with the unqualified
+            // package name before using it in the target image name.
+            baseImagePackageName = osPackageName?.name ?: packageName
 
-      if (osPackageName?.name) {
-        packageNameList[0] = osPackageName.name
+            appVersionStr = PackageNameConverter.buildAppVersionStr(bakeRequest, osPackageName)
 
-        // If a version/release was specified, we need to include that when installing the package.
-        if (osPackageName?.version && osPackageName?.release) {
-          packageNameList[0] += "$selectedOptions.baseImage.packageType.versionDelimiter$osPackageName.version-$osPackageName.release"
+            if (!AppVersion.parseName(appVersionStr)) {
+              if (appVersionStr) {
+                log.debug("AppVersion.parseName() was unable to parse appVersionStr=$appVersionStr.")
+              }
+
+              // If appVersionStr could not be parsed to create AppVersion, clear it.
+              appVersionStr = null
+            }
+          }
         }
       }
     }
@@ -77,9 +82,6 @@ public class DefaultImageNameFactory implements ImageNameFactory {
     if (bakeRequest.ami_name) {
       imageName = "$bakeRequest.ami_name-"
     } else {
-      // We need to replace the original fully-qualified package name with the unqualified package name before using
-      // it in the target image name.
-      def baseImagePackageName = osPackageName?.name ?: firstPackageName
       imageName = baseImagePackageName ? "$baseImagePackageName-" : ""
     }
 
