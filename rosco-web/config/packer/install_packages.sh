@@ -43,6 +43,9 @@ function provision_deb() {
     echo "removing /usr/sbin/policy-rc.d"
     sudo rm -f /usr/sbin/policy-rc.d
   fi
+
+  # Cleanup repository configuration
+  sudo rm /etc/apt/sources.list.d/spinnaker.list
 }
 
 function provision_rpm() {
@@ -63,6 +66,9 @@ EOF
 
   # Enforce the package installation order.
   for package in $packages; do sudo yum -y install $package; done
+
+  # Cleanup repository configuration
+  sudo rm /etc/yum.repos.d/spinnaker.repo
 }
 
 function main() {
