@@ -44,8 +44,10 @@ function provision_deb() {
     sudo rm -f /usr/sbin/policy-rc.d
   fi
 
-  # Cleanup repository configuration
-  sudo rm /etc/apt/sources.list.d/spinnaker.list
+  if [[ "$repository" != "" ]]; then
+    # Cleanup repository configuration
+    sudo rm /etc/apt/sources.list.d/spinnaker.list
+  fi
 }
 
 function provision_rpm() {
@@ -67,8 +69,10 @@ EOF
   # Enforce the package installation order.
   for package in $packages; do sudo yum -y install $package; done
 
-  # Cleanup repository configuration
-  sudo rm /etc/yum.repos.d/spinnaker.repo
+  if [[ "$repository" != "" ]]; then
+    # Cleanup repository configuration
+    sudo rm /etc/yum.repos.d/spinnaker.repo
+  fi
 }
 
 function main() {
