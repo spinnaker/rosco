@@ -1,0 +1,6 @@
+redis:
+  command: "redis-server --appendonly yes"
+  container_name: redis
+  ports:
+    - "6379:6379"
+  image: redis
