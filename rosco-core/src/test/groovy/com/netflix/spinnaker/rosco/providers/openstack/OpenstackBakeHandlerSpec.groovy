@@ -111,7 +111,7 @@ class OpenstackBakeHandlerSpec extends Specification {
     openstackBakeryDefaults = new ObjectMapper().convertValue(openstackBakeryDefaultsJson, RoscoOpenstackConfiguration.OpenstackBakeryDefaults)
   }
 
-  void 'can identify amazon-ebs builds'() {
+  void 'can identify openstack-ebs builds'() {
     setup:
       @Subject
       OpenstackBakeHandler openstackBakeHandler = new OpenstackBakeHandler(openstackBakeryDefaults: openstackBakeryDefaults)
@@ -126,7 +126,7 @@ class OpenstackBakeHandlerSpec extends Specification {
       Producer == true
   }
 
-  void 'can identify amazon-chroot builds'() {
+  void 'can identify openstack-chroot builds'() {
     setup:
       @Subject
       OpenstackBakeHandler openstackBakeHandler = new OpenstackBakeHandler(openstackBakeryDefaults: openstackBakeryDefaults)
@@ -153,7 +153,7 @@ class OpenstackBakeHandlerSpec extends Specification {
       Boolean openstackProducer = openstackBakeHandler.isProducerOf(logsContent)
 
     then:
-      openstackProducer == false
+      !openstackProducer
   }
 
   void 'can scrape packer logs for image name'() {
@@ -163,20 +163,20 @@ class OpenstackBakeHandlerSpec extends Specification {
 
     when:
       def logsContent =
-        "    amazon-ebs: Processing triggers for libc-bin ...\n" +
-        "    amazon-ebs: ldconfig deferred processing now taking place\n" +
-        "==> amazon-ebs: Stopping the source instance...\n" +
-        "==> amazon-ebs: Waiting for the instance to stop...\n" +
-        "==> amazon-ebs: Creating the AMI: kato-x8664-1422459898853-ubuntu\n" +
-        "    amazon-ebs: AMI: ami-2c014644\n" +
-        "==> amazon-ebs: Waiting for AMI to become ready...\n" +
-        "==> amazon-ebs: Terminating the source AWS instance...\n" +
-        "==> amazon-ebs: Deleting temporary security group...\n" +
-        "==> amazon-ebs: Deleting temporary keypair...\n" +
-        "Build 'amazon-ebs' finished.\n" +
+        "    openstack-ebs: Processing triggers for libc-bin ...\n" +
+        "    openstack-ebs: ldconfig deferred processing now taking place\n" +
+        "==> openstack-ebs: Stopping the source instance...\n" +
+        "==> openstack-ebs: Waiting for the instance to stop...\n" +
+        "==> openstack-ebs: Creating the AMI: kato-x8664-1422459898853-ubuntu\n" +
+        "    openstack-ebs: AMI: ami-2c014644\n" +
+        "==> openstack-ebs: Waiting for AMI to become ready...\n" +
+        "==> openstack-ebs: Terminating the source AWS instance...\n" +
+        "==> openstack-ebs: Deleting temporary security group...\n" +
+        "==> openstack-ebs: Deleting temporary keypair...\n" +
+        "Build 'openstack-ebs' finished.\n" +
         "\n" +
         "==> Builds finished. The artifacts of successful builds are:\n" +
-        "--> amazon-ebs: AMIs were created:\n" +
+        "--> openstack-ebs: AMIs were created:\n" +
         "\n" +
         "us-east-1: ami-2c014644"
 
@@ -190,27 +190,27 @@ class OpenstackBakeHandlerSpec extends Specification {
       }
   }
 
-  void 'can scrape packer (amazon-chroot) logs for image name'() {
+  void 'can scrape packer (openstack-chroot) logs for image name'() {
     setup:
       @Subject
       OpenstackBakeHandler openstackBakeHandler = new OpenstackBakeHandler(openstackBakeryDefaults: openstackBakeryDefaults)
 
     when:
       def logsContent =
-        "    amazon-chroot: Processing triggers for libc-bin ...\n" +
-        "    amazon-chroot: ldconfig deferred processing now taking place\n" +
-        "==> amazon-chroot: Stopping the source instance...\n" +
-        "==> amazon-chroot: Waiting for the instance to stop...\n" +
-        "==> amazon-chroot: Creating the AMI: kato-x8664-1422459898853-ubuntu\n" +
-        "    amazon-chroot: AMI: ami-2c014644\n" +
-        "==> amazon-chroot: Waiting for AMI to become ready...\n" +
-        "==> amazon-chroot: Terminating the source AWS instance...\n" +
-        "==> amazon-chroot: Deleting temporary security group...\n" +
-        "==> amazon-chroot: Deleting temporary keypair...\n" +
-        "Build 'amazon-chroot' finished.\n" +
+        "    openstack-chroot: Processing triggers for libc-bin ...\n" +
+        "    openstack-chroot: ldconfig deferred processing now taking place\n" +
+        "==> openstack-chroot: Stopping the source instance...\n" +
+        "==> openstack-chroot: Waiting for the instance to stop...\n" +
+        "==> openstack-chroot: Creating the AMI: kato-x8664-1422459898853-ubuntu\n" +
+        "    openstack-chroot: AMI: ami-2c014644\n" +
+        "==> openstack-chroot: Waiting for AMI to become ready...\n" +
+        "==> openstack-chroot: Terminating the source AWS instance...\n" +
+        "==> openstack-chroot: Deleting temporary security group...\n" +
+        "==> openstack-chroot: Deleting temporary keypair...\n" +
+        "Build 'openstack-chroot' finished.\n" +
         "\n" +
         "==> Builds finished. The artifacts of successful builds are:\n" +
-        "--> amazon-chroot: AMIs were created:\n" +
+        "--> openstack-chroot: AMIs were created:\n" +
         "\n" +
         "us-east-1: ami-2c014644"
 
@@ -232,20 +232,20 @@ class OpenstackBakeHandlerSpec extends Specification {
 
     when:
       def logsContent =
-        "    amazon-ebs: Processing triggers for libc-bin ...\n" +
-        "    amazon-ebs: ldconfig deferred processing now taking place\n" +
-        "==> amazon-ebs: Stopping the source instance...\n" +
-        "==> amazon-ebs: Waiting for the instance to stop...\n" +
-        "==> amazon-ebs: Creating the AMI: kato-x8664-1422459898853-ubuntu\n" +
-        "    amazon-ebs: AMI: ami-2c014644\n" +
-        "==> amazon-ebs: Waiting for AMI to become ready...\n" +
-        "==> amazon-ebs: Terminating the source AWS instance...\n" +
-        "==> amazon-ebs: Deleting temporary security group...\n" +
-        "==> amazon-ebs: Deleting temporary keypair...\n" +
-        "Build 'amazon-ebs' finished.\n" +
+        "    openstack-ebs: Processing triggers for libc-bin ...\n" +
+        "    openstack-ebs: ldconfig deferred processing now taking place\n" +
+        "==> openstack-ebs: Stopping the source instance...\n" +
+        "==> openstack-ebs: Waiting for the instance to stop...\n" +
+        "==> openstack-ebs: Creating the AMI: kato-x8664-1422459898853-ubuntu\n" +
+        "    openstack-ebs: AMI: ami-2c014644\n" +
+        "==> openstack-ebs: Waiting for AMI to become ready...\n" +
+        "==> openstack-ebs: Terminating the source AWS instance...\n" +
+        "==> openstack-ebs: Deleting temporary security group...\n" +
+        "==> openstack-ebs: Deleting temporary keypair...\n" +
+        "Build 'openstack-ebs' finished.\n" +
         "\n" +
         "==> Builds finished. The artifacts of successful builds are:\n" +
-        "--> amazon-ebs: AMIs were created:\n"
+        "--> openstack-ebs: AMIs were created:\n"
 
       Bake bake = openstackBakeHandler.scrapeCompletedBakeResults(REGION, "123", logsContent)
 
@@ -264,10 +264,10 @@ class OpenstackBakeHandlerSpec extends Specification {
 
     when:
       def logsContent =
-          "    amazon-ebs: Processing triggers for libc-bin ...\n" +
-          "    amazon-ebs: ldconfig deferred processing now taking place\n" +
-          "==> amazon-ebs: Stopping the source instance...\n" +
-          "==> amazon-ebs: Waiting for the instance to stop...\n"
+          "    openstack-ebs: Processing triggers for libc-bin ...\n" +
+          "    openstack-ebs: ldconfig deferred processing now taking place\n" +
+          "==> openstack-ebs: Stopping the source instance...\n" +
+          "==> openstack-ebs: Waiting for the instance to stop...\n"
 
       Bake bake = openstackBakeHandler.scrapeCompletedBakeResults(REGION, "123", logsContent)
 
