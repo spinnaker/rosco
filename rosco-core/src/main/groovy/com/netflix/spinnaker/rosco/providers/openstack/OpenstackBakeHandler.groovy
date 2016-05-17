@@ -27,8 +27,8 @@ import org.springframework.stereotype.Component
 @Component
 public class OpenstackBakeHandler extends CloudProviderBakeHandler {
 
-  private static final String BUILDER_TYPE = "openstack-(chroot|ebs)"
-  private static final String IMAGE_NAME_TOKEN = "openstack-(chroot|ebs): Creating the AMI:"
+  private static final String BUILDER_TYPE = "" //TODO
+  private static final String IMAGE_NAME_TOKEN = "" //TODO
 
   @Autowired
   RoscoOpenstackConfiguration.OpenstackBakeryDefaults openstackBakeryDefaults
@@ -40,90 +40,32 @@ public class OpenstackBakeHandler extends CloudProviderBakeHandler {
 
   @Override
   BakeOptions getBakeOptions() {
-    new BakeOptions(
-      cloudProvider: BakeRequest.CloudProviderType.openstack,
-      baseImages: openstackBakeryDefaults?.baseImages?.collect { it.baseImage }
-    )
+    //TODO
+    new BakeOptions()
   }
 
   @Override
   String produceProviderSpecificBakeKeyComponent(String region, BakeRequest bakeRequest) {
-    if (!bakeRequest.vm_type) {
-      bakeRequest = bakeRequest.copyWith(vm_type: openstackBakeryDefaults.defaultVirtualizationType)
-    }
-
-    bakeRequest.with {
-      def enhancedNetworkingSegment = enhanced_networking ? 'enhancedNWEnabled' : 'enhancedNWDisabled'
-
-      return "$region:$vm_type:$enhancedNetworkingSegment"
-    }
+    //TODO
+    String key = ''
+    key
   }
 
   @Override
   def findVirtualizationSettings(String region, BakeRequest bakeRequest) {
-    BakeRequest.VmType vm_type = bakeRequest.vm_type ?: openstackBakeryDefaults.defaultVirtualizationType
-
-    def openstackOperatingSystemVirtualizationSettings = openstackBakeryDefaults?.baseImages.find {
-      it.baseImage.id == bakeRequest.base_os
-    }
-
-    if (!openstackOperatingSystemVirtualizationSettings) {
-      throw new IllegalArgumentException("No virtualization settings found for '$bakeRequest.base_os'.")
-    }
-
-    def openstackVirtualizationSettings = openstackOperatingSystemVirtualizationSettings?.virtualizationSettings.find {
-      it.region == region && it.virtualizationType == vm_type
-    }
-
-    if (!openstackVirtualizationSettings) {
-      throw new IllegalArgumentException("No virtualization settings found for region '$region', operating system '$bakeRequest.base_os', and vm type '$vm_type'.")
-    }
-
-    if (bakeRequest.base_ami) {
-      openstackVirtualizationSettings = openstackVirtualizationSettings.clone()
-      openstackVirtualizationSettings.sourceAmi = bakeRequest.base_ami
-    }
-
-    return openstackVirtualizationSettings
+    //TODO
   }
 
   @Override
   Map buildParameterMap(String region, def openstackVirtualizationSettings, String imageName, BakeRequest bakeRequest) {
-    def parameterMap = [
-      openstack_region       : region,
-      openstack_ssh_username : openstackVirtualizationSettings.sshUserName,
-      openstack_instance_type: openstackVirtualizationSettings.instanceType,
-      openstack_source_ami   : openstackVirtualizationSettings.sourceAmi,
-      openstack_target_ami   : imageName
-    ]
-
-    if (openstackBakeryDefaults.openstackAccessKey && openstackBakeryDefaults.openstackSecretKey) {
-      parameterMap.openstack_access_key = openstackBakeryDefaults.openstackAccessKey
-      parameterMap.openstack_secret_key = openstackBakeryDefaults.openstackSecretKey
-    }
-
-    if (openstackBakeryDefaults.openstackSubnetId) {
-      parameterMap.openstack_subnet_id = openstackBakeryDefaults.openstackSubnetId
-    }
-
-    if (openstackBakeryDefaults.openstackVpcId) {
-      parameterMap.openstack_vpc_id = openstackBakeryDefaults.openstackVpcId
-    }
-
-    if (openstackBakeryDefaults.openstackAssociatePublicIpAddress != null) {
-      parameterMap.openstack_associate_public_ip_address = openstackBakeryDefaults.openstackAssociatePublicIpAddress
-    }
-
-    if (bakeRequest.enhanced_networking) {
-      parameterMap.openstack_enhanced_networking = true
-    }
-
-    return parameterMap
+    //TODO
+    def parameterMap = [:]
+    parameterMap
   }
 
   @Override
   String getTemplateFileName() {
-    return openstackBakeryDefaults.templateFile
+    //TODO
   }
 
   @Override
@@ -139,13 +81,9 @@ public class OpenstackBakeHandler extends CloudProviderBakeHandler {
     // TODO(duftler): Presently scraping the logs for the image name/id. Would be better to not be reliant on the log
     // format not changing. Resolve this by storing bake details in redis and querying oort for amiId from amiName.
     logsContent.eachLine { String line ->
-      if (line =~ IMAGE_NAME_TOKEN) {
-        imageName = line.split(" ").last()
-      } else if (line =~ "$region:") {
-        amiId = line.split(" ").last()
-      }
+      //TODO
     }
 
-    return new Bake(id: bakeId, ami: amiId, image_name: imageName)
+    new Bake(id: bakeId, ami: amiId, image_name: imageName)
   }
 }

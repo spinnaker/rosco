@@ -16,7 +16,6 @@
 
 package com.netflix.spinnaker.rosco.providers.openstack.config
 
-import com.netflix.spinnaker.rosco.api.BakeOptions
 import com.netflix.spinnaker.rosco.api.BakeRequest
 import com.netflix.spinnaker.rosco.providers.openstack.OpenstackBakeHandler
 import com.netflix.spinnaker.rosco.providers.registry.CloudProviderBakeHandlerRegistry
@@ -46,32 +45,21 @@ class RoscoOpenstackConfiguration {
   @Bean
   @ConfigurationProperties('openstack.bakeryDefaults')
   OpenstackBakeryDefaults openstackBakeryDefaults(@Value('${openstack.bakeryDefaults.defaultVirtualizationType:hvm}') BakeRequest.VmType defaultVirtualizationType) {
-    new OpenstackBakeryDefaults(defaultVirtualizationType: defaultVirtualizationType)
+    //TODO
+    new OpenstackBakeryDefaults()
   }
 
   static class OpenstackBakeryDefaults {
-    String openstackAccessKey
-    String openstackSecretKey
-    String openstackSubnetId
-    String openstackVpcId
-    Boolean openstackAssociatePublicIpAddress
-    String templateFile
-    BakeRequest.VmType defaultVirtualizationType
-    List<OpenstackOperatingSystemVirtualizationSettings> baseImages = []
+    //TODO
   }
 
   static class OpenstackOperatingSystemVirtualizationSettings {
-    BakeOptions.BaseImage baseImage
-    List<OpenstackVirtualizationSettings> virtualizationSettings = []
+    //TODO
   }
 
   @AutoClone(style = AutoCloneStyle.SIMPLE)
   static class OpenstackVirtualizationSettings {
-    String region
-    BakeRequest.VmType virtualizationType
-    String instanceType
-    String sourceAmi
-    String sshUserName
+    //TODO
   }
 
   @PostConstruct
