@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Google, Inc.
+ * Copyright 2016 Target, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,65 +50,65 @@ class OpenstackBakeHandlerSpec extends Specification {
 
   void setupSpec() {
     def openstackBakeryDefaultsJson = [
-            identityEndpoint: OPENSTACK_ENDPOINT,
-            username: 'foo',
-            password: 'bar',
-            domainName: 'Default',
-            insecure: 'false',
-            floatingIpPool: 'ippool',
-            securityGroups: 'default',
-            tenantName: 'tenant1',
-            templateFile: "openstack_template.json",
-            baseImages: [
-                    [
-                            baseImage: [
-                                    id: "ubuntu",
-                                    packageType: "DEB",
-                            ],
-                            virtualizationSettings: [
-                                    [
-                                            region: REGION,
-                                            flavor: "smem-2vcpu",
-                                            sourceImageName: SOURCE_UBUNTU_IMAGE_NAME,
-                                            sshUserName: "ubuntu"
-                                    ],
-                                    [
-                                            region: REGION,
-                                            flavor: "mmem-6vcpu",
-                                            sourceImageName: SOURCE_UBUNTU_IMAGE_NAME,
-                                            sshUserName: "ubuntu"
-                                    ]
-                            ]
-                    ],
-                    [
-                            baseImage: [
-                                    id: "trusty",
-                                    packageType: "DEB",
-                            ],
-                            virtualizationSettings: [
-                                    [
-                                            region: REGION,
-                                            flavor: "smem-2vcpu",
-                                            sourceImageName: SOURCE_TRUSTY_IMAGE_NAME,
-                                            sshUserName: "ubuntu"
-                                    ]
-                            ]
-                    ],
-                    [
-                            baseImage: [
-                                    id: "openstack",
-                                    packageType: "RPM",
-                            ],
-                            virtualizationSettings: [
-                                    [
-                                            region: REGION,
-                                            flavor: "smem-2vcpu",
-                                            sourceImageName: SOURCE_OPENSTACK_IMAGE_NAME,
-                                            sshUserName: "cloud-user"
-                                    ]
-                            ]
-                    ]
+      identityEndpoint: OPENSTACK_ENDPOINT,
+      username: 'foo',
+      password: 'bar',
+      domainName: 'Default',
+      insecure: 'false',
+      floatingIpPool: 'ippool',
+      securityGroups: 'default',
+      tenantName: 'tenant1',
+      templateFile: "openstack_template.json",
+      baseImages: [
+        [
+          baseImage: [
+            id: "ubuntu",
+            packageType: "DEB",
+          ],
+          virtualizationSettings: [
+            [
+              region: REGION,
+              instanceType: "smem-2vcpu",
+              sourceImageName: SOURCE_UBUNTU_IMAGE_NAME,
+              sshUserName: "ubuntu"
+            ],
+            [
+              region: REGION,
+              instanceType: "mmem-6vcpu",
+              sourceImageName: SOURCE_UBUNTU_IMAGE_NAME,
+              sshUserName: "ubuntu"
             ]
+          ]
+        ],
+        [
+          baseImage: [
+            id: "trusty",
+            packageType: "DEB",
+          ],
+          virtualizationSettings: [
+            [
+              region: REGION,
+              instanceType: "smem-2vcpu",
+              sourceImageName: SOURCE_TRUSTY_IMAGE_NAME,
+              sshUserName: "ubuntu"
+            ]
+          ]
+        ],
+        [
+          baseImage: [
+            id: "openstack",
+            packageType: "RPM",
+          ],
+          virtualizationSettings: [
+            [
+              region: REGION,
+              instanceType: "smem-2vcpu",
+              sourceImageName: SOURCE_OPENSTACK_IMAGE_NAME,
+              sshUserName: "cloud-user"
+            ]
+          ]
+        ]
+      ]
     ]
 
     openstackBakeryDefaults = new ObjectMapper().convertValue(openstackBakeryDefaultsJson, RoscoOpenstackConfiguration.OpenstackBakeryDefaults)
@@ -249,20 +249,20 @@ Build 'openstack' finished.
 
   void 'produces packer command with all required parameters'() {
     setup:
-    String flavor = openstackBakeryDefaults.baseImages[0].virtualizationSettings[0].flavor
+    String instanceType = openstackBakeryDefaults.baseImages[0].virtualizationSettings[0].instanceType
     def imageNameFactoryMock = Mock(ImageNameFactory)
     def packerCommandFactoryMock = Mock(PackerCommandFactory)
     def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
             package_name: PACKAGES_NAME,
             base_os: "ubuntu",
-            flavor: flavor,
+            instance_type: instanceType,
             cloud_provider_type: BakeRequest.CloudProviderType.openstack)
     def targetImageName = "1f28b46b-b36f-4b7c-bc34-40e2371886fa"
     def parameterMap = [
             openstack_identity_endpoint: OPENSTACK_ENDPOINT,
             openstack_region: REGION,
             openstack_ssh_username: "ubuntu",
-            openstack_flavor: flavor,
+            openstack_instance_type: instanceType,
             openstack_source_image_name: SOURCE_UBUNTU_IMAGE_NAME,
             openstack_image_name: targetImageName,
             openstack_username: openstackBakeryDefaults.username,
@@ -295,21 +295,21 @@ Build 'openstack' finished.
 
   void 'produces packer command with all required parameters, overriding base ami'() {
     setup:
-    String flavor = openstackBakeryDefaults.baseImages[0].virtualizationSettings[0].flavor
+    String instanceType = openstackBakeryDefaults.baseImages[0].virtualizationSettings[0].instanceType
     def imageNameFactoryMock = Mock(ImageNameFactory)
     def packerCommandFactoryMock = Mock(PackerCommandFactory)
     def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
             package_name: PACKAGES_NAME,
             base_os: "ubuntu",
             base_ami: "ubuntu-natty",
-            flavor: flavor,
+            instance_type: instanceType,
             cloud_provider_type: BakeRequest.CloudProviderType.openstack)
     def targetImageName = "1f28b46b-b36f-4b7c-bc34-40e2371886fa"
     def parameterMap = [
             openstack_identity_endpoint: OPENSTACK_ENDPOINT,
             openstack_region: REGION,
             openstack_ssh_username: "ubuntu",
-            openstack_flavor: flavor,
+            openstack_instance_type: instanceType,
             openstack_source_image_name: "ubuntu-natty",
             openstack_image_name: targetImageName,
             openstack_username: openstackBakeryDefaults.username,
@@ -343,13 +343,13 @@ Build 'openstack' finished.
   void 'produces packer command with all required parameters, overriding template filename'() {
     setup:
     String template_file_name = "somePackerTemplate.json"
-    String flavor = openstackBakeryDefaults.baseImages[0].virtualizationSettings[0].flavor
+    String instanceType = openstackBakeryDefaults.baseImages[0].virtualizationSettings[0].instanceType
     def imageNameFactoryMock = Mock(ImageNameFactory)
     def packerCommandFactoryMock = Mock(PackerCommandFactory)
     def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
             package_name: PACKAGES_NAME,
             base_os: "ubuntu",
-            flavor: flavor,
+            instance_type: instanceType,
             cloud_provider_type: BakeRequest.CloudProviderType.openstack,
             template_file_name: template_file_name)
     def targetImageName = "1f28b46b-b36f-4b7c-bc34-40e2371886fa"
@@ -357,7 +357,7 @@ Build 'openstack' finished.
             openstack_identity_endpoint: OPENSTACK_ENDPOINT,
             openstack_region: REGION,
             openstack_ssh_username: "ubuntu",
-            openstack_flavor: flavor,
+            openstack_instance_type: instanceType,
             openstack_source_image_name: SOURCE_UBUNTU_IMAGE_NAME,
             openstack_image_name: targetImageName,
             openstack_username: openstackBakeryDefaults.username,
@@ -390,13 +390,13 @@ Build 'openstack' finished.
 
   void 'produces packer command with all required parameters, adding extended attributes'() {
     setup:
-    String flavor = openstackBakeryDefaults.baseImages[0].virtualizationSettings[0].flavor
+    String instanceType = openstackBakeryDefaults.baseImages[0].virtualizationSettings[0].instanceType
     def imageNameFactoryMock = Mock(ImageNameFactory)
     def packerCommandFactoryMock = Mock(PackerCommandFactory)
     def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
             package_name: PACKAGES_NAME,
             base_os: "ubuntu",
-            flavor: flavor,
+            instance_type: instanceType,
             cloud_provider_type: BakeRequest.CloudProviderType.openstack,
             extended_attributes: [someAttr1: "someValue1", someAttr2: "someValue2"])
     def targetImageName = "1f28b46b-b36f-4b7c-bc34-40e2371886fa"
@@ -404,7 +404,7 @@ Build 'openstack' finished.
             openstack_identity_endpoint: OPENSTACK_ENDPOINT,
             openstack_region: REGION,
             openstack_ssh_username: "ubuntu",
-            openstack_flavor: flavor,
+            openstack_instance_type: instanceType,
             openstack_source_image_name: SOURCE_UBUNTU_IMAGE_NAME,
             openstack_image_name: targetImageName,
             openstack_username: openstackBakeryDefaults.username,
@@ -439,21 +439,21 @@ Build 'openstack' finished.
 
   void 'produces packer command with all required parameters, and overrides native attributes via extended attributes'() {
     setup:
-    String flavor = openstackBakeryDefaults.baseImages[0].virtualizationSettings[0].flavor
+    String instanceType = openstackBakeryDefaults.baseImages[0].virtualizationSettings[0].instanceType
     def imageNameFactoryMock = Mock(ImageNameFactory)
     def packerCommandFactoryMock = Mock(PackerCommandFactory)
     def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
             package_name: PACKAGES_NAME,
             base_os: "ubuntu",
-            flavor: flavor,
+            instance_type: instanceType,
             cloud_provider_type: BakeRequest.CloudProviderType.openstack,
-            extended_attributes: [openstack_flavor: "mmem-6vcpu", openstack_domain_name: "domain2"])
+            extended_attributes: [openstack_instance_type: "mmem-6vcpu", openstack_domain_name: "domain2"])
     def targetImageName = "1f28b46b-b36f-4b7c-bc34-40e2371886fa"
     def parameterMap = [
             openstack_identity_endpoint: OPENSTACK_ENDPOINT,
             openstack_region: REGION,
             openstack_ssh_username: "ubuntu",
-            openstack_flavor: "mmem-6vcpu",
+            openstack_instance_type: "mmem-6vcpu",
             openstack_source_image_name: SOURCE_UBUNTU_IMAGE_NAME,
             openstack_image_name: targetImageName,
             openstack_username: openstackBakeryDefaults.username,
@@ -486,13 +486,13 @@ Build 'openstack' finished.
 
   void 'produces packer command with all required parameters including upgrade'() {
     setup:
-    String flavor = openstackBakeryDefaults.baseImages[0].virtualizationSettings[0].flavor
+    String instanceType = openstackBakeryDefaults.baseImages[0].virtualizationSettings[0].instanceType
     def imageNameFactoryMock = Mock(ImageNameFactory)
     def packerCommandFactoryMock = Mock(PackerCommandFactory)
     def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
             package_name: PACKAGES_NAME,
             base_os: "ubuntu",
-            flavor: flavor,
+            instance_type: instanceType,
             cloud_provider_type: BakeRequest.CloudProviderType.openstack,
             upgrade: true)
     def targetImageName = "1f28b46b-b36f-4b7c-bc34-40e2371886fa"
@@ -500,7 +500,7 @@ Build 'openstack' finished.
             openstack_identity_endpoint: OPENSTACK_ENDPOINT,
             openstack_region: REGION,
             openstack_ssh_username: "ubuntu",
-            openstack_flavor: flavor,
+            openstack_instance_type: instanceType,
             openstack_source_image_name: SOURCE_UBUNTU_IMAGE_NAME,
             openstack_image_name: targetImageName,
             openstack_username: openstackBakeryDefaults.username,
@@ -563,7 +563,7 @@ Build 'openstack' finished.
             package_name: PACKAGES_NAME,
             base_os: "trusty",
             cloud_provider_type: BakeRequest.CloudProviderType.openstack,
-            flavor: "smem-2vcpu")
+            instance_type: "smem-2vcpu")
 
     @Subject
     OpenstackBakeHandler openstackBakeHandler = new OpenstackBakeHandler(openstackBakeryDefaults: openstackBakeryDefaults,
@@ -576,7 +576,7 @@ Build 'openstack' finished.
 
     then:
     IllegalArgumentException e = thrown()
-    e.message == "No virtualization settings found for region 'TTEOSCORE1999', operating system 'trusty', and flavor 'smem-2vcpu'."
+    e.message == "No virtualization settings found for region 'TTEOSCORE1999', operating system 'trusty', and instance_type 'smem-2vcpu'."
   }
 
   void 'produce a default openstack bakeKey without base ami'() {

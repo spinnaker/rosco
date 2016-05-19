@@ -32,7 +32,14 @@ import io.swagger.annotations.ApiParam
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestMethod
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @Slf4j
@@ -82,12 +89,6 @@ class BakeryController {
   @ResponseStatus(HttpStatus.NOT_FOUND)
   Map handleBakeOptionsException(BakeOptions.Exception e) {
     [error: "bake.options.not.found", status: HttpStatus.NOT_FOUND, messages: ["Bake options not found. " + e.message]]
-  }
-
-  @ExceptionHandler(Exception)
-  @ResponseStatus(HttpStatus.BAD_REQUEST)
-  Map handleException(Exception e) {
-    [error: e.message]
   }
 
   @RequestMapping(value = '/api/v1/{region}/bake', method = RequestMethod.POST)

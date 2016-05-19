@@ -4,7 +4,7 @@ server:
 rush:
   baseUrl: http://localhost:8085
   # TODO(duftler): Figure out the right way to set this dynamically.
-  configDir: rosco-web/config/packer
+  configDir: /some/path/to/config/packer
 
 executionStatusToBakeStates:
   associations:
@@ -194,7 +194,7 @@ google:
 openstack:
   enabled: ${OS_ENABLED:false}
   bakeryDefaults:
-    identityEndpoint: ${OS_AUTH_URL:https://openstack.yourcompany.com:5000/v3}
+    identityEndpoint: https://openstack.yourcompany.com:5000/v3
     domainName: Default
     floatingIpPool: ext_vlan1472_net
     securityGroups: default
@@ -211,11 +211,11 @@ openstack:
         packageType: deb
       virtualizationSettings:
       - region: TTEOSCORE1
-        flavor: smem-2vcpu
+        instanceType: smem-2vcpu
         sourceImageName: ubuntu-latest
         sshUserName: ubuntu
       - region: TTCOSCORE1
-        flavor: smem-2vcpu
+        instanceType: smem-2vcpu
         sourceImageName: ubuntu-latest
         sshUserName: ubuntu
 

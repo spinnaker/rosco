@@ -1,7 +1,7 @@
 {
   "variables": {
     "openstack_domain_name": null,
-    "openstack_flavor": null,
+    "openstack_instance_type": null,
     "openstack_floating_ip_pool": null,
     "openstack_image_name": null,
     "openstack_identity_endpoint": null,
@@ -24,7 +24,7 @@
   "builders": [{
     "type": "openstack",
     "domain_name": "{{user `openstack_domain_name`}}",
-    "flavor": "{{user `openstack_flavor`}}",
+    "flavor": "{{user `openstack_instance_type`}}",
     "floating_ip_pool": "{{user `openstack_floating_ip_pool`}}",
     "image_name": "{{user `openstack_image_name`}}",
     "identity_endpoint": "{{user `openstack_identity_endpoint`}}",

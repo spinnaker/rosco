@@ -56,7 +56,7 @@ class BakeRequest {
   String ami_name
   String ami_suffix
   Boolean upgrade
-  String flavor //openstack only
+  String instance_type
 
   @ApiModelProperty("The explicit packer template to use, instead of resolving one from rosco's configuration")
   String template_file_name

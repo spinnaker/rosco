@@ -69,7 +69,7 @@ class RoscoOpenstackConfiguration {
   @AutoClone(style = AutoCloneStyle.SIMPLE)
   static class OpenstackVirtualizationSettings {
     String region
-    String flavor
+    String instanceType
     String sourceImageName
     String sshUserName
   }

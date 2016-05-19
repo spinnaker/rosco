@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Google, Inc.
+ * Copyright 2016 Target, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,11 +70,11 @@ public class OpenstackBakeHandler extends CloudProviderBakeHandler {
     }
 
     def openstackVirtualizationSettings = openstackOperatingSystemVirtualizationSettings?.virtualizationSettings.find {
-      it.region == region && it.flavor == bakeRequest.flavor
+      it.region == region && it.instanceType == bakeRequest.instance_type
     }
 
     if (!openstackVirtualizationSettings) {
-      throw new IllegalArgumentException("No virtualization settings found for region '$region', operating system '$bakeRequest.base_os', and flavor '${bakeRequest.flavor}'.")
+      throw new IllegalArgumentException("No virtualization settings found for region '$region', operating system '$bakeRequest.base_os', and instance_type '${bakeRequest.instance_type}'.")
     }
 
     if (bakeRequest.base_ami) {
@@ -91,7 +91,7 @@ public class OpenstackBakeHandler extends CloudProviderBakeHandler {
             openstack_identity_endpoint   : openstackBakeryDefaults.identityEndpoint,
             openstack_region              : region,
             openstack_ssh_username        : openstackVirtualizationSettings.sshUserName,
-            openstack_flavor              : openstackVirtualizationSettings.flavor,
+            openstack_instance_type       : openstackVirtualizationSettings.instanceType,
             openstack_source_image_name   : openstackVirtualizationSettings.sourceImageName,
             openstack_image_name          : imageName
     ]
