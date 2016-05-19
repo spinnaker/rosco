@@ -29,7 +29,7 @@ Need to run rosco locally for development? Here's what you need to setup and run
 . ./gradlew bootRun
 
 ## Verifying
-. curl -v localhost:7002/backOptions
+. curl -v localhost:8087/backOptions
 
 ## Swagger
-. http://localhost:7002/swagger-ui.html
+. http://localhost:8087/swagger-ui.html
