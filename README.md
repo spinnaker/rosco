@@ -13,32 +13,48 @@ It exposes a REST api which can be experimented with via the Swagger UI: http://
 Need to run rosco locally for development? Here's what you need to setup and run:
 
 ## Environment Setup
-. git clone git@github.com:spinnaker/rosco.git
-. git clone https://github.com/spinnaker/spinnaker.git
+```
+git clone git@github.com:spinnaker/rosco.git
+git clone https://github.com/spinnaker/spinnaker.git
+```
 
 ## Docker Setup (runs redis locally)
-. docker-machine create --virtualbox-disk-size 8192 --virtualbox-memory 8192 -d virtualbox spinnaker
-. eval $(docker-machine env spinnaker)
-. cd spinnaker/experimental/docker-compose
-. docker-compose up -d redis rush
+```
+docker-machine create --virtualbox-disk-size 8192 --virtualbox-memory 8192 -d virtualbox spinnaker
+eval $(docker-machine env spinnaker)
+cd spinnaker/experimental/docker-compose
+docker-compose up -d redis rush
+```
 
 ## Verify redis
-. docker run -it --link redis:redis --rm redis redis-cli -h redis -p 6379
-. (printf "PING\r\n";) | nc -v localhost 6379
+```
+docker run -it --link redis:redis --rm redis redis-cli -h redis -p 6379
+(printf "PING\r\n";) | nc -v localhost 6379
+```
 
 ## IDE setup
-. gradle wrapper
-. ./gradlew idea
+```
+gradle wrapper
+./gradlew idea
+```
 
 ## Running App
-. ./gradlew bootRun
+```
+./gradlew bootRun
+```
 
 ## Verifying
-. curl -v localhost:8087/bakeOptions
+```
+curl -v localhost:8087/bakeOptions
+```
 
 ## Swagger
-. http://localhost:8087/swagger-ui.html
+```
+http://localhost:8087/swagger-ui.html
+```
 
 ## Docker teardown
-. docker-compose stop
-. docker-machine rm rosco-instance
+```
+docker-compose stop
+docker-machine rm spinnaker
+```
