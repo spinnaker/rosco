@@ -36,7 +36,7 @@ class RetrofitConfiguration {
   }
 
   @Bean LogLevel retrofitLogLevel() {
-    LogLevel.FULL
+    LogLevel.BASIC
   }
 
   @Bean Gson gson() {

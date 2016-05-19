@@ -4,7 +4,7 @@ server:
 rush:
   baseUrl: http://localhost:8085
   # TODO(duftler): Figure out the right way to set this dynamically.
-  configDir: /some/path/to/config/packer
+  configDir: rosco-web/config/packer
 
 executionStatusToBakeStates:
   associations:
@@ -190,6 +190,34 @@ google:
           packageType: deb
         virtualizationSettings:
           sourceImage: ubuntu-1404-trusty-v20150909a
+
+openstack:
+  enabled: ${OS_ENABLED:false}
+  bakeryDefaults:
+    identityEndpoint: ${OS_AUTH_URL:https://openstack.yourcompany.com:5000/v3}
+    domainName: Default
+    floatingIpPool: ext_vlan1472_net
+    securityGroups: default
+    tenantName: PRD-spinnakeropenstack
+    insecure: true
+    username: ${OS_USERNAME}
+    password: ${OS_PASSWORD}
+    templateFile: openstack.json
+    baseImages:
+    - baseImage:
+        id: vivid
+        shortDescription: 15.04
+        detailedDescription: Ubuntu Vivid Vervet v15.04
+        packageType: deb
+      virtualizationSettings:
+      - region: TTEOSCORE1
+        flavor: smem-2vcpu
+        sourceImageName: ubuntu-latest
+        sshUserName: ubuntu
+      - region: TTCOSCORE1
+        flavor: smem-2vcpu
+        sourceImageName: ubuntu-latest
+        sshUserName: ubuntu
 
 swagger:
   enabled: true

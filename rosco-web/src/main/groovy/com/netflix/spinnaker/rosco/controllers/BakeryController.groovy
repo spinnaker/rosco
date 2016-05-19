@@ -78,10 +78,16 @@ class BakeryController {
     return baseImage
   }
 
-  @ExceptionHandler
+  @ExceptionHandler(BakeOptions.Exception)
   @ResponseStatus(HttpStatus.NOT_FOUND)
   Map handleBakeOptionsException(BakeOptions.Exception e) {
     [error: "bake.options.not.found", status: HttpStatus.NOT_FOUND, messages: ["Bake options not found. " + e.message]]
+  }
+
+  @ExceptionHandler(Exception)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  Map handleException(Exception e) {
+    [error: e.message]
   }
 
   @RequestMapping(value = '/api/v1/{region}/bake', method = RequestMethod.POST)
