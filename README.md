@@ -32,7 +32,7 @@ docker run -it --link redis:redis --rm redis redis-cli -h redis -p 6379
 (printf "PING\r\n";) | nc -v localhost 6379
 ```
 
-## IDE setup
+# IDE setup
 ```
 gradle wrapper
 ./gradlew idea
