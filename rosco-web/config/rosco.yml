@@ -194,7 +194,7 @@ google:
 openstack:
   enabled: ${OS_ENABLED:false}
   bakeryDefaults:
-    identityEndpoint: https://openstack.yourcompany.com:5000/v3
+    identityEndpoint: ${OS_AUTH_URL:}
     domainName: Default
     floatingIpPool: ext_vlan1472_net
     securityGroups: default
