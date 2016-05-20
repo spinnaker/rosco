@@ -45,9 +45,6 @@ allprojects {
       exceptionFormat = 'full'
     }
   }
-  tasks.withType(JavaExec) {
-    systemProperties = System.properties
-  }
 }
 
 defaultTasks ':rosco-web:bootRun'
