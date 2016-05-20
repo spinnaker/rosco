@@ -48,8 +48,8 @@ public class OpenstackBakeHandler extends CloudProviderBakeHandler {
   @Override
   BakeOptions getBakeOptions() {
     new BakeOptions(
-            cloudProvider: BakeRequest.CloudProviderType.openstack,
-            baseImages: openstackBakeryDefaults?.baseImages?.collect { it.baseImage }
+      cloudProvider: BakeRequest.CloudProviderType.openstack,
+      baseImages: openstackBakeryDefaults?.baseImages?.collect { it.baseImage }
     )
   }
 
@@ -88,12 +88,12 @@ public class OpenstackBakeHandler extends CloudProviderBakeHandler {
   @Override
   Map buildParameterMap(String region, def openstackVirtualizationSettings, String imageName, BakeRequest bakeRequest) {
     def parameterMap = [
-            openstack_identity_endpoint   : openstackBakeryDefaults.identityEndpoint,
-            openstack_region              : region,
-            openstack_ssh_username        : openstackVirtualizationSettings.sshUserName,
-            openstack_instance_type       : openstackVirtualizationSettings.instanceType,
-            openstack_source_image_name   : openstackVirtualizationSettings.sourceImageName,
-            openstack_image_name          : imageName
+      openstack_identity_endpoint: openstackBakeryDefaults.identityEndpoint,
+      openstack_region: region,
+      openstack_ssh_username: openstackVirtualizationSettings.sshUserName,
+      openstack_instance_type: openstackVirtualizationSettings.instanceType,
+      openstack_source_image_name: openstackVirtualizationSettings.sourceImageName,
+      openstack_image_name: imageName
     ]
 
     if (openstackBakeryDefaults.username && openstackBakeryDefaults.password) {

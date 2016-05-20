@@ -465,7 +465,7 @@ class GCEBakeHandlerSpec extends Specification {
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
-                                      base_os: "wily",
+                                        base_os: "wily",
                                         cloud_provider_type: BakeRequest.CloudProviderType.gce)
 
       @Subject

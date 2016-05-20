@@ -121,7 +121,7 @@ class OpenstackBakeHandlerSpec extends Specification {
 
     when:
     def logsContent =
-            "    openstack: Discovering enabled extensions...\n"
+      "    openstack: Discovering enabled extensions...\n"
 
     Boolean producer = openstackBakeHandler.isProducerOf(logsContent)
 
@@ -136,7 +136,7 @@ class OpenstackBakeHandlerSpec extends Specification {
 
     when:
     def logsContent =
-            "    somesystem-thing: doing the harlem shake ...\n"
+      "    somesystem-thing: doing the harlem shake ...\n"
 
     Boolean openstackProducer = openstackBakeHandler.isProducerOf(logsContent)
 
@@ -189,7 +189,7 @@ Build 'openstack' finished.
     Bake bake = openstackBakeHandler.scrapeCompletedBakeResults(REGION, "123", logsContent)
 
     then:
-    with (bake) {
+    with(bake) {
       id == "123"
       !ami
       image_name == "1f28b46b-b36f-4b7c-bc34-40e2371886fa"
@@ -240,7 +240,7 @@ Build 'openstack' finished.
     Bake bake = openstackBakeHandler.scrapeCompletedBakeResults(REGION, "123", logsContent)
 
     then:
-    with (bake) {
+    with(bake) {
       id == "123"
       !ami
       !image_name
@@ -253,37 +253,37 @@ Build 'openstack' finished.
     def imageNameFactoryMock = Mock(ImageNameFactory)
     def packerCommandFactoryMock = Mock(PackerCommandFactory)
     def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
-            package_name: PACKAGES_NAME,
-            base_os: "ubuntu",
-            instance_type: instanceType,
-            cloud_provider_type: BakeRequest.CloudProviderType.openstack)
+      package_name: PACKAGES_NAME,
+      base_os: "ubuntu",
+      instance_type: instanceType,
+      cloud_provider_type: BakeRequest.CloudProviderType.openstack)
     def targetImageName = "1f28b46b-b36f-4b7c-bc34-40e2371886fa"
     def parameterMap = [
-            openstack_identity_endpoint: OPENSTACK_ENDPOINT,
-            openstack_region: REGION,
-            openstack_ssh_username: "ubuntu",
-            openstack_instance_type: instanceType,
-            openstack_source_image_name: SOURCE_UBUNTU_IMAGE_NAME,
-            openstack_image_name: targetImageName,
-            openstack_username: openstackBakeryDefaults.username,
-            openstack_password: openstackBakeryDefaults.password,
-            openstack_domain_name: openstackBakeryDefaults.domainName,
-            openstack_insecure: openstackBakeryDefaults.insecure,
-            openstack_floating_ip_pool: openstackBakeryDefaults.floatingIpPool,
-            openstack_security_groups: openstackBakeryDefaults.securityGroups,
-            openstack_tenant_name: openstackBakeryDefaults.tenantName,
-            repository: DEBIAN_REPOSITORY,
-            package_type: BakeRequest.PackageType.DEB.packageType,
-            packages: PACKAGES_NAME,
-            configDir: configDir
+      openstack_identity_endpoint: OPENSTACK_ENDPOINT,
+      openstack_region: REGION,
+      openstack_ssh_username: "ubuntu",
+      openstack_instance_type: instanceType,
+      openstack_source_image_name: SOURCE_UBUNTU_IMAGE_NAME,
+      openstack_image_name: targetImageName,
+      openstack_username: openstackBakeryDefaults.username,
+      openstack_password: openstackBakeryDefaults.password,
+      openstack_domain_name: openstackBakeryDefaults.domainName,
+      openstack_insecure: openstackBakeryDefaults.insecure,
+      openstack_floating_ip_pool: openstackBakeryDefaults.floatingIpPool,
+      openstack_security_groups: openstackBakeryDefaults.securityGroups,
+      openstack_tenant_name: openstackBakeryDefaults.tenantName,
+      repository: DEBIAN_REPOSITORY,
+      package_type: BakeRequest.PackageType.DEB.packageType,
+      packages: PACKAGES_NAME,
+      configDir: configDir
     ]
 
     @Subject
     OpenstackBakeHandler openstackBakeHandler = new OpenstackBakeHandler(configDir: configDir,
-            openstackBakeryDefaults: openstackBakeryDefaults,
-            imageNameFactory: imageNameFactoryMock,
-            packerCommandFactory: packerCommandFactoryMock,
-            debianRepository: DEBIAN_REPOSITORY)
+      openstackBakeryDefaults: openstackBakeryDefaults,
+      imageNameFactory: imageNameFactoryMock,
+      packerCommandFactory: packerCommandFactoryMock,
+      debianRepository: DEBIAN_REPOSITORY)
 
     when:
     openstackBakeHandler.producePackerCommand(REGION, bakeRequest)
@@ -299,38 +299,38 @@ Build 'openstack' finished.
     def imageNameFactoryMock = Mock(ImageNameFactory)
     def packerCommandFactoryMock = Mock(PackerCommandFactory)
     def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
-            package_name: PACKAGES_NAME,
-            base_os: "ubuntu",
-            base_ami: "ubuntu-natty",
-            instance_type: instanceType,
-            cloud_provider_type: BakeRequest.CloudProviderType.openstack)
+      package_name: PACKAGES_NAME,
+      base_os: "ubuntu",
+      base_ami: "ubuntu-natty",
+      instance_type: instanceType,
+      cloud_provider_type: BakeRequest.CloudProviderType.openstack)
     def targetImageName = "1f28b46b-b36f-4b7c-bc34-40e2371886fa"
     def parameterMap = [
-            openstack_identity_endpoint: OPENSTACK_ENDPOINT,
-            openstack_region: REGION,
-            openstack_ssh_username: "ubuntu",
-            openstack_instance_type: instanceType,
-            openstack_source_image_name: "ubuntu-natty",
-            openstack_image_name: targetImageName,
-            openstack_username: openstackBakeryDefaults.username,
-            openstack_password: openstackBakeryDefaults.password,
-            openstack_domain_name: openstackBakeryDefaults.domainName,
-            openstack_insecure: openstackBakeryDefaults.insecure,
-            openstack_floating_ip_pool: openstackBakeryDefaults.floatingIpPool,
-            openstack_security_groups: openstackBakeryDefaults.securityGroups,
-            openstack_tenant_name: openstackBakeryDefaults.tenantName,
-            repository: DEBIAN_REPOSITORY,
-            package_type: BakeRequest.PackageType.DEB.packageType,
-            packages: PACKAGES_NAME,
-            configDir: configDir
+      openstack_identity_endpoint: OPENSTACK_ENDPOINT,
+      openstack_region: REGION,
+      openstack_ssh_username: "ubuntu",
+      openstack_instance_type: instanceType,
+      openstack_source_image_name: "ubuntu-natty",
+      openstack_image_name: targetImageName,
+      openstack_username: openstackBakeryDefaults.username,
+      openstack_password: openstackBakeryDefaults.password,
+      openstack_domain_name: openstackBakeryDefaults.domainName,
+      openstack_insecure: openstackBakeryDefaults.insecure,
+      openstack_floating_ip_pool: openstackBakeryDefaults.floatingIpPool,
+      openstack_security_groups: openstackBakeryDefaults.securityGroups,
+      openstack_tenant_name: openstackBakeryDefaults.tenantName,
+      repository: DEBIAN_REPOSITORY,
+      package_type: BakeRequest.PackageType.DEB.packageType,
+      packages: PACKAGES_NAME,
+      configDir: configDir
     ]
 
     @Subject
     OpenstackBakeHandler openstackBakeHandler = new OpenstackBakeHandler(configDir: configDir,
-            openstackBakeryDefaults: openstackBakeryDefaults,
-            imageNameFactory: imageNameFactoryMock,
-            packerCommandFactory: packerCommandFactoryMock,
-            debianRepository: DEBIAN_REPOSITORY)
+      openstackBakeryDefaults: openstackBakeryDefaults,
+      imageNameFactory: imageNameFactoryMock,
+      packerCommandFactory: packerCommandFactoryMock,
+      debianRepository: DEBIAN_REPOSITORY)
 
     when:
     openstackBakeHandler.producePackerCommand(REGION, bakeRequest)
@@ -347,38 +347,38 @@ Build 'openstack' finished.
     def imageNameFactoryMock = Mock(ImageNameFactory)
     def packerCommandFactoryMock = Mock(PackerCommandFactory)
     def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
-            package_name: PACKAGES_NAME,
-            base_os: "ubuntu",
-            instance_type: instanceType,
-            cloud_provider_type: BakeRequest.CloudProviderType.openstack,
-            template_file_name: template_file_name)
+      package_name: PACKAGES_NAME,
+      base_os: "ubuntu",
+      instance_type: instanceType,
+      cloud_provider_type: BakeRequest.CloudProviderType.openstack,
+      template_file_name: template_file_name)
     def targetImageName = "1f28b46b-b36f-4b7c-bc34-40e2371886fa"
     def parameterMap = [
-            openstack_identity_endpoint: OPENSTACK_ENDPOINT,
-            openstack_region: REGION,
-            openstack_ssh_username: "ubuntu",
-            openstack_instance_type: instanceType,
-            openstack_source_image_name: SOURCE_UBUNTU_IMAGE_NAME,
-            openstack_image_name: targetImageName,
-            openstack_username: openstackBakeryDefaults.username,
-            openstack_password: openstackBakeryDefaults.password,
-            openstack_domain_name: openstackBakeryDefaults.domainName,
-            openstack_insecure: openstackBakeryDefaults.insecure,
-            openstack_floating_ip_pool: openstackBakeryDefaults.floatingIpPool,
-            openstack_security_groups: openstackBakeryDefaults.securityGroups,
-            openstack_tenant_name: openstackBakeryDefaults.tenantName,
-            repository: DEBIAN_REPOSITORY,
-            package_type: BakeRequest.PackageType.DEB.packageType,
-            packages: PACKAGES_NAME,
-            configDir: configDir
+      openstack_identity_endpoint: OPENSTACK_ENDPOINT,
+      openstack_region: REGION,
+      openstack_ssh_username: "ubuntu",
+      openstack_instance_type: instanceType,
+      openstack_source_image_name: SOURCE_UBUNTU_IMAGE_NAME,
+      openstack_image_name: targetImageName,
+      openstack_username: openstackBakeryDefaults.username,
+      openstack_password: openstackBakeryDefaults.password,
+      openstack_domain_name: openstackBakeryDefaults.domainName,
+      openstack_insecure: openstackBakeryDefaults.insecure,
+      openstack_floating_ip_pool: openstackBakeryDefaults.floatingIpPool,
+      openstack_security_groups: openstackBakeryDefaults.securityGroups,
+      openstack_tenant_name: openstackBakeryDefaults.tenantName,
+      repository: DEBIAN_REPOSITORY,
+      package_type: BakeRequest.PackageType.DEB.packageType,
+      packages: PACKAGES_NAME,
+      configDir: configDir
     ]
 
     @Subject
     OpenstackBakeHandler openstackBakeHandler = new OpenstackBakeHandler(configDir: configDir,
-            openstackBakeryDefaults: openstackBakeryDefaults,
-            imageNameFactory: imageNameFactoryMock,
-            packerCommandFactory: packerCommandFactoryMock,
-            debianRepository: DEBIAN_REPOSITORY)
+      openstackBakeryDefaults: openstackBakeryDefaults,
+      imageNameFactory: imageNameFactoryMock,
+      packerCommandFactory: packerCommandFactoryMock,
+      debianRepository: DEBIAN_REPOSITORY)
 
     when:
     openstackBakeHandler.producePackerCommand(REGION, bakeRequest)
@@ -394,40 +394,40 @@ Build 'openstack' finished.
     def imageNameFactoryMock = Mock(ImageNameFactory)
     def packerCommandFactoryMock = Mock(PackerCommandFactory)
     def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
-            package_name: PACKAGES_NAME,
-            base_os: "ubuntu",
-            instance_type: instanceType,
-            cloud_provider_type: BakeRequest.CloudProviderType.openstack,
-            extended_attributes: [someAttr1: "someValue1", someAttr2: "someValue2"])
+      package_name: PACKAGES_NAME,
+      base_os: "ubuntu",
+      instance_type: instanceType,
+      cloud_provider_type: BakeRequest.CloudProviderType.openstack,
+      extended_attributes: [someAttr1: "someValue1", someAttr2: "someValue2"])
     def targetImageName = "1f28b46b-b36f-4b7c-bc34-40e2371886fa"
     def parameterMap = [
-            openstack_identity_endpoint: OPENSTACK_ENDPOINT,
-            openstack_region: REGION,
-            openstack_ssh_username: "ubuntu",
-            openstack_instance_type: instanceType,
-            openstack_source_image_name: SOURCE_UBUNTU_IMAGE_NAME,
-            openstack_image_name: targetImageName,
-            openstack_username: openstackBakeryDefaults.username,
-            openstack_password: openstackBakeryDefaults.password,
-            openstack_domain_name: openstackBakeryDefaults.domainName,
-            openstack_insecure: openstackBakeryDefaults.insecure,
-            openstack_floating_ip_pool: openstackBakeryDefaults.floatingIpPool,
-            openstack_security_groups: openstackBakeryDefaults.securityGroups,
-            openstack_tenant_name: openstackBakeryDefaults.tenantName,
-            repository: DEBIAN_REPOSITORY,
-            package_type: BakeRequest.PackageType.DEB.packageType,
-            packages: PACKAGES_NAME,
-            configDir: configDir,
-            someAttr1: "someValue1",
-            someAttr2: "someValue2"
+      openstack_identity_endpoint: OPENSTACK_ENDPOINT,
+      openstack_region: REGION,
+      openstack_ssh_username: "ubuntu",
+      openstack_instance_type: instanceType,
+      openstack_source_image_name: SOURCE_UBUNTU_IMAGE_NAME,
+      openstack_image_name: targetImageName,
+      openstack_username: openstackBakeryDefaults.username,
+      openstack_password: openstackBakeryDefaults.password,
+      openstack_domain_name: openstackBakeryDefaults.domainName,
+      openstack_insecure: openstackBakeryDefaults.insecure,
+      openstack_floating_ip_pool: openstackBakeryDefaults.floatingIpPool,
+      openstack_security_groups: openstackBakeryDefaults.securityGroups,
+      openstack_tenant_name: openstackBakeryDefaults.tenantName,
+      repository: DEBIAN_REPOSITORY,
+      package_type: BakeRequest.PackageType.DEB.packageType,
+      packages: PACKAGES_NAME,
+      configDir: configDir,
+      someAttr1: "someValue1",
+      someAttr2: "someValue2"
     ]
 
     @Subject
     OpenstackBakeHandler openstackBakeHandler = new OpenstackBakeHandler(configDir: configDir,
-            openstackBakeryDefaults: openstackBakeryDefaults,
-            imageNameFactory: imageNameFactoryMock,
-            packerCommandFactory: packerCommandFactoryMock,
-            debianRepository: DEBIAN_REPOSITORY)
+      openstackBakeryDefaults: openstackBakeryDefaults,
+      imageNameFactory: imageNameFactoryMock,
+      packerCommandFactory: packerCommandFactoryMock,
+      debianRepository: DEBIAN_REPOSITORY)
 
     when:
     openstackBakeHandler.producePackerCommand(REGION, bakeRequest)
@@ -443,38 +443,38 @@ Build 'openstack' finished.
     def imageNameFactoryMock = Mock(ImageNameFactory)
     def packerCommandFactoryMock = Mock(PackerCommandFactory)
     def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
-            package_name: PACKAGES_NAME,
-            base_os: "ubuntu",
-            instance_type: instanceType,
-            cloud_provider_type: BakeRequest.CloudProviderType.openstack,
-            extended_attributes: [openstack_instance_type: "mmem-6vcpu", openstack_domain_name: "domain2"])
+      package_name: PACKAGES_NAME,
+      base_os: "ubuntu",
+      instance_type: instanceType,
+      cloud_provider_type: BakeRequest.CloudProviderType.openstack,
+      extended_attributes: [openstack_instance_type: "mmem-6vcpu", openstack_domain_name: "domain2"])
     def targetImageName = "1f28b46b-b36f-4b7c-bc34-40e2371886fa"
     def parameterMap = [
-            openstack_identity_endpoint: OPENSTACK_ENDPOINT,
-            openstack_region: REGION,
-            openstack_ssh_username: "ubuntu",
-            openstack_instance_type: "mmem-6vcpu",
-            openstack_source_image_name: SOURCE_UBUNTU_IMAGE_NAME,
-            openstack_image_name: targetImageName,
-            openstack_username: openstackBakeryDefaults.username,
-            openstack_password: openstackBakeryDefaults.password,
-            openstack_domain_name: 'domain2',
-            openstack_insecure: openstackBakeryDefaults.insecure,
-            openstack_floating_ip_pool: openstackBakeryDefaults.floatingIpPool,
-            openstack_security_groups: openstackBakeryDefaults.securityGroups,
-            openstack_tenant_name: openstackBakeryDefaults.tenantName,
-            repository: DEBIAN_REPOSITORY,
-            package_type: BakeRequest.PackageType.DEB.packageType,
-            packages: PACKAGES_NAME,
-            configDir: configDir
+      openstack_identity_endpoint: OPENSTACK_ENDPOINT,
+      openstack_region: REGION,
+      openstack_ssh_username: "ubuntu",
+      openstack_instance_type: "mmem-6vcpu",
+      openstack_source_image_name: SOURCE_UBUNTU_IMAGE_NAME,
+      openstack_image_name: targetImageName,
+      openstack_username: openstackBakeryDefaults.username,
+      openstack_password: openstackBakeryDefaults.password,
+      openstack_domain_name: 'domain2',
+      openstack_insecure: openstackBakeryDefaults.insecure,
+      openstack_floating_ip_pool: openstackBakeryDefaults.floatingIpPool,
+      openstack_security_groups: openstackBakeryDefaults.securityGroups,
+      openstack_tenant_name: openstackBakeryDefaults.tenantName,
+      repository: DEBIAN_REPOSITORY,
+      package_type: BakeRequest.PackageType.DEB.packageType,
+      packages: PACKAGES_NAME,
+      configDir: configDir
     ]
 
     @Subject
     OpenstackBakeHandler openstackBakeHandler = new OpenstackBakeHandler(configDir: configDir,
-            openstackBakeryDefaults: openstackBakeryDefaults,
-            imageNameFactory: imageNameFactoryMock,
-            packerCommandFactory: packerCommandFactoryMock,
-            debianRepository: DEBIAN_REPOSITORY)
+      openstackBakeryDefaults: openstackBakeryDefaults,
+      imageNameFactory: imageNameFactoryMock,
+      packerCommandFactory: packerCommandFactoryMock,
+      debianRepository: DEBIAN_REPOSITORY)
 
     when:
     openstackBakeHandler.producePackerCommand(REGION, bakeRequest)
@@ -490,39 +490,39 @@ Build 'openstack' finished.
     def imageNameFactoryMock = Mock(ImageNameFactory)
     def packerCommandFactoryMock = Mock(PackerCommandFactory)
     def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
-            package_name: PACKAGES_NAME,
-            base_os: "ubuntu",
-            instance_type: instanceType,
-            cloud_provider_type: BakeRequest.CloudProviderType.openstack,
-            upgrade: true)
+      package_name: PACKAGES_NAME,
+      base_os: "ubuntu",
+      instance_type: instanceType,
+      cloud_provider_type: BakeRequest.CloudProviderType.openstack,
+      upgrade: true)
     def targetImageName = "1f28b46b-b36f-4b7c-bc34-40e2371886fa"
     def parameterMap = [
-            openstack_identity_endpoint: OPENSTACK_ENDPOINT,
-            openstack_region: REGION,
-            openstack_ssh_username: "ubuntu",
-            openstack_instance_type: instanceType,
-            openstack_source_image_name: SOURCE_UBUNTU_IMAGE_NAME,
-            openstack_image_name: targetImageName,
-            openstack_username: openstackBakeryDefaults.username,
-            openstack_password: openstackBakeryDefaults.password,
-            openstack_domain_name: openstackBakeryDefaults.domainName,
-            openstack_insecure: openstackBakeryDefaults.insecure,
-            openstack_floating_ip_pool: openstackBakeryDefaults.floatingIpPool,
-            openstack_security_groups: openstackBakeryDefaults.securityGroups,
-            openstack_tenant_name: openstackBakeryDefaults.tenantName,
-            repository: DEBIAN_REPOSITORY,
-            package_type: BakeRequest.PackageType.DEB.packageType,
-            packages: PACKAGES_NAME,
-            configDir: configDir,
-            upgrade: true
+      openstack_identity_endpoint: OPENSTACK_ENDPOINT,
+      openstack_region: REGION,
+      openstack_ssh_username: "ubuntu",
+      openstack_instance_type: instanceType,
+      openstack_source_image_name: SOURCE_UBUNTU_IMAGE_NAME,
+      openstack_image_name: targetImageName,
+      openstack_username: openstackBakeryDefaults.username,
+      openstack_password: openstackBakeryDefaults.password,
+      openstack_domain_name: openstackBakeryDefaults.domainName,
+      openstack_insecure: openstackBakeryDefaults.insecure,
+      openstack_floating_ip_pool: openstackBakeryDefaults.floatingIpPool,
+      openstack_security_groups: openstackBakeryDefaults.securityGroups,
+      openstack_tenant_name: openstackBakeryDefaults.tenantName,
+      repository: DEBIAN_REPOSITORY,
+      package_type: BakeRequest.PackageType.DEB.packageType,
+      packages: PACKAGES_NAME,
+      configDir: configDir,
+      upgrade: true
     ]
 
     @Subject
     OpenstackBakeHandler openstackBakeHandler = new OpenstackBakeHandler(configDir: configDir,
-            openstackBakeryDefaults: openstackBakeryDefaults,
-            imageNameFactory: imageNameFactoryMock,
-            packerCommandFactory: packerCommandFactoryMock,
-            debianRepository: DEBIAN_REPOSITORY)
+      openstackBakeryDefaults: openstackBakeryDefaults,
+      imageNameFactory: imageNameFactoryMock,
+      packerCommandFactory: packerCommandFactoryMock,
+      debianRepository: DEBIAN_REPOSITORY)
 
     when:
     openstackBakeHandler.producePackerCommand(REGION, bakeRequest)
@@ -537,15 +537,15 @@ Build 'openstack' finished.
     def imageNameFactoryMock = Mock(ImageNameFactory)
     def packerCommandFactoryMock = Mock(PackerCommandFactory)
     def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
-            package_name: PACKAGES_NAME,
-            base_os: "centos",
-            cloud_provider_type: BakeRequest.CloudProviderType.openstack)
+      package_name: PACKAGES_NAME,
+      base_os: "centos",
+      cloud_provider_type: BakeRequest.CloudProviderType.openstack)
 
     @Subject
     OpenstackBakeHandler openstackBakeHandler = new OpenstackBakeHandler(openstackBakeryDefaults: openstackBakeryDefaults,
-            imageNameFactory: imageNameFactoryMock,
-            packerCommandFactory: packerCommandFactoryMock,
-            debianRepository: DEBIAN_REPOSITORY)
+      imageNameFactory: imageNameFactoryMock,
+      packerCommandFactory: packerCommandFactoryMock,
+      debianRepository: DEBIAN_REPOSITORY)
 
     when:
     openstackBakeHandler.producePackerCommand(REGION, bakeRequest)
@@ -560,19 +560,19 @@ Build 'openstack' finished.
     def imageNameFactoryMock = Mock(ImageNameFactory)
     def packerCommandFactoryMock = Mock(PackerCommandFactory)
     def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
-            package_name: PACKAGES_NAME,
-            base_os: "trusty",
-            cloud_provider_type: BakeRequest.CloudProviderType.openstack,
-            instance_type: "smem-2vcpu")
+      package_name: PACKAGES_NAME,
+      base_os: "trusty",
+      cloud_provider_type: BakeRequest.CloudProviderType.openstack,
+      instance_type: "smem-2vcpu")
 
     @Subject
     OpenstackBakeHandler openstackBakeHandler = new OpenstackBakeHandler(openstackBakeryDefaults: openstackBakeryDefaults,
-            imageNameFactory: imageNameFactoryMock,
-            packerCommandFactory: packerCommandFactoryMock,
-            debianRepository: DEBIAN_REPOSITORY)
+      imageNameFactory: imageNameFactoryMock,
+      packerCommandFactory: packerCommandFactoryMock,
+      debianRepository: DEBIAN_REPOSITORY)
 
     when:
-    openstackBakeHandler.producePackerCommand(REGION+'999', bakeRequest)
+    openstackBakeHandler.producePackerCommand(REGION + '999', bakeRequest)
 
     then:
     IllegalArgumentException e = thrown()
@@ -582,9 +582,9 @@ Build 'openstack' finished.
   void 'produce a default openstack bakeKey without base ami'() {
     setup:
     def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
-            package_name: PACKAGES_NAME,
-            base_os: "centos",
-            cloud_provider_type: BakeRequest.CloudProviderType.openstack)
+      package_name: PACKAGES_NAME,
+      base_os: "centos",
+      cloud_provider_type: BakeRequest.CloudProviderType.openstack)
 
     @Subject
     OpenstackBakeHandler openstackBakeHandler = new OpenstackBakeHandler(openstackBakeryDefaults: openstackBakeryDefaults)
@@ -600,9 +600,9 @@ Build 'openstack' finished.
   void 'produce a default openstack bakeKey without base ami, even when no packages are specified'() {
     setup:
     def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
-            package_name: packageName,
-            base_os: "centos",
-            cloud_provider_type: BakeRequest.CloudProviderType.openstack)
+      package_name: packageName,
+      base_os: "centos",
+      cloud_provider_type: BakeRequest.CloudProviderType.openstack)
 
     @Subject
     OpenstackBakeHandler openstackBakeHandler = new OpenstackBakeHandler(openstackBakeryDefaults: openstackBakeryDefaults)
@@ -620,10 +620,10 @@ Build 'openstack' finished.
   void 'produce a default openstack bakeKey with base ami'() {
     setup:
     def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
-            package_name: PACKAGES_NAME,
-            base_os: "centos",
-            cloud_provider_type: BakeRequest.CloudProviderType.openstack,
-            base_ami: "foobar")
+      package_name: PACKAGES_NAME,
+      base_os: "centos",
+      cloud_provider_type: BakeRequest.CloudProviderType.openstack,
+      base_ami: "foobar")
 
     @Subject
     OpenstackBakeHandler openstackBakeHandler = new OpenstackBakeHandler(openstackBakeryDefaults: openstackBakeryDefaults)
@@ -638,10 +638,10 @@ Build 'openstack' finished.
   void 'produce a default openstack bakeKey with ami name'() {
     setup:
     def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
-            package_name: PACKAGES_NAME,
-            base_os: "centos",
-            cloud_provider_type: BakeRequest.CloudProviderType.openstack,
-            ami_name: "kato-app")
+      package_name: PACKAGES_NAME,
+      base_os: "centos",
+      cloud_provider_type: BakeRequest.CloudProviderType.openstack,
+      ami_name: "kato-app")
     @Subject
     OpenstackBakeHandler openstackBakeHandler = new OpenstackBakeHandler(openstackBakeryDefaults: openstackBakeryDefaults)
 
@@ -655,16 +655,16 @@ Build 'openstack' finished.
   void 'do not consider ami suffix when composing bake key'() {
     setup:
     def bakeRequest1 = new BakeRequest(user: "someuser@gmail.com",
-            package_name: PACKAGES_NAME,
-            base_os: "centos",
-            vm_type: BakeRequest.VmType.hvm,
-            cloud_provider_type: BakeRequest.CloudProviderType.openstack,
-            ami_suffix: "1.0")
+      package_name: PACKAGES_NAME,
+      base_os: "centos",
+      vm_type: BakeRequest.VmType.hvm,
+      cloud_provider_type: BakeRequest.CloudProviderType.openstack,
+      ami_suffix: "1.0")
     def bakeRequest2 = new BakeRequest(user: "someuser@gmail.com",
-            package_name: PACKAGES_NAME,
-            base_os: "centos",
-            cloud_provider_type: BakeRequest.CloudProviderType.openstack,
-            ami_suffix: "2.0")
+      package_name: PACKAGES_NAME,
+      base_os: "centos",
+      cloud_provider_type: BakeRequest.CloudProviderType.openstack,
+      ami_suffix: "2.0")
     @Subject
     OpenstackBakeHandler openstackBakeHandler = new OpenstackBakeHandler(openstackBakeryDefaults: openstackBakeryDefaults)
 
