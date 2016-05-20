@@ -26,10 +26,10 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
 /**
- * TODO need to figure out:
- * packer openstack variables - required vs optional (currently have a best guess for what is required for v3)
- * openstack username/password management (currently will load via environment variable passed to java process)
- * v2 vs. v3 apis (currently implemented for v3)
+ * TODO(drmaas): need to figure out the following:
+ * 1) packer openstack variables - required vs optional (currently have a best guess for what is required for v3)
+ * 2) openstack username/password management (currently will load via environment variable passed to java process)
+ * 3) v2 vs. v3 apis (currently implemented for v3)
  */
 @Component
 public class OpenstackBakeHandler extends CloudProviderBakeHandler {
@@ -60,7 +60,6 @@ public class OpenstackBakeHandler extends CloudProviderBakeHandler {
 
   @Override
   def findVirtualizationSettings(String region, BakeRequest bakeRequest) {
-
     def openstackOperatingSystemVirtualizationSettings = openstackBakeryDefaults?.baseImages.find {
       it.baseImage.id == bakeRequest.base_os
     }
