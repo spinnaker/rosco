@@ -15,7 +15,7 @@ Need to run rosco locally for development? Here's what you need to setup and run
 ## Environment Setup
 ```
 git clone git@github.com:spinnaker/rosco.git
-git clone https://github.com/spinnaker/spinnaker.git
+git clone git@github.com:spinnaker/spinnaker.git
 ```
 
 ## Docker Setup (runs redis locally)
@@ -32,9 +32,8 @@ docker run -it --link redis:redis --rm redis redis-cli -h redis -p 6379
 (printf "PING\r\n";) | nc -v localhost 6379
 ```
 
-# IDE setup
+## IDE setup
 ```
-gradle wrapper
 ./gradlew idea
 ```
 
