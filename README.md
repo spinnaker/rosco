@@ -33,9 +33,16 @@ docker run -it --link redis:redis --rm redis redis-cli -h redis -p 6379
 ```
 
 ## IDE setup
+
+### Generate Intellij gradle project files
 ```
 ./gradlew idea
 ```
+
+### Apply groovy code formatting scheme
+
+1) Preferences -> Editor -> Code Style -> Manage ... -> Import -> select codestyle.xml from the project directory.
+2) Apply the 'spinnaker' scheme.
 
 ## Running App
 ```
