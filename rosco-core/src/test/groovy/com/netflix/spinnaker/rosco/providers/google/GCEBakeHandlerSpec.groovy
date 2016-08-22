@@ -183,8 +183,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       gceBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> null
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
@@ -223,8 +223,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       gceBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> null
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(RPM_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
@@ -264,8 +264,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       gceBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> null
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
@@ -305,8 +305,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       gceBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> null
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/somePackerTemplate.json")
   }
@@ -348,8 +348,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       gceBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> null
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
@@ -389,8 +389,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       gceBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> null
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
@@ -429,8 +429,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       gceBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> null
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
@@ -475,8 +475,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       gceBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, [osPackage]) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, [osPackage]) >> appVersionStr
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, [osPackage]) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, [osPackage]) >> appVersionStr
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, [osPackage]) >> fullyQualifiedPackageName
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
@@ -526,7 +526,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       gceBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
 
       IllegalArgumentException e = thrown()
       e.message == "No Google account specified for bakery."

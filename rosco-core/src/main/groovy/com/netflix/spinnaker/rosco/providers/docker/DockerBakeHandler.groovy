@@ -31,7 +31,7 @@ public class DockerBakeHandler extends CloudProviderBakeHandler {
   private static final String BUILDER_TYPE = "docker"
   private static final String IMAGE_NAME_TOKEN = "Repository:"
 
-  ImageNameFactory imageNameFactory = new ImageNameFactory()
+  ImageNameFactory imageNameFactory = new DockerImageNameFactory()
 
   @Autowired
   RoscoDockerConfiguration.DockerBakeryDefaults dockerBakeryDefaults
@@ -67,12 +67,15 @@ public class DockerBakeHandler extends CloudProviderBakeHandler {
   }
 
   @Override
-  Map buildParameterMap(String region, def dockerVirtualizationSettings, String imageName, BakeRequest bakeRequest) {
-    return [
+  Map buildParameterMap(String region, def dockerVirtualizationSettings, String imageName, BakeRequest bakeRequest, String imageTag) {
+    Map parameterMap = [
       docker_source_image     : dockerVirtualizationSettings.sourceImage,
+      docker_target_repository: dockerBakeryDefaults.targetRepository,
+      docker_target_image_tag : imageTag,
       docker_target_image     : imageName,
-      docker_target_repository: dockerBakeryDefaults.targetRepository
     ]
+
+    return parameterMap
   }
 
   @Override
