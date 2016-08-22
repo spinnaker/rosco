@@ -312,8 +312,8 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       awsBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> null
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
@@ -352,8 +352,8 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       awsBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> null
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(RPM_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
@@ -417,8 +417,8 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       awsBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> null
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(RPM_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("sudo", parameterMap, null, "$configDir/aws-chroot.json")
   }
@@ -458,8 +458,8 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       awsBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> null
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
@@ -498,8 +498,8 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       awsBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> null
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
@@ -539,8 +539,8 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       awsBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> null
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/somePackerTemplate.json")
   }
@@ -582,8 +582,8 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       awsBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> null
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
@@ -622,8 +622,8 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       awsBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> null
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
@@ -671,8 +671,8 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       awsBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> appVersionStr
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> appVersionStr
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> fullyQualifiedPackageName
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
@@ -713,8 +713,8 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       awsBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> null
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
@@ -937,8 +937,8 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       awsBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> appVersionStr
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> appVersionStr
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> fullyQualifiedPackageName
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
@@ -991,8 +991,8 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       awsBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> appVersionStr
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> appVersionStr
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> fullyQualifiedPackageName
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }

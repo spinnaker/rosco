@@ -120,7 +120,7 @@ abstract class CloudProviderBakeHandler {
   /**
    * Returns a map containing the parameters that should be propagated to the packer template for this provider.
    */
-  abstract Map buildParameterMap(String region, def virtualizationSettings, String imageName, BakeRequest bakeRequest)
+  abstract Map buildParameterMap(String region, def virtualizationSettings, String imageName, BakeRequest bakeRequest, String imageTag)
 
   /**
    * Returns the command that should be prepended to the shell command passed to the container.
@@ -151,26 +151,20 @@ abstract class CloudProviderBakeHandler {
 
     def osPackageNames = PackageNameConverter.buildOsPackageNames(packageType, packageNameList)
 
+    def imageTag = imageNameFactory.buildImageTag(bakeRequest, osPackageNames)
+
     def appVersionStr = imageNameFactory.buildAppVersionStr(bakeRequest, osPackageNames)
 
-    def imageName = imageNameFactory.buildImageName(bakeRequest, osPackageNames)
+    def parameterMap = buildParameterMap(region, virtualizationSettings, appVersionStr, bakeRequest, imageTag)
 
-    def packagesParameter = imageNameFactory.buildPackagesParameter(packageType, osPackageNames)
-
-    def parameterMap = buildParameterMap(region, virtualizationSettings, imageName, bakeRequest)
-
-    if (debianRepository && selectedOptions.baseImage.packageType == BakeRequest.PackageType.DEB) {
+    if (debianRepository && packageType == BakeRequest.PackageType.DEB) {
       parameterMap.repository = debianRepository
-    } else if (yumRepository && selectedOptions.baseImage.packageType == BakeRequest.PackageType.RPM) {
+    } else if (yumRepository && packageType == BakeRequest.PackageType.RPM) {
       parameterMap.repository = yumRepository
     }
 
-    parameterMap.package_type = selectedOptions.baseImage.packageType.packageType
-    parameterMap.packages = packagesParameter
-
-    if (appVersionStr) {
-      parameterMap.appversion = appVersionStr
-    }
+    parameterMap.package_type = packageType.packageType
+    parameterMap.packages = imageNameFactory.buildPackagesParameter(packageType, osPackageNames)
 
     if (bakeRequest.build_host) {
       parameterMap.build_host = bakeRequest.build_host
@@ -182,18 +176,14 @@ abstract class CloudProviderBakeHandler {
 
     parameterMap.configDir = configDir
 
-    if (bakeRequest.extended_attributes) {
-      if (bakeRequest.extended_attributes.containsKey('share_with')) {
-        unrollParameters("share_with_", bakeRequest.extended_attributes.get('share_with'), parameterMap)
+    bakeRequest.extended_attributes?.entrySet()?.forEach { attribute ->
+      switch (attribute.getKey()) {
+        case ['copy_to', 'share_with']:
+          parameterMap.putAll(unrollParameters(attribute))
+          break
+        default:
+          parameterMap.put(attribute.getKey(), attribute.getValue())
       }
-
-      if (bakeRequest.extended_attributes.containsKey('copy_to')) {
-        unrollParameters("copy_to_", bakeRequest.extended_attributes.get('copy_to'), parameterMap)
-      }
-
-      List attributes = bakeRequest.extended_attributes.keySet().asList()
-      parameterMap << bakeRequest.extended_attributes.subMap(
-              attributes.findAll { !it.equals('share_with') && !it.equals('copy_to') })
     }
 
     def finalTemplateFileName = "$configDir/${bakeRequest.template_file_name ?: templateFileName}"
@@ -205,11 +195,15 @@ abstract class CloudProviderBakeHandler {
                                                    finalTemplateFileName)
   }
 
-  private void unrollParameters(String prefix, String rolledParameter, Map parameterMap) {
-    List<String> values = rolledParameter.tokenize(",")
-    values.eachWithIndex { value, index, counter = index + 1 ->
-      parameterMap.put(prefix + counter, value.trim())
+  protected Map unrollParameters(Map.Entry entry) {
+    String keyPrefix = entry.key + "_"
+    Map parameters = new HashMap()
+    entry.value.tokenize(",").eachWithIndex { String value, int i ->
+      int keyNumber = i + 1
+      parameters.put(keyPrefix + keyNumber, value.trim())
     }
+
+    return parameters
   }
 
   BaseImage findBaseImage(BakeRequest bakeRequest) {

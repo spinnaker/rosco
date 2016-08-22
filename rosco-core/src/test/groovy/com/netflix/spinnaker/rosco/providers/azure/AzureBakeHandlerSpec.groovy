@@ -22,7 +22,6 @@ import com.netflix.spinnaker.rosco.api.BakeOptions
 import com.netflix.spinnaker.rosco.api.BakeRequest
 import com.netflix.spinnaker.rosco.providers.azure.config.RoscoAzureConfiguration
 import com.netflix.spinnaker.rosco.providers.util.ImageNameFactory
-import com.netflix.spinnaker.rosco.providers.util.PackageNameConverter
 import com.netflix.spinnaker.rosco.providers.util.PackerCommandFactory
 import com.netflix.spinnaker.rosco.providers.util.TestDefaults
 import spock.lang.Shared
@@ -209,8 +208,8 @@ class AzureBakeHandlerSpec extends Specification implements TestDefaults{
       azureBakeHandler.producePackerCommand(REGION, bakeRequest)
 
     then:
-      1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
-      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> null
+      1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages) >> targetImageName
+      1 * imageNameFactoryMock.buildImageTag(bakeRequest, osPackages) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(BakeRequest.PackageType.DEB, osPackages) >> PACKAGES_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/azure-linux.json")
   }

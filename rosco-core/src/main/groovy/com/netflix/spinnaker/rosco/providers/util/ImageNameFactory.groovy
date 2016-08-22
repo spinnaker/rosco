@@ -34,24 +34,24 @@ public class ImageNameFactory {
   Clock clock = Clock.systemUTC()
 
   /**
-   * Attempts to produce an appVersionStr from the first packageName; to be used for tagging the newly-baked image
+   * Attempts to produce an image tag from the first packageName; to be used for tagging the newly-baked image
    */
-  def buildAppVersionStr(BakeRequest bakeRequest, List<PackageNameConverter.OsPackageName> osPackageNames) {
-    String appVersionStr = null
+  def buildImageTag(BakeRequest bakeRequest, List<PackageNameConverter.OsPackageName> osPackageNames) {
+    String imageTag = null
 
     if (osPackageNames) {
-      appVersionStr = PackageNameConverter.buildAppVersionStr(bakeRequest, osPackageNames.first())
+      imageTag = PackageNameConverter.buildAppVersionStr(bakeRequest, osPackageNames.first())
     }
 
-    return appVersionStr
+    return imageTag
   }
 
   /**
-   * Produces an imageName either from the BakeRequest.ami_name or the first package to be installed.
+   * Produces an appVersionStr either from the BakeRequest.ami_name or the first package to be installed.
    * This is to be used for naming the image being baked. Note that this function is not required to
    * return the same image name on multiple invocations with the same bake request
    */
-  def buildImageName(BakeRequest bakeRequest, List<PackageNameConverter.OsPackageName> osPackageNames) {
+  def buildAppVersionStr(BakeRequest bakeRequest, List<PackageNameConverter.OsPackageName> osPackageNames) {
     String timestamp = clock.millis()
     String baseImageName = osPackageNames ? osPackageNames.first()?.name : ""
     String baseImageArch = osPackageNames ? osPackageNames.first()?.arch : "all"
