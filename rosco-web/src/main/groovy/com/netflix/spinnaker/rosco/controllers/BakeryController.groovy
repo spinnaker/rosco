@@ -98,8 +98,19 @@ class BakeryController {
     String jobId = jobExecutor.startJob(jobRequest)
 
     // Give the job jobExecutor some time to kick off the job.
+    // Poll for bake status by job id every 1/2 second for 5 seconds.
     // The goal here is to fail fast. If it takes too much time, no point in waiting here.
-    sleep(1000)
+    def startTime = System.currentTimeMillis()
+
+    while (System.currentTimeMillis() - startTime < 5000) {
+      def bakeStatus = jobExecutor.getJob(jobId)
+
+      if (bakeStatus) {
+        break;
+      } else {
+        Thread.sleep(500)
+      }
+    }
 
     // Update the status right away so we can fail fast if necessary.
     BakeStatus newBakeStatus = jobExecutor.updateJob(jobId)

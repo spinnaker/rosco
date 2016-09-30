@@ -111,6 +111,22 @@ class JobExecutorLocal implements JobExecutor {
   }
 
   @Override
+  BakeStatus getJob(String jobId) {
+    try {
+      if (jobIdToHandlerMap[jobId]) {
+        return new BakeStatus(id: jobId, resource_id: jobId)
+      } else {
+        // This instance of rosco is not managing the job.
+        return null;
+      }
+    } catch (Exception e) {
+      log.error("Failed to get $jobId", e)
+
+      return null
+    }
+  }
+
+  @Override
   BakeStatus updateJob(String jobId) {
     try {
       log.info("Polling state for $jobId...")
