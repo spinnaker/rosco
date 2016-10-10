@@ -176,17 +176,61 @@ class RedisBackedBakeStore implements BakeStore {
           redis.call('ZREM', KEYS[2], KEYS[1])
 
           -- Delete the bake key key.
-          local ret = redis.call('DEL', KEYS[1])
+          redis.call('DEL', KEYS[1])
 
           if bake_id then
-            -- Remove the bake id from the set of incomplete bakes.
-            redis.call('SREM', KEYS[3], bake_id)
+            -- Retrieve the rosco instance id associated with bake id.
+            local rosco_instance_id = redis.call('HGET', bake_id, 'roscoInstanceId')
+
+            if rosco_instance_id then
+              -- Remove bake id from that rosco instance's set of incomplete bakes.
+              redis.call('SREM', 'allBakes:incomplete:' .. rosco_instance_id, bake_id)
+            end
 
             -- Delete the bake id key.
             redis.call('DEL', bake_id)
           end
 
-          return ret
+          return bake_id
+        """)
+        deleteBakeByKeyPreserveDetailsSHA = jedis.scriptLoad("""\
+          -- Retrieve the bake id associated with bake key.
+          local bake_id = redis.call('HGET', KEYS[1], 'id')
+
+          -- Remove bake key from the set of bakes.
+          redis.call('ZREM', KEYS[2], KEYS[1])
+
+          -- Delete the bake key key.
+          redis.call('DEL', KEYS[1])
+
+          if bake_id then
+            -- Retrieve the rosco instance id associated with bake id.
+            local rosco_instance_id = redis.call('HGET', bake_id, 'roscoInstanceId')
+
+            if rosco_instance_id then
+              -- Remove bake id from that rosco instance's set of incomplete bakes.
+              redis.call('SREM', 'allBakes:incomplete:' .. rosco_instance_id, bake_id)
+            end
+
+            -- Set bake state to CANCELED if still running.
+            local bake_status = redis.call('HGET', bake_id, 'bakeStatus')
+
+            if bake_status then
+              local bake_status_json = cjson.decode(bake_status)
+
+              if bake_status_json['state'] == 'RUNNING' then
+                bake_status_json['state'] = 'CANCELED'
+                bake_status_json['result'] = 'FAILURE'
+
+                -- Update the bake status set on the bake id hash.
+                 redis.call('HMSET', bake_id,
+                            'bakeStatus', cjson.encode(bake_status_json),
+                            'updatedTimestamp', ARGV[1])
+              end
+            end
+          end
+
+          return bake_id
         """)
         cancelBakeByIdSHA = jedis.scriptLoad("""
           -- Retrieve the bake key associated with bake id.
@@ -355,10 +399,34 @@ class RedisBackedBakeStore implements BakeStore {
   }
 
   @Override
-  public boolean deleteBakeByKey(String bakeKey) {
-    def keyList = [bakeKey, "allBakes", thisInstanceIncompleteBakesKey]
+  public String deleteBakeByKey(String bakeKey) {
+    def jedis = jedisPool.getResource()
+    def keyList = [bakeKey, "allBakes"]
 
-    return evalSHA("deleteBakeByKeySHA", keyList, []) == 1
+    jedis.withCloseable {
+      Set<String> incompleteBakesKeys = jedis.keys(allIncompleteBakesKeyPattern)
+
+      keyList += incompleteBakesKeys
+    }
+
+    return evalSHA("deleteBakeByKeySHA", keyList, [])
+  }
+
+  @Override
+  public String deleteBakeByKeyPreserveDetails(String bakeKey) {
+    def jedis = jedisPool.getResource()
+    def updatedTimestampMilliseconds = timeInMilliseconds
+    def keyList = [bakeKey, "allBakes"]
+
+    jedis.withCloseable {
+      Set<String> incompleteBakesKeys = jedis.keys(allIncompleteBakesKeyPattern)
+
+      keyList += incompleteBakesKeys
+    }
+
+    def argList = [updatedTimestampMilliseconds + ""]
+
+    return evalSHA("deleteBakeByKeyPreserveDetailsSHA", keyList, argList)
   }
 
   @Override
@@ -367,8 +435,8 @@ class RedisBackedBakeStore implements BakeStore {
                                     resource_id: bakeId,
                                     state: BakeStatus.State.CANCELED,
                                     result: BakeStatus.Result.FAILURE)
-    def jedis = jedisPool.getResource()
     def bakeStatusJson = mapper.writeValueAsString(bakeStatus)
+    def jedis = jedisPool.getResource()
     def updatedTimestampMilliseconds = timeInMilliseconds
     def keyList = [bakeId, "allBakes"]
 
