@@ -26,6 +26,7 @@ import com.netflix.spinnaker.rosco.providers.CloudProviderBakeHandler
 import com.netflix.spinnaker.rosco.providers.registry.CloudProviderBakeHandlerRegistry
 import com.netflix.spinnaker.rosco.jobs.JobExecutor
 import com.netflix.spinnaker.rosco.jobs.JobRequest
+import groovy.transform.InheritConstructors
 import groovy.util.logging.Slf4j
 import io.swagger.annotations.ApiOperation
 import io.swagger.annotations.ApiParam
@@ -143,8 +144,11 @@ class BakeryController {
         Id bakesId = registry.createId('bakes').withTag("rebake", "true")
         registry.counter(bakesId).increment()
 
-        // TODO(duftler): Does it make sense to cancel here as well?
-        bakeStore.deleteBakeByKey(bakeKey)
+        String bakeId = bakeStore.deleteBakeByKeyPreserveDetails(bakeKey)
+
+        if (bakeId) {
+          jobExecutor.cancelJob(bakeId)
+        }
       } else {
         def existingBakeStatus = queryExistingBakes(bakeKey)
 
@@ -228,6 +232,22 @@ class BakeryController {
     throw new IllegalArgumentException("Unable to retrieve logs for '$statusId'.")
   }
 
+  @RequestMapping(value = "/api/v1/{region}/logs/{statusId}", produces = ["application/json"], method = RequestMethod.GET)
+  Map lookupLogsJson(@PathVariable("region") String region,
+                     @PathVariable("statusId") String statusId) {
+    Map logsContentMap = bakeStore.retrieveBakeLogsById(statusId)
+
+    if (logsContentMap?.logsContent) {
+      return logsContentMap
+    } else {
+      throw new LogsNotFoundException()
+    }
+  }
+
+  @InheritConstructors
+  @ResponseStatus(value = HttpStatus.NOT_FOUND, reason = "Logs not found.")
+  static class LogsNotFoundException extends RuntimeException {}
+
   // TODO(duftler): Synchronize this with existing bakery api.
   @RequestMapping(value = '/api/v1/{region}/bake', method = RequestMethod.DELETE)
   String deleteBake(@PathVariable("region") String region,
@@ -240,9 +260,10 @@ class BakeryController {
 
     if (cloudProviderBakeHandler) {
       def bakeKey = cloudProviderBakeHandler.produceBakeKey(region, bakeRequest)
+      def bakeId = bakeStore.deleteBakeByKey(bakeKey)
 
-      if (bakeStore.deleteBakeByKey(bakeKey)) {
-        return "Deleted bake '$bakeKey'."
+      if (bakeId) {
+        return "Deleted bake '$bakeKey' with id '$bakeId'."
       }
 
       throw new IllegalArgumentException("Unable to locate bake with key '$bakeKey'.")
