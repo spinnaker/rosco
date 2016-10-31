@@ -111,7 +111,7 @@ class JobExecutorLocal implements JobExecutor {
 
   @Override
   boolean jobExists(String jobId) {
-    return jobIdToHandlerMap.containsKey(jobId);
+    return jobIdToHandlerMap.containsKey(jobId)
   }
 
   @Override
