@@ -63,6 +63,11 @@ interface BakeStore {
   public BakeStatus retrieveBakeStatusByKey(String bakeKey)
 
   /**
+   * Retrieve the bake request associated with the bakeKey. bakeKey may be null.
+   */
+  public BakeRequest retrieveBakeRequestById(String bakeId)
+
+  /**
    * Retrieve the bake status associated with the bakeId. bakeId may be null.
    */
   public BakeStatus retrieveBakeStatusById(String bakeId)

@@ -18,6 +18,7 @@ package com.netflix.spinnaker.rosco.executor
 
 import com.netflix.spectator.api.DefaultRegistry
 import com.netflix.spinnaker.rosco.api.Bake
+import com.netflix.spinnaker.rosco.api.BakeRequest
 import com.netflix.spinnaker.rosco.api.BakeStatus
 import com.netflix.spinnaker.rosco.persistence.RedisBackedBakeStore
 import com.netflix.spinnaker.rosco.providers.CloudProviderBakeHandler
@@ -46,7 +47,6 @@ class BakePollerSpec extends Specification {
                                                 state: bakeState,
                                                 result: bakeResult,
                                                 logsContent: LOGS_CONTENT)
-
       @Subject
       def bakePoller = new BakePoller(bakeStore: bakeStoreMock,
                                       executor: jobExecutorMock,
@@ -86,6 +86,8 @@ class BakePollerSpec extends Specification {
                                       cloudProviderBakeHandlerRegistry: cloudProviderBakeHandlerRegistryMock,
                                       registry: new DefaultRegistry())
 
+      def bakeRequest = new BakeRequest(build_number: 42, cloud_provider_type: BakeRequest.CloudProviderType.aws)
+
     when:
       bakePoller.updateBakeStatusAndLogs(JOB_ID)
 
@@ -97,6 +99,7 @@ class BakePollerSpec extends Specification {
       1 * bakeStoreMock.updateBakeDetails(bakeDetails)
       1 * bakeStoreMock.updateBakeStatus(completeBakeStatus)
       1 * bakeStoreMock.retrieveBakeStatusById(JOB_ID) >> completeBakeStatus
+      1 * bakeStoreMock.retrieveBakeRequestById(JOB_ID) >> bakeRequest
 
     where:
       bakeState                  | bakeResult

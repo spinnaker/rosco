@@ -32,6 +32,10 @@ import io.swagger.annotations.ApiModelProperty
 class Bake {
   @ApiModelProperty(value="The id of the bake job.")
   String id
-  String ami
-  String image_name
+  @Deprecated
+  String ami // Replaced by Artifact.name
+  @Deprecated
+  String image_name // Replaced by Artifact.reference
+  Artifact artifact // The artifact produced by the bake
+  BuildInfo build_info // The build responsible for the content of this bake
 }

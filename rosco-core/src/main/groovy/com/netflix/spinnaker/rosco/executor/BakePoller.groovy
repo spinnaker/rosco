@@ -18,8 +18,11 @@ package com.netflix.spinnaker.rosco.executor
 
 import com.netflix.spectator.api.Id
 import com.netflix.spectator.api.Registry
+import com.netflix.spinnaker.rosco.api.Artifact
 import com.netflix.spinnaker.rosco.api.Bake
+import com.netflix.spinnaker.rosco.api.BakeRequest
 import com.netflix.spinnaker.rosco.api.BakeStatus
+import com.netflix.spinnaker.rosco.api.BuildInfo
 import com.netflix.spinnaker.rosco.jobs.JobExecutor
 import com.netflix.spinnaker.rosco.persistence.BakeStore
 import com.netflix.spinnaker.rosco.providers.registry.CloudProviderBakeHandlerRegistry
@@ -196,9 +199,23 @@ class BakePoller implements ApplicationListener<ContextRefreshedEvent> {
 
         if (cloudProviderBakeHandler) {
           String region = bakeStore.retrieveRegionById(bakeId)
+          BakeRequest bakeRequest = bakeStore.retrieveBakeRequestById(bakeId)
 
           if (region) {
             Bake bakeDetails = cloudProviderBakeHandler.scrapeCompletedBakeResults(region, bakeId, logsContent)
+            bakeDetails.artifact = new Artifact(
+              name: bakeDetails.ami,
+              reference: bakeDetails.image_name,
+              type: bakeRequest.cloud_provider_type.name()
+            )
+
+            bakeDetails.build_info = new BuildInfo(
+              url: bakeRequest.build_info_url,
+              host: bakeRequest.build_host,
+              job_number: bakeRequest.build_number,
+              job_name: bakeRequest.job,
+              organisation: bakeRequest.organization
+            )
 
             bakeStore.updateBakeDetails(bakeDetails)
 
