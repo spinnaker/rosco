@@ -364,6 +364,16 @@ class RedisBackedBakeStore implements BakeStore {
   }
 
   @Override
+  public BakeRequest retrieveBakeRequestById(String bakeId) {
+    def jedis = jedisPool.getResource()
+
+    jedis.withCloseable {
+      def bakeRequestJson = jedis.hget(bakeId, "bakeRequest")
+      return bakeRequestJson ? mapper.readValue(bakeRequestJson, BakeRequest) : null
+    }
+  }
+
+  @Override
   public BakeStatus retrieveBakeStatusByKey(String bakeKey) {
     def jedis = jedisPool.getResource()
 
