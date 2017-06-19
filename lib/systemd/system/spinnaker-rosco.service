@@ -1,0 +1,18 @@
+[Unit]
+Description=Spinnaker Rosco
+After=network.target
+
+[Service]
+Type=simple
+GuessMainPID=yes
+Environment=logfile=/var/log/spinnaker/rosco/rosco.log
+ExecStartPre=/usr/bin/touch /etc/default/spinnaker
+ExecStartPre=/bin/bash -c '. /etc/default/spinnaker'
+ExecStart=/opt/rosco/bin/rosco 2>&1 ${logfile} &
+ExecStop=/bin/kill $MAINPID
+ExecReload=/bin/kill -HUP $MAINPID
+StandardOutput=journal+console
+WorkingDirectory=/opt/rosco
+
+[Install]
+WantedBy=multi-user.target
