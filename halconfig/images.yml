@@ -147,7 +147,7 @@ docker:
       virtualizationSettings:
         sourceImage: ubuntu:trusty
 
-google:
+gce:
   bakeryDefaults:
     baseImages:
     - baseImage:
