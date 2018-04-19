@@ -21,14 +21,14 @@ import spock.lang.Specification
 import java.nio.file.Paths
 
 class PackerManifestServiceSpec extends Specification implements TestDefaults {
-    def "getManifestFileName"() {
-        setup:
-          def controller = new PackerManifestService(tempDir: Paths.get("/path/to/tmp"))
+  def "getManifestFileName"() {
+    setup:
+      def controller = new PackerManifestService(tempDir: Paths.get("/path/to/tmp"))
 
-        when:
-          def fileName = controller.getManifestFileName("test-bake-id")
+    when:
+      def fileName = controller.getManifestFileName("test-bake-id")
 
-        then:
-          fileName == "/path/to/tmp/test-bake-id-manifest.json"
-    }
+    then:
+      fileName == "/path/to/tmp/test-bake-id-manifest.json"
+  }
 }

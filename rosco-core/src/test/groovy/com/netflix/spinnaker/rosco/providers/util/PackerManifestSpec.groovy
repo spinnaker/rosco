@@ -19,32 +19,32 @@ package com.netflix.spinnaker.rosco.providers.util
 import spock.lang.Specification
 
 class PackerManifestSpec extends Specification implements TestDefaults {
-    void "getLastBuild"() {
-        setup:
-          def firstBuild = new PackerManifest.PackerBuild(packerRunUuid: UUID.randomUUID().toString())
-          def secondBuild = new PackerManifest.PackerBuild(packerRunUuid: UUID.randomUUID().toString())
-          PackerManifest manifest
+  void "getLastBuild"() {
+    setup:
+      def firstBuild = new PackerManifest.PackerBuild(packerRunUuid: UUID.randomUUID().toString())
+      def secondBuild = new PackerManifest.PackerBuild(packerRunUuid: UUID.randomUUID().toString())
+      PackerManifest manifest
 
-        when:
-          manifest = new PackerManifest(builds: [firstBuild, secondBuild], lastRunUuid: firstBuild.getPackerRunUuid())
-        then:
-          manifest.getLastBuild() == firstBuild
+    when:
+      manifest = new PackerManifest(builds: [firstBuild, secondBuild], lastRunUuid: firstBuild.getPackerRunUuid())
+    then:
+      manifest.getLastBuild() == firstBuild
 
-        when:
-          manifest = new PackerManifest(builds: [firstBuild, secondBuild], lastRunUuid: secondBuild.getPackerRunUuid())
-        then:
-          manifest.getLastBuild() == secondBuild
+    when:
+      manifest = new PackerManifest(builds: [firstBuild, secondBuild], lastRunUuid: secondBuild.getPackerRunUuid())
+    then:
+      manifest.getLastBuild() == secondBuild
 
-        when:
-          manifest = new PackerManifest(builds: [firstBuild, secondBuild], lastRunUuid: UUID.randomUUID().toString())
-          manifest.getLastBuild()
-        then:
-          thrown(IllegalStateException)
+    when:
+      manifest = new PackerManifest(builds: [firstBuild, secondBuild], lastRunUuid: UUID.randomUUID().toString())
+      manifest.getLastBuild()
+    then:
+      thrown(IllegalStateException)
 
-        when:
-          manifest = new PackerManifest(builds: [], lastRunUuid: UUID.randomUUID().toString())
-          manifest.getLastBuild()
-        then:
-          thrown(IllegalStateException)
-    }
+    when:
+      manifest = new PackerManifest(builds: [], lastRunUuid: UUID.randomUUID().toString())
+      manifest.getLastBuild()
+    then:
+      thrown(IllegalStateException)
+  }
 }
