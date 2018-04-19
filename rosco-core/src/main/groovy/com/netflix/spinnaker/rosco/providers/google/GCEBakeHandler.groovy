@@ -38,7 +38,7 @@ public class GCEBakeHandler extends CloudProviderBakeHandler {
 
   ImageNameFactory imageNameFactory = new ImageNameFactory()
 
-  PackerManifestService packerManifestController = new PackerManifestService()
+  PackerManifestService packerManifestService = new PackerManifestService()
 
   @Autowired
   RoscoGoogleConfiguration.GCEBakeryDefaults gceBakeryDefaults
@@ -143,7 +143,7 @@ public class GCEBakeHandler extends CloudProviderBakeHandler {
       parameterMap.appversion = appVersionStr
     }
 
-    parameterMap.manifestFile = packerManifestController.getManifestFileName(bakeRequest.request_id)
+    parameterMap.manifestFile = packerManifestService.getManifestFileName(bakeRequest.request_id)
 
     return parameterMap
   }
@@ -157,9 +157,9 @@ public class GCEBakeHandler extends CloudProviderBakeHandler {
   Bake scrapeCompletedBakeResults(String region, String bakeId, String logsContent) {
     String imageName
 
-    if (packerManifestController.manifestExists(bakeId)) {
+    if (packerManifestService.manifestExists(bakeId)) {
       log.info("Using manifest file to determine baked artifact for bake $bakeId")
-      PackerManifest.PackerBuild packerBuild = packerManifestController.getBuild(bakeId)
+      PackerManifest.PackerBuild packerBuild = packerManifestService.getBuild(bakeId)
       imageName = packerBuild.getArtifactId()
     } else {
       // TODO(duftler): Presently scraping the logs for the image name. Would be better to not be reliant on the log
