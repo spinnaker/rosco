@@ -20,10 +20,10 @@ import spock.lang.Specification
 
 import java.nio.file.Paths
 
-class PackerManifestControllerSpec extends Specification implements TestDefaults {
+class PackerManifestServiceSpec extends Specification implements TestDefaults {
     def "getManifestFileName"() {
         setup:
-          def controller = new PackerManifestController(tempDir: Paths.get("/path/to/tmp"))
+          def controller = new PackerManifestService(tempDir: Paths.get("/path/to/tmp"))
 
         when:
           def fileName = controller.getManifestFileName("test-bake-id")

@@ -25,7 +25,7 @@ import com.netflix.spinnaker.rosco.providers.util.PackerCommandFactory
 import com.netflix.spinnaker.rosco.providers.google.config.RoscoGoogleConfiguration
 import com.netflix.spinnaker.rosco.providers.google.config.RoscoGoogleConfiguration.GCEBakeryDefaults
 import com.netflix.spinnaker.rosco.providers.util.PackerManifest
-import com.netflix.spinnaker.rosco.providers.util.PackerManifestController
+import com.netflix.spinnaker.rosco.providers.util.PackerManifestService
 import com.netflix.spinnaker.rosco.providers.util.TestDefaults
 import spock.lang.Shared
 import spock.lang.Subject
@@ -138,7 +138,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
 
   void 'can scrape packer logs for image name'() {
     setup:
-      def packerManifestControllerMock = Mock(PackerManifestController)
+      def packerManifestControllerMock = Mock(PackerManifestService)
       packerManifestControllerMock.manifestExists(*_) >> false
       @Subject
       GCEBakeHandler gceBakeHandler = new GCEBakeHandler(googleConfigurationProperties: googleConfigurationProperties,
@@ -171,7 +171,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
 
   void 'scraping returns null for missing image name'() {
     setup:
-      def packerManifestControllerMock = Mock(PackerManifestController)
+      def packerManifestControllerMock = Mock(PackerManifestService)
       packerManifestControllerMock.manifestExists(*_) >> false
       @Subject
       GCEBakeHandler gceBakeHandler = new GCEBakeHandler(gceBakeryDefaults: gceBakeryDefaults,
@@ -202,7 +202,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
 
   void 'can get image name from manifest file'() {
     setup:
-      def packerManifestControllerMock = Mock(PackerManifestController)
+      def packerManifestControllerMock = Mock(PackerManifestService)
       @Subject
       GCEBakeHandler gceBakeHandler = new GCEBakeHandler(googleConfigurationProperties: googleConfigurationProperties,
                                                          packerManifestController: packerManifestControllerMock)
@@ -243,7 +243,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
-      def packerManifestControllerMock = Mock(PackerManifestController)
+      def packerManifestControllerMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "precise",
@@ -287,7 +287,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
-      def packerManifestControllerMock = Mock(PackerManifestController)
+      def packerManifestControllerMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "centos",
@@ -331,7 +331,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
-      def packerManifestControllerMock = Mock(PackerManifestController)
+      def packerManifestControllerMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "precise",
@@ -376,7 +376,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
-      def packerManifestControllerMock = Mock(PackerManifestController)
+      def packerManifestControllerMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "precise",
@@ -421,7 +421,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
-      def packerManifestControllerMock = Mock(PackerManifestController)
+      def packerManifestControllerMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "precise",
@@ -468,7 +468,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
-      def packerManifestControllerMock = Mock(PackerManifestController)
+      def packerManifestControllerMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "precise",
@@ -518,7 +518,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
-      def packerManifestControllerMock = Mock(PackerManifestController)
+      def packerManifestControllerMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "precise",
@@ -565,7 +565,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
-      def packerManifestControllerMock = Mock(PackerManifestController)
+      def packerManifestControllerMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "trusty",
@@ -609,7 +609,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
-      def packerManifestControllerMock = Mock(PackerManifestController)
+      def packerManifestControllerMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "trusty",
@@ -656,7 +656,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
-      def packerManifestControllerMock = Mock(PackerManifestController)
+      def packerManifestControllerMock = Mock(PackerManifestService)
       def fullyQualifiedPackageName = "nflx-djangobase-enhanced_0.1-h12.170cdbd_all"
       def appVersionStr = "nflx-djangobase-enhanced-0.1-170cdbd.h12"
       def buildHost = "http://some-build-server:8080"
@@ -709,7 +709,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
-      def packerManifestControllerMock = Mock(PackerManifestController)
+      def packerManifestControllerMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "trusty",
@@ -755,7 +755,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
-      def packerManifestControllerMock = Mock(PackerManifestController)
+      def packerManifestControllerMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "xenial",
@@ -799,7 +799,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
-      def packerManifestControllerMock = Mock(PackerManifestController)
+      def packerManifestControllerMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "xenial",
@@ -844,7 +844,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
-      def packerManifestControllerMock = Mock(PackerManifestController)
+      def packerManifestControllerMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "yakkety",

@@ -25,7 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
-public class PackerManifestController {
+public class PackerManifestService {
   private Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"));
   private ObjectMapper objectMapper = new ObjectMapper();
 
