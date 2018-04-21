@@ -16,6 +16,8 @@
 
 package com.netflix.spinnaker.rosco.providers.google
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.netflix.spinnaker.kork.artifacts.model.Artifact
 import com.netflix.spinnaker.rosco.api.Bake
 import com.netflix.spinnaker.rosco.api.BakeOptions
 import com.netflix.spinnaker.rosco.api.BakeRequest
@@ -28,6 +30,8 @@ import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
+import java.nio.file.Path
+
 @Slf4j
 @Component
 public class GCEBakeHandler extends CloudProviderBakeHandler {
@@ -39,6 +43,9 @@ public class GCEBakeHandler extends CloudProviderBakeHandler {
   ImageNameFactory imageNameFactory = new ImageNameFactory()
 
   PackerManifestService packerManifestService = new PackerManifestService()
+
+  @Autowired
+  ObjectMapper objectMapper
 
   @Autowired
   RoscoGoogleConfiguration.GCEBakeryDefaults gceBakeryDefaults
@@ -145,7 +152,19 @@ public class GCEBakeHandler extends CloudProviderBakeHandler {
 
     parameterMap.manifestFile = packerManifestService.getManifestFileName(bakeRequest.request_id)
 
+    parameterMap.artifactFile = writeArtifactsToFile(bakeRequest.request_id, bakeRequest.package_artifacts)
+
     return parameterMap
+  }
+
+  String writeArtifactsToFile(String bakeId, List<Artifact> packageArtifacts) {
+    Path artifactFile = getArtifactFilePath(bakeId)
+
+    artifactFile.withWriter { writer ->
+      objectMapper.writeValue(writer, packageArtifacts ?: [])
+    }
+
+    return artifactFile.toString()
   }
 
   @Override
