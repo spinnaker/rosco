@@ -28,6 +28,10 @@ import com.netflix.spinnaker.rosco.providers.util.PackerCommandFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+
 abstract class CloudProviderBakeHandler {
 
   @Value('${rosco.configDir}')
@@ -128,6 +132,16 @@ abstract class CloudProviderBakeHandler {
 
   def String getArtifactReference(BakeRequest bakeRequest, Bake bakeDetails) {
     return bakeDetails.ami ?: bakeDetails.image_name
+  }
+
+  Path getArtifactFilePath(String bakeId) {
+    Path tmpDir = Paths.get(System.getProperty("java.io.tmpdir"))
+    return tmpDir.resolve(bakeId + "-artifacts.json")
+  }
+
+  void deleteArtifactFile(String bakeId) {
+    Path artifactFile = getArtifactFilePath(bakeId)
+    Files.deleteIfExists(artifactFile)
   }
 
   /**
