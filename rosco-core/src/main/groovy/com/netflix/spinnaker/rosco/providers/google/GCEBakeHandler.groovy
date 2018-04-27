@@ -146,7 +146,7 @@ public class GCEBakeHandler extends CloudProviderBakeHandler {
       parameterMap.appversion = appVersionStr
     }
 
-    parameterMap.artifactFile = packerArtifactService.writeArtifactsToFile(bakeRequest.request_id, bakeRequest.package_artifacts)
+    parameterMap.artifactFile = packerArtifactService.writeArtifactsToFile(bakeRequest.request_id, bakeRequest.package_artifacts)?.toString()
 
     parameterMap.manifestFile = packerManifestService.getManifestFileName(bakeRequest.request_id)
 

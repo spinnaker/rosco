@@ -32,7 +32,13 @@ public class PackerArtifactService {
   private Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"));
   private ObjectMapper objectMapper = new ObjectMapper();
 
-  public String writeArtifactsToFile(String bakeId, List<Artifact> artifacts) {
+  public PackerArtifactService() throws IOException {
+    if (!Files.isDirectory(tempDir)) {
+      Files.createDirectories(tempDir);
+    }
+  }
+
+  public Path writeArtifactsToFile(String bakeId, List<Artifact> artifacts) {
     Path artifactFile = getArtifactFilePath(bakeId);
 
     // If we were not passed any artifacts at all, write an empty array to the file rather
@@ -52,7 +58,7 @@ public class PackerArtifactService {
       throw new IllegalStateException("Could not write artifacts to file: " + e.getMessage());
     }
 
-    return artifactFile.toString();
+    return artifactFile;
   }
 
   public void deleteArtifactFile(String bakeId) {

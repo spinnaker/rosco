@@ -33,6 +33,8 @@ import spock.lang.Subject
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import java.nio.file.Paths
+
 class GCEBakeHandlerSpec extends Specification implements TestDefaults{
 
   private static final String REGION = "us-central1"
@@ -287,7 +289,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> ARTIFACT_FILE_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
@@ -335,7 +337,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, RPM_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(RPM_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> ARTIFACT_FILE_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
@@ -384,7 +386,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> ARTIFACT_FILE_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
@@ -433,7 +435,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> ARTIFACT_FILE_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/somePackerTemplate.json")
   }
@@ -484,7 +486,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> ARTIFACT_FILE_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
@@ -538,7 +540,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> ARTIFACT_FILE_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
@@ -589,7 +591,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> ARTIFACT_FILE_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
@@ -637,7 +639,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> ARTIFACT_FILE_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
@@ -688,7 +690,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> ARTIFACT_FILE_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
@@ -745,7 +747,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, [osPackage]) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, [osPackage], DEB_PACKAGE_TYPE) >> appVersionStr
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, [osPackage]) >> fullyQualifiedPackageName
-      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> ARTIFACT_FILE_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
@@ -795,7 +797,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> ARTIFACT_FILE_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
@@ -843,7 +845,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> ARTIFACT_FILE_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
@@ -892,7 +894,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> ARTIFACT_FILE_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
@@ -940,7 +942,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> ARTIFACT_FILE_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
