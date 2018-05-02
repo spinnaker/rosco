@@ -11,6 +11,7 @@ echo "upgrade=$upgrade"
 echo "artifacts="
 cat /tmp/artifacts.json
 echo
+uninstall_jq=false
 
 # Strip leading/trailing quotes if present.
 repository=`echo $repository | sed 's/^"\(.*\)"$/\1/'`
@@ -19,24 +20,50 @@ repository=`echo $repository | sed 's/^"\(.*\)"$/\1/'`
 # Also convert a comma-separated list to a whitespace-separated one.
 packages=`echo $packages | sed 's/^"\(.*\)"$/\1/' | sed 's/,/ /g'`
 
-function install_jq() {
-  if [[ "$package_type" == "deb" ]]; then
+function ensure_jq_deb() {
+  if ! dpkg-query -W jq; then
     sudo apt-get update
     sudo DEBIAN_FRONTEND=noninteractive apt-get install --force-yes -y jq
+    uninstall_jq=true
+  fi
+}
+
+function ensure_jq_rpm() {
+  if ! rpm -q jq; then
+    sudo yum -y install jq
+    uninstall_jq=true
+  fi
+}
+
+function ensure_jq() {
+  if [[ "$package_type" == "deb" ]]; then
+    ensure_jq_deb
   fi
 
   if [[ "$package_type" == "rpm" ]]; then
-    sudo yum -y install jq
+    ensure_jq_rpm
+  fi
+}
+
+function remove_jq_deb() {
+  if [[ "$uninstall_jq" = true ]]; then
+    sudo DEBIAN_FRONTEND=noninteractive apt-get purge --force-yes -y jq
+  fi
+}
+
+function remove_jq_rpm() {
+  if [[ "$uninstall_jq" = true ]]; then
+    sudo yum -y autoremove jq
   fi
 }
 
 function remove_jq() {
   if [[ "$package_type" == "deb" ]]; then
-    sudo DEBIAN_FRONTEND=noninteractive apt-get purge --force-yes -y jq
+    remove_jq_deb
   fi
 
   if [[ "$package_type" == "rpm" ]]; then
-    sudo yum -y autoremove jq
+    remove_jq_rpm
   fi
 }
 
@@ -50,7 +77,7 @@ function get_artifact_references() {
   fi
 
   if [[ -e /tmp/artifacts.json ]]; then
-    install_jq
+    ensure_jq
     # The last field of each artifact reference is the package to install, and the remaning
     # fields are the repo from which to install it
     jq -r '.[] | .reference' /tmp/artifacts.json | awk 'NF{NF-=1} { print $0 }' >> /tmp/repos
