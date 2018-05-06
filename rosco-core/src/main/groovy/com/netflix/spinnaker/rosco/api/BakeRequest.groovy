@@ -75,6 +75,8 @@ class BakeRequest {
   Map extended_attributes
   @ApiModelProperty("The name of a json file containing key/value pairs to add to the packer command (must be in the same location as the template file)")
   String var_file_name
+  @ApiModelProperty("Packer template to use, included inline")
+  String template
 
   @ApiModelProperty("The name of a configured account to use when baking the image")
   String account_name

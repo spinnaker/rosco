@@ -27,6 +27,12 @@ import com.netflix.spinnaker.rosco.providers.util.PackageNameConverter
 import com.netflix.spinnaker.rosco.providers.util.PackerCommandFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.util.FileCopyUtils
+import org.springframework.util.FileSystemUtils
+
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Path
 
 abstract class CloudProviderBakeHandler {
 
@@ -212,14 +218,26 @@ abstract class CloudProviderBakeHandler {
       }
     }
 
-    def finalTemplateFileName = bakeRequest.template_file_name ?: getTemplateFileName(selectedOptions.baseImage)
-    def finaltemplateFilePath = "$configDir/$finalTemplateFileName"
+    String finalTemplateFileName
+    String finalTemplateFilePath
+
+    if (bakeRequest.template) {
+        def tempFile = Files.createTempFile("template_${bakeRequest.request_id}_", ".json")
+        FileCopyUtils.copy(bakeRequest.template.getBytes(StandardCharsets.UTF_8), tempFile.toFile())
+
+        finalTemplateFileName = tempFile.fileName
+        finalTemplateFilePath = tempFile
+    } else {
+        finalTemplateFileName = bakeRequest.template_file_name ?: getTemplateFileName(selectedOptions.baseImage)
+        finalTemplateFilePath = "$configDir/$finalTemplateFileName"
+    }
+
     def finalVarFileName = bakeRequest.var_file_name ? "$configDir/$bakeRequest.var_file_name" : null
     def baseCommand = getBaseCommand(finalTemplateFileName)
     def packerCommand = packerCommandFactory.buildPackerCommand(baseCommand,
                                                                 parameterMap,
                                                                 finalVarFileName,
-                                                                finaltemplateFilePath)
+                                                                finalTemplateFilePath)
 
     return new BakeRecipe(name: imageName, version: appVersionStr, command: packerCommand)
   }

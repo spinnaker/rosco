@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.netflix.spinnaker.rosco.api.Bake
 import com.netflix.spinnaker.rosco.api.BakeRequest
 import com.netflix.spinnaker.rosco.config.RoscoConfiguration
+import com.netflix.spinnaker.rosco.jobs.BakeRecipe
 import com.netflix.spinnaker.rosco.providers.aws.config.RoscoAWSConfiguration
 import com.netflix.spinnaker.rosco.providers.util.ImageNameFactory
 import com.netflix.spinnaker.rosco.providers.util.PackageNameConverter
@@ -824,6 +825,95 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
     then:
       IllegalArgumentException e = thrown()
       e.message == "No virtualization settings found for 'centos'."
+  }
+
+  void 'inline template produces packer command referring to temporary template file'() {
+    setup:
+    def imageNameFactoryMock = Mock(ImageNameFactory)
+    def packerCommandFactoryMock = Mock(PackerCommandFactory)
+    def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
+            package_name: PACKAGES_NAME,
+            base_os: "ubuntu",
+            vm_type: BakeRequest.VmType.hvm,
+            cloud_provider_type: BakeRequest.CloudProviderType.aws,
+            template: """
+{
+  "variables": {
+    "aws_access_key": "",
+    "aws_secret_key": "",
+    "aws_subnet_id": "{{env `AWS_SUBNET_ID`}}",
+    "aws_vpc_id": "{{env `AWS_VPC_ID`}}",
+    "aws_region": null,
+    "aws_ssh_username": null,
+    "aws_instance_type": null,
+    "aws_source_ami": null,
+    "aws_target_ami": null,
+    "aws_associate_public_ip_address": "true",
+    "aws_ena_support": "false",
+    "aws_spot_price": "0",
+    "aws_spot_price_auto_product": "",
+    "appversion": "",
+    "build_host": "",
+    "repository": "",
+    "package_type": "",
+    "packages": "",
+    "upgrade": "",
+    "configDir": null
+  },
+  "builders": [{
+    "type": "amazon-ebs",
+    "access_key": "{{user `aws_access_key`}}",
+    "secret_key": "{{user `aws_secret_key`}}",
+    "subnet_id": "{{user `aws_subnet_id`}}",
+    "vpc_id": "{{user `aws_vpc_id`}}",
+    "region": "{{user `aws_region`}}",
+    "ssh_username": "{{user `aws_ssh_username`}}",
+    "ssh_pty": true,
+    "instance_type": "{{user `aws_instance_type`}}",
+    "source_ami": "{{user `aws_source_ami`}}",
+    "ami_name": "{{user `aws_target_ami`}}",
+    "associate_public_ip_address": "{{user `aws_associate_public_ip_address`}}",
+    "ena_support": "{{user `aws_ena_support`}}",
+    "spot_price": "{{user `aws_spot_price`}}",
+    "spot_price_auto_product": "{{user `aws_spot_price_auto_product`}}",
+    "tags": {
+      "appversion": "{{user `appversion`}}",
+      "build_host": "{{user `build_host`}}",
+      "build_info_url": "{{user `build_info_url`}}"
+    },
+    "run_tags": {"Packages": "{{user `packages`}}"}
+  }],
+  "provisioners": [{
+    "type": "shell",
+    "script": "{{user `configDir`}}/install_packages.sh",
+    "environment_vars": [
+      "repository={{user `repository`}}",
+      "package_type={{user `package_type`}}",
+      "packages={{user `packages`}}",
+      "upgrade={{user `upgrade`}}"
+    ],
+    "pause_before": "30s"
+  }]
+}
+""",
+            upgrade: true)
+
+    @Subject
+    AWSBakeHandler awsBakeHandler = new AWSBakeHandler(configDir: configDir,
+            awsBakeryDefaults: awsBakeryDefaults,
+            imageNameFactory: imageNameFactoryMock,
+            packerCommandFactory: packerCommandFactoryMock,
+            debianRepository: DEBIAN_REPOSITORY)
+
+    when:
+    awsBakeHandler.produceBakeRecipe(REGION, bakeRequest)
+
+    then:
+    1 * packerCommandFactoryMock.buildPackerCommand(*_) >> { arguments ->
+      String templatePath = arguments[3]
+      assert templatePath.contains('template_')
+      assert new File(templatePath).canRead()
+    }
   }
 
   void 'throws exception when virtualization settings are not found for specified region, operating system, and vm type'() {
