@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Google, Inc.
+ * Copyright 2018 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,21 @@
  * limitations under the License.
  */
 
-package com.netflix.spinnaker.rosco.jobs
+package com.netflix.spinnaker.rosco.providers.util
 
-import com.netflix.spinnaker.rosco.api.BakeStatus
+import spock.lang.Specification
 
-interface JobExecutor {
-  String startJob(JobRequest jobRequest)
-  boolean jobExists(String jobId)
-  BakeStatus updateJob(String jobId)
-  void cancelJob(String jobId)
-  int runningJobCount()
+import java.nio.file.Paths
+
+class PackerManifestServiceSpec extends Specification implements TestDefaults {
+  def "getManifestFileName"() {
+    setup:
+      def controller = new PackerManifestService(tempDir: Paths.get("/path/to/tmp"))
+
+    when:
+      def fileName = controller.getManifestFileName("test-bake-id")
+
+    then:
+      fileName == "/path/to/tmp/test-bake-id-manifest.json"
+  }
 }

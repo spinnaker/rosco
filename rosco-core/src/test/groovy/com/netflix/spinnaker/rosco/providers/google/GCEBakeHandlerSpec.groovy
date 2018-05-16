@@ -21,14 +21,19 @@ import com.netflix.spinnaker.rosco.api.Bake
 import com.netflix.spinnaker.rosco.api.BakeRequest
 import com.netflix.spinnaker.rosco.providers.util.ImageNameFactory
 import com.netflix.spinnaker.rosco.providers.util.PackageNameConverter
+import com.netflix.spinnaker.rosco.providers.util.PackerArtifactService
 import com.netflix.spinnaker.rosco.providers.util.PackerCommandFactory
 import com.netflix.spinnaker.rosco.providers.google.config.RoscoGoogleConfiguration
 import com.netflix.spinnaker.rosco.providers.google.config.RoscoGoogleConfiguration.GCEBakeryDefaults
+import com.netflix.spinnaker.rosco.providers.util.PackerManifest
+import com.netflix.spinnaker.rosco.providers.util.PackerManifestService
 import com.netflix.spinnaker.rosco.providers.util.TestDefaults
 import spock.lang.Shared
 import spock.lang.Subject
 import spock.lang.Specification
 import spock.lang.Unroll
+
+import java.nio.file.Paths
 
 class GCEBakeHandlerSpec extends Specification implements TestDefaults{
 
@@ -38,6 +43,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
   private static final String SOURCE_XENIAL_IMAGE_NAME = "some-xenial-image"
   private static final String SOURCE_YAKKETY_IMAGE_NAME = "some-yakkety-image"
   private static final String SOURCE_CENTOS_HVM_IMAGE_NAME = "some-centos-image"
+  private static final String MANIFEST_FILE_NAME = "/path/to/stub-manifest.json"
+  private static final String ARTIFACT_FILE_NAME = "/path/to/stub-artifact.json"
 
   @Shared
   String configDir = "/some/path"
@@ -47,6 +54,9 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
 
   @Shared
   RoscoGoogleConfiguration.GoogleConfigurationProperties googleConfigurationProperties
+
+  @Shared
+  ObjectMapper objectMapper = new ObjectMapper()
 
   @Shared
   def gceBakeryDefaultsJson = [
@@ -135,8 +145,11 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
 
   void 'can scrape packer logs for image name'() {
     setup:
+      def packerManifestServiceMock = Mock(PackerManifestService)
+      packerManifestServiceMock.manifestExists(*_) >> false
       @Subject
-      GCEBakeHandler gceBakeHandler = new GCEBakeHandler(googleConfigurationProperties: googleConfigurationProperties)
+      GCEBakeHandler gceBakeHandler = new GCEBakeHandler(googleConfigurationProperties: googleConfigurationProperties,
+                                                         packerManifestService: packerManifestServiceMock)
 
     when:
       def logsContent =
@@ -165,9 +178,11 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
 
   void 'scraping returns null for missing image name'() {
     setup:
+      def packerManifestServiceMock = Mock(PackerManifestService)
+      packerManifestServiceMock.manifestExists(*_) >> false
       @Subject
-      GCEBakeHandler gceBakeHandler = new GCEBakeHandler(gceBakeryDefaults: gceBakeryDefaults)
-
+      GCEBakeHandler gceBakeHandler = new GCEBakeHandler(gceBakeryDefaults: gceBakeryDefaults,
+                                                         packerManifestService: packerManifestServiceMock)
     when:
       def logsContent =
         "    googlecompute: Running hooks in /etc/ca-certificates/update.d....\n" +
@@ -192,10 +207,51 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       }
   }
 
+  void 'can get image name from manifest file'() {
+    setup:
+      def packerManifestServiceMock = Mock(PackerManifestService)
+      @Subject
+      GCEBakeHandler gceBakeHandler = new GCEBakeHandler(googleConfigurationProperties: googleConfigurationProperties,
+                                                         packerManifestService: packerManifestServiceMock)
+
+    when:
+      // Pass in valid logs to ensure that we're prioritizing the image name from the manifest
+      def logsContent =
+        "    googlecompute: Running hooks in /etc/ca-certificates/update.d....\n" +
+        "    googlecompute: done.\n" +
+        "    googlecompute: done.\n" +
+        "==> googlecompute: Deleting instance...\n" +
+        "    googlecompute: Instance has been deleted!\n" +
+        "==> googlecompute: Creating image...\n" +
+        "==> googlecompute: Deleting disk...\n" +
+        "    googlecompute: Disk has been deleted!\n" +
+        "Build 'googlecompute' finished.\n" +
+        "\n" +
+        "==> Builds finished. The artifacts of successful builds are:\n" +
+        "--> googlecompute: A disk image was created: kato-x12345678-trusty"
+
+      Bake bake = gceBakeHandler.scrapeCompletedBakeResults(REGION, "123", logsContent)
+
+    then:
+      1 * packerManifestServiceMock.manifestExists("123") >> true
+      1 * packerManifestServiceMock.getBuild("123") >> {
+        def build = new PackerManifest.PackerBuild()
+        build.setArtifactId("my-test-image-name")
+        return build
+      }
+      with (bake) {
+        id == "123"
+        !ami
+        image_name == "my-test-image-name"
+      }
+  }
+
   void 'produces packer command with all required parameters for precise'() {
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
+      def packerArtifactServiceMock = Mock(PackerArtifactService)
+      def packerManifestServiceMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "precise",
@@ -211,7 +267,9 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
         repository: DEBIAN_REPOSITORY,
         package_type: DEB_PACKAGE_TYPE.util.packageType,
         packages: PACKAGES_NAME,
-        configDir: configDir
+        configDir: configDir,
+        artifactFile: ARTIFACT_FILE_NAME,
+        manifestFile: MANIFEST_FILE_NAME
       ]
 
       @Subject
@@ -220,6 +278,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
                                                          googleConfigurationProperties: googleConfigurationProperties,
                                                          imageNameFactory: imageNameFactoryMock,
                                                          packerCommandFactory: packerCommandFactoryMock,
+                                                         packerArtifactService: packerArtifactServiceMock,
+                                                         packerManifestService: packerManifestServiceMock,
                                                          debianRepository: DEBIAN_REPOSITORY)
 
     when:
@@ -229,6 +289,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
+      1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
@@ -236,6 +298,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
+      def packerArtifactServiceMock = Mock(PackerArtifactService)
+      def packerManifestServiceMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "centos",
@@ -251,7 +315,9 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
         repository: YUM_REPOSITORY,
         package_type: RPM_PACKAGE_TYPE.util.packageType,
         packages: PACKAGES_NAME,
-        configDir: configDir
+        configDir: configDir,
+        artifactFile: ARTIFACT_FILE_NAME,
+        manifestFile: MANIFEST_FILE_NAME
       ]
 
       @Subject
@@ -260,6 +326,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
                                                          googleConfigurationProperties: googleConfigurationProperties,
                                                          imageNameFactory: imageNameFactoryMock,
                                                          packerCommandFactory: packerCommandFactoryMock,
+                                                         packerArtifactService: packerArtifactServiceMock,
+                                                         packerManifestService: packerManifestServiceMock,
                                                          yumRepository: YUM_REPOSITORY)
 
     when:
@@ -269,6 +337,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, RPM_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(RPM_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
+      1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
@@ -276,6 +346,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
+      def packerArtifactServiceMock = Mock(PackerArtifactService)
+      def packerManifestServiceMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "precise",
@@ -292,7 +364,9 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
         repository: DEBIAN_REPOSITORY,
         package_type: DEB_PACKAGE_TYPE.util.packageType,
         packages: PACKAGES_NAME,
-        configDir: configDir
+        configDir: configDir,
+        artifactFile: ARTIFACT_FILE_NAME,
+        manifestFile: MANIFEST_FILE_NAME
       ]
 
       @Subject
@@ -301,6 +375,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
                                                          googleConfigurationProperties: googleConfigurationProperties,
                                                          imageNameFactory: imageNameFactoryMock,
                                                          packerCommandFactory: packerCommandFactoryMock,
+                                                         packerArtifactService: packerArtifactServiceMock,
+                                                         packerManifestService: packerManifestServiceMock,
                                                          debianRepository: DEBIAN_REPOSITORY)
 
     when:
@@ -310,6 +386,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
+      1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
@@ -317,6 +395,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
+      def packerArtifactServiceMock = Mock(PackerArtifactService)
+      def packerManifestServiceMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "precise",
@@ -333,7 +413,9 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
         repository: DEBIAN_REPOSITORY,
         package_type: DEB_PACKAGE_TYPE.util.packageType,
         packages: PACKAGES_NAME,
-        configDir: configDir
+        configDir: configDir,
+        artifactFile: ARTIFACT_FILE_NAME,
+        manifestFile: MANIFEST_FILE_NAME
       ]
 
       @Subject
@@ -342,6 +424,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
                                                          googleConfigurationProperties: googleConfigurationProperties,
                                                          imageNameFactory: imageNameFactoryMock,
                                                          packerCommandFactory: packerCommandFactoryMock,
+                                                         packerArtifactService: packerArtifactServiceMock,
+                                                         packerManifestService: packerManifestServiceMock,
                                                          debianRepository: DEBIAN_REPOSITORY)
 
     when:
@@ -351,6 +435,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
+      1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/somePackerTemplate.json")
   }
 
@@ -358,6 +444,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
+      def packerArtifactServiceMock = Mock(PackerArtifactService)
+      def packerManifestServiceMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "precise",
@@ -375,6 +463,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
         package_type: DEB_PACKAGE_TYPE.util.packageType,
         packages: PACKAGES_NAME,
         configDir: configDir,
+        artifactFile: ARTIFACT_FILE_NAME,
+        manifestFile: MANIFEST_FILE_NAME,
         someAttr1: "someValue1",
         someAttr2: "someValue2"
       ]
@@ -385,6 +475,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
                                                          googleConfigurationProperties: googleConfigurationProperties,
                                                          imageNameFactory: imageNameFactoryMock,
                                                          packerCommandFactory: packerCommandFactoryMock,
+                                                         packerArtifactService: packerArtifactServiceMock,
+                                                         packerManifestService: packerManifestServiceMock,
                                                          debianRepository: DEBIAN_REPOSITORY)
 
     when:
@@ -394,6 +486,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
+      1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
@@ -401,6 +495,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
+      def packerArtifactServiceMock = Mock(PackerArtifactService)
+      def packerManifestServiceMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "precise",
@@ -422,7 +518,9 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
         repository: DEBIAN_REPOSITORY,
         package_type: DEB_PACKAGE_TYPE.util.packageType,
         packages: PACKAGES_NAME,
-        configDir: configDir
+        configDir: configDir,
+        artifactFile: ARTIFACT_FILE_NAME,
+        manifestFile: MANIFEST_FILE_NAME
       ]
 
       @Subject
@@ -431,6 +529,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
                                                          googleConfigurationProperties: googleConfigurationProperties,
                                                          imageNameFactory: imageNameFactoryMock,
                                                          packerCommandFactory: packerCommandFactoryMock,
+                                                         packerArtifactService: packerArtifactServiceMock,
+                                                         packerManifestService: packerManifestServiceMock,
                                                          debianRepository: DEBIAN_REPOSITORY)
 
     when:
@@ -440,6 +540,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
+      1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
@@ -447,6 +549,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
+      def packerArtifactServiceMock = Mock(PackerArtifactService)
+      def packerManifestServiceMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "precise",
@@ -463,7 +567,9 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
         repository: DEBIAN_REPOSITORY,
         package_type: DEB_PACKAGE_TYPE.util.packageType,
         packages: PACKAGES_NAME,
-        configDir: configDir
+        configDir: configDir,
+        artifactFile: ARTIFACT_FILE_NAME,
+        manifestFile: MANIFEST_FILE_NAME
       ]
       def gceBakeryDefaultsAugmented = gceBakeryDefaults.clone()
       gceBakeryDefaultsAugmented.subnetwork = "custom-subnetwork"
@@ -474,6 +580,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
                                                          googleConfigurationProperties: googleConfigurationProperties,
                                                          imageNameFactory: imageNameFactoryMock,
                                                          packerCommandFactory: packerCommandFactoryMock,
+                                                         packerArtifactService: packerArtifactServiceMock,
+                                                         packerManifestService: packerManifestServiceMock,
                                                          debianRepository: DEBIAN_REPOSITORY)
 
     when:
@@ -483,6 +591,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
+      1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
@@ -490,6 +600,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
+      def packerArtifactServiceMock = Mock(PackerArtifactService)
+      def packerManifestServiceMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "trusty",
@@ -505,7 +617,9 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
         repository: DEBIAN_REPOSITORY,
         package_type: DEB_PACKAGE_TYPE.util.packageType,
         packages: PACKAGES_NAME,
-        configDir: configDir
+        configDir: configDir,
+        artifactFile: ARTIFACT_FILE_NAME,
+        manifestFile: MANIFEST_FILE_NAME
       ]
 
       @Subject
@@ -514,6 +628,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
                                                          googleConfigurationProperties: googleConfigurationProperties,
                                                          imageNameFactory: imageNameFactoryMock,
                                                          packerCommandFactory: packerCommandFactoryMock,
+                                                         packerArtifactService: packerArtifactServiceMock,
+                                                         packerManifestService: packerManifestServiceMock,
                                                          debianRepository: DEBIAN_REPOSITORY)
 
     when:
@@ -523,6 +639,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
+      1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
@@ -530,6 +648,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
+      def packerArtifactServiceMock = Mock(PackerArtifactService)
+      def packerManifestServiceMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "trusty",
@@ -548,7 +668,9 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
         repository: DEBIAN_REPOSITORY,
         package_type: DEB_PACKAGE_TYPE.util.packageType,
         packages: PACKAGES_NAME,
-        configDir: configDir
+        configDir: configDir,
+        artifactFile: ARTIFACT_FILE_NAME,
+        manifestFile: MANIFEST_FILE_NAME
       ]
 
       @Subject
@@ -557,6 +679,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
                                                          googleConfigurationProperties: googleConfigurationProperties,
                                                          imageNameFactory: imageNameFactoryMock,
                                                          packerCommandFactory: packerCommandFactoryMock,
+                                                         packerArtifactService: packerArtifactServiceMock,
+                                                         packerManifestService: packerManifestServiceMock,
                                                          debianRepository: DEBIAN_REPOSITORY)
 
     when:
@@ -566,6 +690,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
+      1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
@@ -573,6 +699,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
+      def packerArtifactServiceMock = Mock(PackerArtifactService)
+      def packerManifestServiceMock = Mock(PackerManifestService)
       def fullyQualifiedPackageName = "nflx-djangobase-enhanced_0.1-h12.170cdbd_all"
       def appVersionStr = "nflx-djangobase-enhanced-0.1-170cdbd.h12"
       def buildHost = "http://some-build-server:8080"
@@ -595,6 +723,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
         package_type: DEB_PACKAGE_TYPE.util.packageType,
         packages: fullyQualifiedPackageName,
         configDir: configDir,
+        artifactFile: ARTIFACT_FILE_NAME,
+        manifestFile: MANIFEST_FILE_NAME,
         appversion: appVersionStr,
         build_host: buildHost,
         build_info_url: buildInfoUrl
@@ -606,6 +736,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
                                                          googleConfigurationProperties: googleConfigurationProperties,
                                                          imageNameFactory: imageNameFactoryMock,
                                                          packerCommandFactory: packerCommandFactoryMock,
+                                                         packerArtifactService: packerArtifactServiceMock,
+                                                         packerManifestService: packerManifestServiceMock,
                                                          debianRepository: DEBIAN_REPOSITORY)
 
     when:
@@ -615,6 +747,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, [osPackage]) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, [osPackage], DEB_PACKAGE_TYPE) >> appVersionStr
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, [osPackage]) >> fullyQualifiedPackageName
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
+      1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
@@ -622,6 +756,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
+      def packerArtifactServiceMock = Mock(PackerArtifactService)
+      def packerManifestServiceMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "trusty",
@@ -639,7 +775,9 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
         repository: DEBIAN_REPOSITORY,
         package_type: DEB_PACKAGE_TYPE.util.packageType,
         packages: PACKAGES_NAME,
-        configDir: configDir
+        configDir: configDir,
+        artifactFile: ARTIFACT_FILE_NAME,
+        manifestFile: MANIFEST_FILE_NAME
       ]
 
       @Subject
@@ -648,6 +786,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
                                                          googleConfigurationProperties: googleConfigurationProperties,
                                                          imageNameFactory: imageNameFactoryMock,
                                                          packerCommandFactory: packerCommandFactoryMock,
+                                                         packerArtifactService: packerArtifactServiceMock,
+                                                         packerManifestService: packerManifestServiceMock,
                                                          debianRepository: DEBIAN_REPOSITORY)
 
     when:
@@ -657,6 +797,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
+      1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
@@ -664,6 +806,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
+      def packerArtifactServiceMock = Mock(PackerArtifactService)
+      def packerManifestServiceMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "xenial",
@@ -679,7 +823,9 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
         repository: DEBIAN_REPOSITORY,
         package_type: DEB_PACKAGE_TYPE.util.packageType,
         packages: PACKAGES_NAME,
-        configDir: configDir
+        configDir: configDir,
+        artifactFile: ARTIFACT_FILE_NAME,
+        manifestFile: MANIFEST_FILE_NAME
       ]
 
       @Subject
@@ -688,6 +834,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
                                                          googleConfigurationProperties: googleConfigurationProperties,
                                                          imageNameFactory: imageNameFactoryMock,
                                                          packerCommandFactory: packerCommandFactoryMock,
+                                                         packerArtifactService: packerArtifactServiceMock,
+                                                         packerManifestService: packerManifestServiceMock,
                                                          debianRepository: DEBIAN_REPOSITORY)
 
     when:
@@ -697,6 +845,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
+      1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
@@ -704,6 +854,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
+      def packerArtifactServiceMock = Mock(PackerArtifactService)
+      def packerManifestServiceMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "xenial",
@@ -720,7 +872,9 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
         repository: DEBIAN_REPOSITORY,
         package_type: DEB_PACKAGE_TYPE.util.packageType,
         packages: PACKAGES_NAME,
-        configDir: configDir
+        configDir: configDir,
+        artifactFile: ARTIFACT_FILE_NAME,
+        manifestFile: MANIFEST_FILE_NAME
       ]
 
       @Subject
@@ -729,6 +883,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
                                                          googleConfigurationProperties: googleConfigurationProperties,
                                                          imageNameFactory: imageNameFactoryMock,
                                                          packerCommandFactory: packerCommandFactoryMock,
+                                                         packerArtifactService: packerArtifactServiceMock,
+                                                         packerManifestService: packerManifestServiceMock,
                                                          debianRepository: DEBIAN_REPOSITORY)
 
     when:
@@ -738,6 +894,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
+      1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
@@ -745,6 +903,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
     setup:
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
+      def packerArtifactServiceMock = Mock(PackerArtifactService)
+      def packerManifestServiceMock = Mock(PackerManifestService)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
                                         package_name: PACKAGES_NAME,
                                         base_os: "yakkety",
@@ -760,7 +920,9 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
         repository: DEBIAN_REPOSITORY,
         package_type: DEB_PACKAGE_TYPE.util.packageType,
         packages: PACKAGES_NAME,
-        configDir: configDir
+        configDir: configDir,
+        artifactFile: ARTIFACT_FILE_NAME,
+        manifestFile: MANIFEST_FILE_NAME
       ]
 
       @Subject
@@ -769,6 +931,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
                                                          googleConfigurationProperties: googleConfigurationProperties,
                                                          imageNameFactory: imageNameFactoryMock,
                                                          packerCommandFactory: packerCommandFactoryMock,
+                                                         packerArtifactService: packerArtifactServiceMock,
+                                                         packerManifestService: packerManifestServiceMock,
                                                          debianRepository: DEBIAN_REPOSITORY)
 
     when:
@@ -778,6 +942,8 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
+      1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
+      1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
