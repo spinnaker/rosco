@@ -235,6 +235,9 @@ abstract class CloudProviderBakeHandler {
 
     if (bakeRequest.template) {
         def tempFile = Files.createTempFile("template_${bakeRequest.request_id}_", ".json")
+        // Mark for deletion on VM exit. Deleting on packer completion is a bit more involved,
+        // so the temp file will remain until the OS clears it or Rosco exits.
+        tempFile.toFile().deleteOnExit()
         FileCopyUtils.copy(bakeRequest.template.getBytes(StandardCharsets.UTF_8), tempFile.toFile())
 
         finalTemplateFileName = tempFile.fileName
