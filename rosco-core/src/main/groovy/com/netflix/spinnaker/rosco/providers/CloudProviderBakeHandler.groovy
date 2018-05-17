@@ -137,6 +137,13 @@ abstract class CloudProviderBakeHandler {
   }
 
   /**
+   * Deletes the temporary file containing artifacts to bake into the image.  Currently only GCE
+   * supports baking artifacts, so this defaults to a no-op.
+   */
+  void deleteArtifactFile(String bakeId) {
+  }
+
+  /**
    * Finds the appropriate virtualization settings in this provider's configuration based on the region and
    * bake request parameters. Throws an IllegalArgumentException if the virtualization settings cannot be
    * found.
@@ -175,14 +182,19 @@ abstract class CloudProviderBakeHandler {
     BakeOptions.Selected selectedOptions = new BakeOptions.Selected(baseImage: findBaseImage(bakeRequest))
     BakeRequest.PackageType packageType = selectedOptions.baseImage.packageType
 
-    List<String> packageNameList = bakeRequest.package_name?.tokenize(" ")
+    List<String> packageNameList = bakeRequest.package_name?.tokenize(" ") ?: []
 
     def osPackageNames = PackageNameConverter.buildOsPackageNames(packageType, packageNameList)
+    def osArtifactNames = bakeRequest.package_artifacts.collect { Artifact a ->
+      PackageNameConverter.buildOsPackageName(packageType, a.getName())
+    }
 
-    def appVersionStr = imageNameFactory.buildAppVersionStr(bakeRequest, osPackageNames, packageType)
+    // Use both packages and artifacts to determine the version string and image name
+    def appVersionStr = imageNameFactory.buildAppVersionStr(bakeRequest, osPackageNames + osArtifactNames, packageType)
+    def imageName = imageNameFactory.buildImageName(bakeRequest, osPackageNames + osArtifactNames)
 
-    def imageName = imageNameFactory.buildImageName(bakeRequest, osPackageNames)
-
+    // Don't include artifacts when constructing the packagesParameter, as artifacts will be passed
+    // separately
     def packagesParameter = imageNameFactory.buildPackagesParameter(packageType, osPackageNames)
 
     def parameterMap = buildParameterMap(region, virtualizationSettings, imageName, bakeRequest, appVersionStr)

@@ -13,13 +13,8 @@ import java.util.Map;
 public class BakeManifestRequest {
   TemplateRenderer templateRenderer;
   String outputName;
-  Artifact inputArtifact;
-  List<Artifact> values;
+  List<Artifact> inputArtifacts;
   Map<String, Object> overrides;
-
-  public BakeRecipe convertToRecipe(TemplateUtils utils) {
-    return utils.buildBakeRecipe(this);
-  }
 
   enum TemplateRenderer {
     HELM2;
