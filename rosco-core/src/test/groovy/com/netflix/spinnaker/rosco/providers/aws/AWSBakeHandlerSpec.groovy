@@ -25,6 +25,7 @@ import com.netflix.spinnaker.rosco.providers.aws.config.RoscoAWSConfiguration
 import com.netflix.spinnaker.rosco.providers.util.ImageNameFactory
 import com.netflix.spinnaker.rosco.providers.util.PackageNameConverter
 import com.netflix.spinnaker.rosco.providers.util.PackerCommandFactory
+import com.netflix.spinnaker.rosco.providers.util.PackerTemplateService
 import com.netflix.spinnaker.rosco.providers.util.TestDefaults
 import spock.lang.Shared
 import spock.lang.Specification
@@ -903,6 +904,8 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
             awsBakeryDefaults: awsBakeryDefaults,
             imageNameFactory: imageNameFactoryMock,
             packerCommandFactory: packerCommandFactoryMock,
+            packerTemplateService: new PackerTemplateService(),
+            allowInlineTemplates: true,
             debianRepository: DEBIAN_REPOSITORY)
 
     when:
@@ -911,7 +914,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
     then:
     1 * packerCommandFactoryMock.buildPackerCommand(*_) >> { arguments ->
       String templatePath = arguments[3]
-      assert templatePath.contains('template_')
+      assert templatePath.endsWith('-template.json')
       assert new File(templatePath).canRead()
     }
   }
