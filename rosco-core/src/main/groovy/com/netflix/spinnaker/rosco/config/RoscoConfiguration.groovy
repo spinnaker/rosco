@@ -23,6 +23,7 @@ import com.netflix.spinnaker.rosco.providers.registry.CloudProviderBakeHandlerRe
 import com.netflix.spinnaker.rosco.providers.registry.DefaultCloudProviderBakeHandlerRegistry
 import com.netflix.spinnaker.rosco.providers.util.LocalJobFriendlyPackerCommandFactory
 import com.netflix.spinnaker.rosco.providers.util.PackerCommandFactory
+import com.netflix.spinnaker.rosco.providers.util.PackerTemplateService
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
@@ -77,6 +78,11 @@ class RoscoConfiguration {
   @ConditionalOnMissingBean(PackerCommandFactory)
   PackerCommandFactory localJobFriendlyPackerCommandFactory() {
     return new LocalJobFriendlyPackerCommandFactory()
+  }
+
+  @Bean
+  PackerTemplateService packerTemplateService() {
+    new PackerTemplateService()
   }
 
 }

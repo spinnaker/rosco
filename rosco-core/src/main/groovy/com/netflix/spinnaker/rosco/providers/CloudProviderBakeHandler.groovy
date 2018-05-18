@@ -25,14 +25,9 @@ import com.netflix.spinnaker.rosco.jobs.BakeRecipe
 import com.netflix.spinnaker.rosco.providers.util.ImageNameFactory
 import com.netflix.spinnaker.rosco.providers.util.PackageNameConverter
 import com.netflix.spinnaker.rosco.providers.util.PackerCommandFactory
+import com.netflix.spinnaker.rosco.providers.util.PackerTemplateService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.util.FileCopyUtils
-import org.springframework.util.FileSystemUtils
-
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.Path
 
 abstract class CloudProviderBakeHandler {
 
@@ -41,6 +36,9 @@ abstract class CloudProviderBakeHandler {
 
   @Autowired
   PackerCommandFactory packerCommandFactory
+
+  @Autowired
+  PackerTemplateService packerTemplateService
 
   @Value('${debianRepository:}')
   String debianRepository
@@ -53,6 +51,9 @@ abstract class CloudProviderBakeHandler {
 
   @Value('${templatesNeedingRoot:}')
   List<String> templatesNeedingRoot
+
+  @Value('${rosco.allowInlineTemplates:false}')
+  boolean allowInlineTemplates
 
   /**
    * @return A cloud provider-specific set of defaults.
@@ -141,6 +142,14 @@ abstract class CloudProviderBakeHandler {
    * supports baking artifacts, so this defaults to a no-op.
    */
   void deleteArtifactFile(String bakeId) {
+  }
+
+  /**
+   * Deletes any temporary files associated with this bake
+   */
+  void cleanupCompletedBake(String bakeId) {
+      deleteArtifactFile(bakeId)
+      packerTemplateService.deleteTemplateFile(bakeId)
   }
 
   /**
@@ -233,13 +242,8 @@ abstract class CloudProviderBakeHandler {
     String finalTemplateFileName
     String finalTemplateFilePath
 
-    if (bakeRequest.template) {
-        def tempFile = Files.createTempFile("template_${bakeRequest.request_id}_", ".json")
-        // Mark for deletion on VM exit. Deleting on packer completion is a bit more involved,
-        // so the temp file will remain until the OS clears it or Rosco exits.
-        tempFile.toFile().deleteOnExit()
-        FileCopyUtils.copy(bakeRequest.template.getBytes(StandardCharsets.UTF_8), tempFile.toFile())
-
+    if (allowInlineTemplates && bakeRequest.template) {
+        def tempFile = packerTemplateService.writeTemplateToFile(bakeRequest.request_id, bakeRequest.template)
         finalTemplateFileName = tempFile.fileName
         finalTemplateFilePath = tempFile
     } else {
