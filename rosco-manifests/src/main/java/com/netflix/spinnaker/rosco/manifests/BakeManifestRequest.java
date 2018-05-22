@@ -15,7 +15,7 @@ public class BakeManifestRequest {
   String outputName;
   List<Artifact> inputArtifacts;
   Map<String, Object> overrides;
-  String namespace;
+  Map<String, Object> properties;
 
   enum TemplateRenderer {
     HELM2;

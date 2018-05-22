@@ -43,10 +43,10 @@ public class HelmTemplateUtils extends TemplateUtils {
     command.add("--name");
     command.add(request.getOutputName());
 
-    String namespace = request.getNamespace();
-    if (namespace != null && !namespace.isEmpty()) {
+    Object namespace = request.getProperties().get("namespace");
+    if (namespace != null && !namespace.toString().isEmpty()) {
       command.add("--namespace");
-      command.add(namespace);
+      command.add(namespace.toString());
     }
 
     Map<String, Object> overrides = request.getOverrides();
