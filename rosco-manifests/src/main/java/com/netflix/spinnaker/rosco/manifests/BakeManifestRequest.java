@@ -2,7 +2,6 @@ package com.netflix.spinnaker.rosco.manifests;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
-import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
 import lombok.Data;
 
 import java.util.Arrays;
@@ -15,9 +14,8 @@ public class BakeManifestRequest {
   String outputName;
   List<Artifact> inputArtifacts;
   Map<String, Object> overrides;
-  Map<String, Object> properties;
 
-  enum TemplateRenderer {
+  public enum TemplateRenderer {
     HELM2;
 
     @JsonCreator
