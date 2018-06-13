@@ -15,9 +15,10 @@ import java.util.stream.Collectors;
 
 @Component
 public class HelmTemplateUtils extends TemplateUtils {
-  @Override
-  public BakeRecipe buildBakeRecipe(BakeManifestEnvironment env, BakeManifestRequest request) {
-    BakeRecipe result = super.buildBakeRecipe(env, request);
+  public BakeRecipe buildBakeRecipe(BakeManifestEnvironment env, HelmBakeManifestRequest request) {
+    BakeRecipe result = new BakeRecipe();
+    result.setName(request.getOutputName());
+
     Path templatePath;
     List<Path> valuePaths = new ArrayList<>();
     List<Artifact> inputArtifacts = request.getInputArtifacts();
@@ -43,12 +44,20 @@ public class HelmTemplateUtils extends TemplateUtils {
     command.add("--name");
     command.add(request.getOutputName());
 
+    String namespace = request.getNamespace();
+    if (namespace != null && !namespace.isEmpty()) {
+      command.add("--namespace");
+      command.add(namespace);
+    }
+
     Map<String, Object> overrides = request.getOverrides();
-    if (overrides != null) {
-      for (Map.Entry<String, Object> entry : overrides.entrySet()) {
-        command.add("--set");
-        command.add("'" + entry.getKey() + "=" + entry.getValue().toString() + "'");
-      }
+    if (!overrides.isEmpty()) {
+        List<String> overrideList = new ArrayList<>();
+        for (Map.Entry<String, Object> entry : overrides.entrySet()) {
+            overrideList.add(entry.getKey() + "=" + entry.getValue().toString());
+        }
+        command.add("--set-string");
+        command.add(overrideList.stream().collect(Collectors.joining(",")));
     }
 
     if (!valuePaths.isEmpty()) {
