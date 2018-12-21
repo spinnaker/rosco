@@ -624,40 +624,40 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
 
   void 'sends spot_price_auto_product iff spot_price is set to auto'() {
     setup:
-    def imageNameFactoryMock = Mock(ImageNameFactory)
-    def packerCommandFactoryMock = Mock(PackerCommandFactory)
-    def bakeRequest = new BakeRequest()
+      def imageNameFactoryMock = Mock(ImageNameFactory)
+      def packerCommandFactoryMock = Mock(PackerCommandFactory)
+      def bakeRequest = new BakeRequest()
 
-    @Subject
-    AWSBakeHandler awsBakeHandler = new AWSBakeHandler(configDir: configDir,
-            awsBakeryDefaults: awsBakeryDefaults,
-            imageNameFactory: imageNameFactoryMock,
-            packerCommandFactory: packerCommandFactoryMock,
-            debianRepository: DEBIAN_REPOSITORY)
-
-    when:
-    def virtualizationSettings = [
-            region: "us-east-1",
-            spotPrice: "0",
-            spotPriceAutoProduct: "Linux/UNIX (Amazon VPC)",
-    ]
-    def parameterMap = awsBakeHandler.buildParameterMap(REGION, virtualizationSettings, "", bakeRequest, "")
-
-    then:
-    parameterMap.aws_spot_price == "0"
-    !parameterMap.containsValue("aws_spot_price_auto_product")
+      @Subject
+      AWSBakeHandler awsBakeHandler = new AWSBakeHandler(configDir: configDir,
+                                                         awsBakeryDefaults: awsBakeryDefaults,
+                                                         imageNameFactory: imageNameFactoryMock,
+                                                         packerCommandFactory: packerCommandFactoryMock,
+                                                         debianRepository: DEBIAN_REPOSITORY)
 
     when:
-    virtualizationSettings = [
-            region: "us-east-1",
-            spotPrice: "auto",
-            spotPriceAutoProduct: "Linux/UNIX (Amazon VPC)",
-    ]
-    parameterMap = awsBakeHandler.buildParameterMap(REGION, virtualizationSettings, "", bakeRequest, "")
+      def virtualizationSettings = [
+              region: "us-east-1",
+              spotPrice: "0",
+              spotPriceAutoProduct: "Linux/UNIX (Amazon VPC)",
+      ]
+      def parameterMap = awsBakeHandler.buildParameterMap(REGION, virtualizationSettings, "", bakeRequest, "")
 
     then:
-    parameterMap.aws_spot_price == "auto"
-    parameterMap.aws_spot_price_auto_product == "Linux/UNIX (Amazon VPC)"
+      parameterMap.aws_spot_price == "0"
+      !parameterMap.containsValue("aws_spot_price_auto_product")
+
+    when:
+      virtualizationSettings = [
+              region: "us-east-1",
+              spotPrice: "auto",
+              spotPriceAutoProduct: "Linux/UNIX (Amazon VPC)",
+      ]
+      parameterMap = awsBakeHandler.buildParameterMap(REGION, virtualizationSettings, "", bakeRequest, "")
+
+    then:
+      parameterMap.aws_spot_price == "auto"
+      parameterMap.aws_spot_price_auto_product == "Linux/UNIX (Amazon VPC)"
   }
 
   void 'produces packer command with all required parameters for trusty, using explicit vm type'() {
