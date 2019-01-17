@@ -171,6 +171,38 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       }
   }
 
+  void 'can scrape packer 1.3+ logs for unencrypted image name'() {
+    setup:
+    @Subject
+    AWSBakeHandler awsBakeHandler = new AWSBakeHandler(awsBakeryDefaults: awsBakeryDefaults)
+
+    when:
+    def logsContent =
+      "==> amazon-ebs: Creating unencrypted AMI test-ami-123456789_123456789 from instance i-123456789\n" +
+      "    amazon-ebs: AMI: ami-2c014644\n" +
+      "==> amazon-ebs: Waiting for AMI to become ready...\n" +
+      "==> amazon-ebs: Terminating the source AWS instance...\n" +
+      "==> amazon-ebs: Cleaning up any extra volumes...\n" +
+      "==> amazon-ebs: No volumes to clean up, skipping\n" +
+      "==> amazon-ebs: Deleting temporary security group...\n" +
+      "==> amazon-ebs: Deleting temporary keypair...\n" +
+      "Build 'amazon-ebs' finished.\n" +
+      "\n" +
+      "==> Builds finished. The artifacts of successful builds are:\n" +
+      "--> amazon-ebs: AMIs were created:\n" +
+      "\n" +
+      "us-east-1: ami-2c014644"
+
+    Bake bake = awsBakeHandler.scrapeCompletedBakeResults(REGION, "123", logsContent)
+
+    then:
+    with (bake) {
+      id == "123"
+      ami == "ami-2c014644"
+      image_name == "test-ami-123456789_123456789"
+    }
+  }
+
   void 'can scrape packer (amazon-chroot) logs for image name'() {
     setup:
       @Subject
@@ -620,6 +652,44 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
+  }
+
+  void 'sends spot_price_auto_product iff spot_price is set to auto'() {
+    setup:
+      def imageNameFactoryMock = Mock(ImageNameFactory)
+      def packerCommandFactoryMock = Mock(PackerCommandFactory)
+      def bakeRequest = new BakeRequest()
+
+      @Subject
+      AWSBakeHandler awsBakeHandler = new AWSBakeHandler(configDir: configDir,
+                                                         awsBakeryDefaults: awsBakeryDefaults,
+                                                         imageNameFactory: imageNameFactoryMock,
+                                                         packerCommandFactory: packerCommandFactoryMock,
+                                                         debianRepository: DEBIAN_REPOSITORY)
+
+    when:
+      def virtualizationSettings = [
+              region: "us-east-1",
+              spotPrice: "0",
+              spotPriceAutoProduct: "Linux/UNIX (Amazon VPC)",
+      ]
+      def parameterMap = awsBakeHandler.buildParameterMap(REGION, virtualizationSettings, "", bakeRequest, "")
+
+    then:
+      parameterMap.aws_spot_price == "0"
+      !parameterMap.containsValue("aws_spot_price_auto_product")
+
+    when:
+      virtualizationSettings = [
+              region: "us-east-1",
+              spotPrice: "auto",
+              spotPriceAutoProduct: "Linux/UNIX (Amazon VPC)",
+      ]
+      parameterMap = awsBakeHandler.buildParameterMap(REGION, virtualizationSettings, "", bakeRequest, "")
+
+    then:
+      parameterMap.aws_spot_price == "auto"
+      parameterMap.aws_spot_price_auto_product == "Linux/UNIX (Amazon VPC)"
   }
 
   void 'produces packer command with all required parameters for trusty, using explicit vm type'() {
