@@ -30,7 +30,8 @@ import java.time.Clock
 @Component
 public class AzureBakeHandler extends CloudProviderBakeHandler{
 
-  private static final String IMAGE_NAME_TOKEN = "OSDiskUri:"
+  private static final String IMAGE_NAME_TOKEN = "ManagedImageName: "
+  private static final String IMAGE_ID_TOKEN = "ManagedImageId: "
 
   ImageNameFactory imageNameFactory = new ImageNameFactory()
 
@@ -61,9 +62,11 @@ public class AzureBakeHandler extends CloudProviderBakeHandler{
     // TODO(duftler): Presently scraping the logs for the image name. Would be better to not be reliant on the log
     // format not changing. Resolve this by storing bake details in redis.
     logsContent.eachLine { String line ->
-      if (line =~ IMAGE_NAME_TOKEN) {
-        imageName = line.split("/").last()
-        ami = "https:" + line.split(":").last()
+      if (line.startsWith(IMAGE_NAME_TOKEN)) {
+        imageName = line.substring(IMAGE_NAME_TOKEN.size())
+      }
+      if (line.startsWith(IMAGE_ID_TOKEN)) {
+        ami = line.substring(IMAGE_ID_TOKEN.size())
       }
     }
 
@@ -87,7 +90,6 @@ public class AzureBakeHandler extends CloudProviderBakeHandler{
       azure_client_id: selectedAccount?.clientId,
       azure_client_secret: selectedAccount?.appKey,
       azure_resource_group: selectedAccount?.packerResourceGroup,
-      azure_storage_account: selectedAccount?.packerStorageAccount,
       azure_subscription_id: selectedAccount?.subscriptionId,
       azure_tenant_id: selectedAccount?.tenantId,
       azure_object_id: selectedAccount?.objectId,
@@ -98,21 +100,21 @@ public class AzureBakeHandler extends CloudProviderBakeHandler{
     ]
 
     if (bakeRequest.build_number && bakeRequest.base_name) {
-      parameterMap.azure_image_name = "$bakeRequest.build_number-$bakeRequest.base_name"
+      parameterMap.azure_managed_image_name = "$bakeRequest.build_number-$bakeRequest.base_name"
     } else if (imageName) {
-      parameterMap.azure_image_name = imageName
+      parameterMap.azure_managed_image_name = imageName
     } else {
-      parameterMap.azure_image_name = Clock.systemUTC.millis().toString()
+      parameterMap.azure_managed_image_name = Clock.systemUTC.millis().toString()
     }
 
-    // Ensure 'azure_image_name' conforms to CaptureNamePrefix regex in packer.
+    // Ensure 'azure_managed_image_name' conforms to CaptureNamePrefix regex in packer.
     // https://github.com/mitchellh/packer/blob/master/builder/azure/arm/config.go#L45
-    def azureImageName = parameterMap.azure_image_name
+    def azureImageName = parameterMap.azure_managed_image_name
     azureImageName = azureImageName.replaceAll(/[^A-Za-z0-9_\-\.]/, "")
-    azureImageName = azureImageName.length() <= 23 ? azureImageName : azureImageName.substring(0, 23)
+    azureImageName = azureImageName.length() <= 75 ? azureImageName : azureImageName.substring(0, 75)
     azureImageName = azureImageName.replaceAll(/[\-\.]+$/, "")
 
-    parameterMap.azure_image_name = azureImageName
+    parameterMap.azure_managed_image_name = azureImageName
 
     if (appVersionStr) {
       parameterMap.appversion = appVersionStr
