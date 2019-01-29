@@ -62,10 +62,12 @@ public class AzureBakeHandler extends CloudProviderBakeHandler{
     // TODO(duftler): Presently scraping the logs for the image name. Would be better to not be reliant on the log
     // format not changing. Resolve this by storing bake details in redis.
     logsContent.eachLine { String line ->
+      // Sample for the image name and image id in logs
+      // ManagedImageName: hello-karyon-rxnetty-all-20190128114007-ubuntu-1604
+      // ManagedImageId: /subscriptions/faab228d-df7a-4086-991e-e81c4659d41a/resourceGroups/zhqqi-sntest/providers/Microsoft.Compute/images/hello-karyon-rxnetty-all-20190128114007-ubuntu-1604
       if (line.startsWith(IMAGE_NAME_TOKEN)) {
         imageName = line.substring(IMAGE_NAME_TOKEN.size())
-      }
-      if (line.startsWith(IMAGE_ID_TOKEN)) {
+      } else if (line.startsWith(IMAGE_ID_TOKEN)) {
         ami = line.substring(IMAGE_ID_TOKEN.size())
       }
     }
@@ -111,8 +113,15 @@ public class AzureBakeHandler extends CloudProviderBakeHandler{
     // https://github.com/mitchellh/packer/blob/master/builder/azure/arm/config.go#L45
     def azureImageName = parameterMap.azure_managed_image_name
     azureImageName = azureImageName.replaceAll(/[^A-Za-z0-9_\-\.]/, "")
-    azureImageName = azureImageName.length() <= 75 ? azureImageName : azureImageName.substring(0, 75)
     azureImageName = azureImageName.replaceAll(/[\-\.]+$/, "")
+    // Cut the 75 characters for image name due to Azure Managed Disk limitation
+    // The imageName is made up by 4 parts: PACKAGE_NAME-PACKAGE_TYPE-TIMESTAMP-OS
+    // A potential issue is that if the package name is too long(let's say 80), then if we cut the name by 75
+    // the final image name will only contains part of the package name. So it will be the same for every build
+    // A better way to fix is cutting the package name if it is too long and always keep the "PACKAGE_TYPE-TIMESTAMP-OS" part
+    // But since the imageName here is already combination of 4 parts, not easy to figure out what the exact package name is
+    azureImageName = azureImageName.length() <= 75 ? azureImageName : azureImageName.substring(0, 75)
+    
 
     parameterMap.azure_managed_image_name = azureImageName
 
