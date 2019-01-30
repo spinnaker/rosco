@@ -120,8 +120,7 @@ public class AzureBakeHandler extends CloudProviderBakeHandler{
     // the final image name will only contains part of the package name. So it will be the same for every build
     // A better way to fix is cutting the package name if it is too long and always keep the "PACKAGE_TYPE-TIMESTAMP-OS" part
     // But since the imageName here is already combination of 4 parts, not easy to figure out what the exact package name is
-    azureImageName = azureImageName.length() <= 75 ? azureImageName : azureImageName.substring(0, 75)
-    
+    azureImageName = azureImageName.take(75)
 
     parameterMap.azure_managed_image_name = azureImageName
 
