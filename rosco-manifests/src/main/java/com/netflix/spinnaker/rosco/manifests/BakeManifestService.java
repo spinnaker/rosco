@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Armory
+ * Copyright 2019 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package com.netflix.spinnaker.rosco.manifests.jinja;
+package com.netflix.spinnaker.rosco.manifests;
 
-import com.netflix.spinnaker.rosco.manifests.BakeManifestRequest;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 
-@Data
-@EqualsAndHashCode(callSuper = true)
-public class JinjaBakeManifestRequest extends BakeManifestRequest {
-  public String inputFormat = "yaml";
+import java.util.Map;
+
+public interface BakeManifestService {
+  Artifact bake(Map<String, Object> bakeManifestRequest);
+  boolean handles(String type);
 }

@@ -1,37 +1,34 @@
 package com.netflix.spinnaker.rosco.controllers;
 
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
-import com.netflix.spinnaker.rosco.manifests.BakeManifestRequest;
-import com.netflix.spinnaker.rosco.manifests.helm.HelmBakeManifestRequest;
-import com.netflix.spinnaker.rosco.manifests.helm.HelmBakeManifestService;
-import com.netflix.spinnaker.rosco.manifests.jinja.JinjaBakeManifestRequest;
-import com.netflix.spinnaker.rosco.manifests.jinja.JinjaBakeManifestService;
+import com.netflix.spinnaker.rosco.manifests.BakeManifestService;
 import groovy.util.logging.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @Slf4j
 public class V2BakeryController {
   @Autowired
-  HelmBakeManifestService helmBakeManifestService;
+  List<BakeManifestService> bakeManifestServices;
 
-  @Autowired
-  JinjaBakeManifestService jinjaBakeManifestService;
+  @RequestMapping(value = "/api/v2/manifest/bake/{type}", method = RequestMethod.POST)
+  Artifact doBake(@PathVariable("type") String type,  @RequestBody Map<String, Object> request) {
+    BakeManifestService service = bakeManifestServices.stream()
+      .filter(s -> s.handles(type))
+      .findFirst()
+      .orElse(null);
 
+    if (service == null) {
+      throw new IllegalArgumentException("Cannot bake manifest with template renderer type: " + type);
+    }
 
-  @RequestMapping(value = "/api/v2/manifest/bake/helm", method = RequestMethod.POST)
-  Artifact doBake(@RequestBody HelmBakeManifestRequest bakeRequest) {
-    return helmBakeManifestService.bake(bakeRequest);
+    return service.bake(request);
+
   }
 
-  @RequestMapping(value = "/api/v2/manifest/bake/jinja", method = RequestMethod.POST)
-  Artifact doJinjaBake(@RequestBody JinjaBakeManifestRequest bakeRequest) {
-    return jinjaBakeManifestService.bake(bakeRequest);
-  }
+
 }

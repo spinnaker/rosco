@@ -1,46 +1,41 @@
 package com.netflix.spinnaker.rosco.manifests.helm;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 import com.netflix.spinnaker.rosco.api.BakeStatus;
 import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
 import com.netflix.spinnaker.rosco.jobs.JobExecutor;
 import com.netflix.spinnaker.rosco.jobs.JobRequest;
-import com.netflix.spinnaker.rosco.manifests.BakeManifestRequest;
-import com.netflix.spinnaker.rosco.manifests.TemplateUtils;
+import com.netflix.spinnaker.rosco.manifests.BakeManifestService;
 import com.netflix.spinnaker.rosco.manifests.TemplateUtils.BakeManifestEnvironment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Map;
 import java.util.UUID;
 
 @Component
-public class HelmBakeManifestService {
+public class HelmBakeManifestService implements BakeManifestService {
   @Autowired
   HelmTemplateUtils helmTemplateUtils;
 
   @Autowired
   JobExecutor jobExecutor;
 
-  HelmTemplateUtils templateUtils(HelmBakeManifestRequest request) {
-    BakeManifestRequest.TemplateRenderer templateRenderer = request.getTemplateRenderer();
-    if (templateRenderer == null) {
-      throw new IllegalArgumentException("The request type must be set (e.g. helm2).");
-    }
 
-    switch (templateRenderer) {
-      case HELM2:
-        return helmTemplateUtils;
-      default:
-        throw new IllegalArgumentException("Request type " + templateRenderer + " is not supported.");
-    }
+  @Override
+  public boolean handles(String type) {
+    return type.equals("helm");
   }
 
-  public Artifact bake(HelmBakeManifestRequest request) {
-    HelmTemplateUtils utils = templateUtils(request);
+  public Artifact bake(Map<String, Object> request) {
+    ObjectMapper mapper = new ObjectMapper();
+    HelmBakeManifestRequest bakeManifestRequest = mapper.convertValue(request, HelmBakeManifestRequest.class);
     BakeManifestEnvironment env = new BakeManifestEnvironment();
-    BakeRecipe recipe = utils.buildBakeRecipe(env, request);
+    BakeRecipe recipe = helmTemplateUtils.buildBakeRecipe(env, bakeManifestRequest);
 
     BakeStatus bakeStatus;
 
@@ -68,7 +63,7 @@ public class HelmBakeManifestService {
 
     return Artifact.builder()
         .type("embedded/base64")
-        .name(request.getOutputArtifactName())
+        .name(bakeManifestRequest.getOutputArtifactName())
         .reference(Base64.getEncoder().encodeToString(bakeStatus.getLogsContent().getBytes()))
         .build();
   }
