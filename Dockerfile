@@ -20,6 +20,10 @@ RUN wget https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get &&
   ./get && \
   rm get
 
+RUN wget -O /tmp/get-pip.py https://bootstrap.pypa.io/get-pip.py && \
+    python /tmp/get-pip.py && \
+    pip install jinja2-cli --upgrade
+
 ENV PATH "/packer:$PATH"
 
 CMD ["/opt/rosco/bin/rosco"]
