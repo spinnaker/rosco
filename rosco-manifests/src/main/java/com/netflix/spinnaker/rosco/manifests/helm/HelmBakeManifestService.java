@@ -45,7 +45,7 @@ public class HelmBakeManifestService {
     BakeStatus bakeStatus;
 
     try {
-      JobRequest jobRequest = new JobRequest(recipe.getCommand(), new ArrayList<>(), UUID.randomUUID().toString(), combineStdOutAndErr: false);
+      JobRequest jobRequest = new JobRequest(recipe.getCommand(), new ArrayList<>(), UUID.randomUUID().toString(), /* combineStdOutAndErr*/ false);
       String jobId = jobExecutor.startJob(jobRequest);
 
       bakeStatus = jobExecutor.updateJob(jobId);
