@@ -64,7 +64,7 @@ class JobExecutorLocal implements JobExecutor {
           ByteArrayOutputStream stdErr
           if (jobRequest.combineStdOutAndErr) {
             stdOut = new ByteArrayOutputStream()
-            stdErr = stdOut
+            stdErr = null
             pumpStreamHandler = new PumpStreamHandler(stdOut)
           } else {
             stdOut = new ByteArrayOutputStream()
@@ -149,7 +149,7 @@ class JobExecutorLocal implements JobExecutor {
         }
 
         String outputContent = new String(stdOut.toByteArray())
-        String logsContent = stdOut.is(stdErr) ? outputContent : new String(stdErr.toByteArray())
+        String logsContent = (stdErr == null) ? outputContent : new String(stdErr.toByteArray())
 
         if (resultHandler.hasResult()) {
           log.info("State for $jobId changed with exit code $resultHandler.exitValue.")
