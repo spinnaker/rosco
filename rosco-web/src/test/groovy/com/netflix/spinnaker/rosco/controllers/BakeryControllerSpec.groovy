@@ -687,15 +687,11 @@ class BakeryControllerSpec extends Specification {
       def provider2 = Mock(CloudProviderBakeHandler) {
         2 * getBakeOptions() >> new BakeOptions(cloudProvider: "gce", baseImages: [new BakeOptions.BaseImage(id: "claus")])
       }
-      def provider3 = Mock(CloudProviderBakeHandler) {
-        2 * getBakeOptions() >> new BakeOptions(cloudProvider: "openstack", baseImages: [new BakeOptions.BaseImage(id: "misses")])
-      }
 
       def registry = new DefaultCloudProviderBakeHandlerRegistry()
       registry.with {
         register(BakeRequest.CloudProviderType.aws, provider1)
         register(BakeRequest.CloudProviderType.gce, provider2)
-        register(BakeRequest.CloudProviderType.openstack, provider3)
       }
       def bakeryController = new BakeryController(cloudProviderBakeHandlerRegistry: registry)
 
@@ -706,7 +702,6 @@ class BakeryControllerSpec extends Specification {
       result.size == 3
       result.find { it.cloudProvider == "aws" }.baseImages[0].id == "santa"
       result.find { it.cloudProvider == "gce" }.baseImages[0].id == "claus"
-      result.find { it.cloudProvider == "openstack" }.baseImages[0].id == "misses"
 
     when:
       result = bakeryController.bakeOptionsByCloudProvider(BakeRequest.CloudProviderType.aws)
@@ -724,14 +719,6 @@ class BakeryControllerSpec extends Specification {
       result
       result.cloudProvider == "gce"
       result.baseImages[0].id == "claus"
-
-    when:
-      result = bakeryController.bakeOptionsByCloudProvider(BakeRequest.CloudProviderType.openstack)
-
-    then:
-      result
-      result.cloudProvider == "openstack"
-      result.baseImages[0].id == "misses"
 
     when:
       bakeryController.bakeOptionsByCloudProvider(BakeRequest.CloudProviderType.docker)
