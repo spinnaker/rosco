@@ -454,6 +454,27 @@ huaweicloud:
         sshUserName: ubuntu
         eipType: 5_bgp
 
+tencent:
+  # The property referenced below, TENCENT_ENABLED, is not set in the
+  # 'unified config' supported by the spinnaker/spinnaker project. If you
+  # copy/paste this section into a new rosco-local.yml file for use with a
+  # pre-built Spinnaker image, make sure to explicitly set the property's
+  # value to true.
+  enabled: ${TENCENT_ENABLED:false}
+  bakeryDefaults:
+    templateFile: tencent-basic.json
+    baseImages:
+    - baseImage:
+        id: ubuntu1604
+        shortDescription: v16.04
+        detailedDescription: Ubuntu Server 16.04.1-LTS 64bits
+        packageType: deb
+        osType: linux
+        # You can specify the templateFile used for this baseImage.
+        # If not specified, the default templateFile will be used.
+        templateFile: tencent-basic.json
+      virtualizationSettings:
+
 swagger:
   enabled: true
   title: Spinnaker Rosco API
