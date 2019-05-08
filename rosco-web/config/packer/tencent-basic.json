@@ -1,0 +1,33 @@
+{
+  "variables": {
+    "secret_id": "{{env `TENCENTCLOUD_SECRET_ID`}}",
+    "secret_key": "{{env `TENCENTCLOUD_SECRET_KEY`}}"
+  },
+  "builders": [{
+    "type": "tencentcloud-cvm",
+    "secret_id": "{{user `secret_id`}}",
+    "secret_key": "{{user `secret_key`}}",
+    "region": "ap-guangzhou",
+    "zone": "ap-guangzhou-3",
+    "instance_type": "S4.SMALL1",
+    "source_image_id": "img-pyqx34y1",
+    "image_name": "SpinnakerPackerTest",
+    "image_description": "Spinnaker Packer Test",
+    "associate_public_ip_address": true,
+    "disk_type": "CLOUD_PREMIUM",
+    "disk_size": 50,
+    "ssh_username" : "ubuntu",
+    "packer_debug": true
+  }],
+  "provisioners": [{
+    "type": "shell",
+    "script": "{{user `configDir`}}/install_packages.sh",
+    "environment_vars": [
+      "repository={{user `repository`}}",
+      "package_type={{user `package_type`}}",
+      "packages={{user `packages`}}",
+      "upgrade={{user `upgrade`}}"
+    ],
+    "pause_before": "30s"
+  }]
+}
