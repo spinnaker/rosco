@@ -22,14 +22,15 @@ import com.netflix.spinnaker.rosco.api.BakeRequest
 import com.netflix.spinnaker.rosco.providers.CloudProviderBakeHandler
 import com.netflix.spinnaker.rosco.providers.tencent.config.RoscoTencentConfiguration
 import com.netflix.spinnaker.rosco.providers.util.ImageNameFactory
+import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
+@Slf4j
 @Component
 public class TencentBakeHandler extends CloudProviderBakeHandler {
 
-  private static final String IMAGE_NAME_TOKEN = "ManagedImageName: "
-  private static final String UNENCRYPTED_IMAGE_NAME_TOKEN = "ManagedImageId: "
+  private static final String IMAGE_NAME_TOKEN = "tencentcloud-cvm: Creating image "
 
   ImageNameFactory imageNameFactory = new ImageNameFactory()
 
@@ -67,43 +68,42 @@ public class TencentBakeHandler extends CloudProviderBakeHandler {
   def findVirtualizationSettings(String region, BakeRequest bakeRequest) {
 //    BakeRequest.VmType vmType = bakeRequest.vm_type ?: tencentBakeryDefaults.defaultVirtualizationType
 //
-//    def operatingSystemVirtualizationSettings = tencentBakeryDefaults?.baseImages.find {
-//      it.baseImage.id == bakeRequest.base_os
-//    }
-//
-//    if (!operatingSystemVirtualizationSettings) {
-//      throw new IllegalArgumentException("No virtualization settings found for '$bakeRequest.base_os'.")
-//    }
-//
-//    def virtualizationSettings = operatingSystemVirtualizationSettings?.virtualizationSettings.find {
-//      it.region == region && it.virtualizationType == vmType
-//    }
-//
-//    if (!virtualizationSettings) {
-//      throw new IllegalArgumentException("No virtualization settings found for region '$region', operating system '$bakeRequest.base_os', and vm type '$vmType'.")
-//    }
-//
-//    if (bakeRequest.base_ami) {
-//      virtualizationSettings = virtualizationSettings.clone()
-//      virtualizationSettings.sourceImageId = bakeRequest.base_ami
-//    }
-//
-//    return virtualizationSettings
-    return null
+    def operatingSystemVirtualizationSettings = tencentBakeryDefaults?.baseImages.find {
+      it.baseImage.id == bakeRequest.base_os
+    }
+
+    if (!operatingSystemVirtualizationSettings) {
+      throw new IllegalArgumentException("No virtualization settings found for '$bakeRequest.base_os'.")
+    }
+
+    def virtualizationSettings = operatingSystemVirtualizationSettings?.virtualizationSettings.find {
+      it.region == region //&& it.virtualizationType == vmType
+    }
+
+    if (!virtualizationSettings) {
+      throw new IllegalArgumentException("No virtualization settings found for region '$region', operating system '$bakeRequest.base_os', and vm type '$vmType'.")
+    }
+
+    if (bakeRequest.base_ami) {
+      virtualizationSettings = virtualizationSettings.clone()
+      virtualizationSettings.sourceImageId = bakeRequest.base_ami
+    }
+
+    return virtualizationSettings
   }
 
   @Override
   Map buildParameterMap(String region, def virtualizationSettings, String imageName, BakeRequest bakeRequest, String appVersionStr) {
     def parameterMap = [
       tencent_region       : region,
-//      tencent_instance_type: virtualizationSettings.instanceType,
-//      tencent_source_image_id   : virtualizationSettings.sourceImageId,
+      tencent_instance_type: virtualizationSettings.instanceType,
+      tencent_source_image_id   : virtualizationSettings.sourceImageId,
       tencent_target_image   : imageName
     ]
 
-//    if (virtualizationSettings.sshUserName) {
-//      parameterMap.tencent_ssh_username = virtualizationSettings.sshUserName
-//    }
+    if (virtualizationSettings.sshUserName) {
+      parameterMap.tencent_ssh_username = virtualizationSettings.sshUserName
+    }
 
     if (tencentBakeryDefaults.secretId && tencentBakeryDefaults.secretKey) {
       parameterMap.tencent_secret_id = tencentBakeryDefaults.secretId
@@ -122,14 +122,6 @@ public class TencentBakeHandler extends CloudProviderBakeHandler {
       parameterMap.tencent_associate_public_ip_address = tencentBakeryDefaults.associatePublicIpAddress
     }
 
-//    if (bakeRequest.enhanced_networking) {
-//      parameterMap.tencent_ena_support = true
-//    }
-//
-//    if (bakeRequest.build_info_url) {
-//      parameterMap.build_info_url = bakeRequest.build_info_url
-//    }
-
     if (appVersionStr) {
       parameterMap.appversion = appVersionStr
     }
@@ -144,6 +136,7 @@ public class TencentBakeHandler extends CloudProviderBakeHandler {
 
   @Override
   Bake scrapeCompletedBakeResults(String region, String bakeId, String logsContent) {
+    log.info("enter scrapeCompletedBakeResults, with $region, $bakeId, $logsContent")
     String amiId
     String imageName
 
@@ -151,12 +144,9 @@ public class TencentBakeHandler extends CloudProviderBakeHandler {
     // format not changing. Resolve this by storing bake details in redis and querying oort for amiId from amiName.
     logsContent.eachLine { String line ->
       if (line =~ IMAGE_NAME_TOKEN) {
-        imageName = line.split(" ").last()
-      } else if (line =~ UNENCRYPTED_IMAGE_NAME_TOKEN) {
-        line = line.replaceAll(UNENCRYPTED_IMAGE_NAME_TOKEN, "").trim()
-        imageName = line.split(" ").first()
+        imageName = line.split(IMAGE_NAME_TOKEN).last()
       } else if (line =~ "$region:") {
-        amiId = line.split(" ").last()
+        amiId = line.split("tencentcloud-cvm: Tencentcloud images\\($region: ").last().split("\\)").first()
       }
     }
 

@@ -69,13 +69,13 @@ class RoscoTencentConfiguration {
 
   @AutoClone(style = AutoCloneStyle.SIMPLE)
   static class TencentVirtualizationSettings {
-//    String region
-//    String zone
+    String region
+    String zone
 //    BakeRequest.VmType virtualizationType
-//    String instanceType
-//    String sourceImageId
-//    String imageName
-//    String sshUserName
+    String instanceType
+    String sourceImageId
+    String imageName
+    String sshUserName
   }
 
   @PostConstruct
