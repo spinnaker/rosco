@@ -32,13 +32,12 @@ class InstanceStatusEndpointSpec extends Specification {
   void 'instance incomplete bakes with status'() {
     setup:
     def bakeStoreMock = Mock(RedisBackedBakeStore)
-    def statusHandler = new StatusHandler(bakeStoreMock, instanceId)
 
     @Subject
-    def statusEndpoint = new InstanceStatusEndpoint(statusHandler)
+    def statusHandler = new StatusHandler(bakeStoreMock, instanceId)
 
     when:
-    def instanceInfo = statusEndpoint.invoke()
+    def instanceInfo = statusHandler.instanceIncompleteBakes()
 
     then:
     1 * bakeStoreMock.getThisInstanceIncompleteBakeIds() >> Sets.newHashSet(JOB_ID)
@@ -51,13 +50,12 @@ class InstanceStatusEndpointSpec extends Specification {
     setup:
     def bakeStoreMock = Mock(RedisBackedBakeStore)
     bakeStoreMock.getThisInstanceIncompleteBakeIds() >> new HashSet<>()
-    def statusHandler = new StatusHandler(bakeStoreMock, instanceId)
 
     @Subject
-    def statusEndpoint = new InstanceStatusEndpoint(statusHandler)
+    def statusHandler = new StatusHandler(bakeStoreMock, instanceId)
 
     when:
-    def instanceInfo = statusEndpoint.invoke()
+    def instanceInfo = statusHandler.instanceIncompleteBakes()
 
     then:
     1 * bakeStoreMock.getThisInstanceIncompleteBakeIds()
@@ -68,13 +66,12 @@ class InstanceStatusEndpointSpec extends Specification {
   void 'no instance incomplete bakes'() {
     setup:
     def bakeStoreMock = Mock(RedisBackedBakeStore)
-    def statusHandler = new StatusHandler(bakeStoreMock, instanceId)
 
     @Subject
-    def statusEndpoint = new InstanceStatusEndpoint(statusHandler)
+    def statusHandler = new StatusHandler(bakeStoreMock, instanceId)
 
     when:
-    def instanceInfo = statusEndpoint.invoke()
+    def instanceInfo = statusHandler.instanceIncompleteBakes()
 
     then:
     instanceInfo.bakes.isEmpty()
@@ -85,13 +82,12 @@ class InstanceStatusEndpointSpec extends Specification {
     setup:
     def bakeStoreMock = Mock(RedisBackedBakeStore)
     bakeStoreMock.getThisInstanceIncompleteBakeIds() >> { throw new RuntimeException() }
-    def statusHandler = new StatusHandler(bakeStoreMock, instanceId)
 
     @Subject
-    def statusEndpoint = new InstanceStatusEndpoint(statusHandler)
+    def statusHandler = new StatusHandler(bakeStoreMock, instanceId)
 
     when:
-    statusEndpoint.invoke()
+    statusHandler.instanceIncompleteBakes()
 
     then:
     thrown(RuntimeException)
@@ -102,13 +98,12 @@ class InstanceStatusEndpointSpec extends Specification {
     def bakeStoreMock = Mock(RedisBackedBakeStore)
     bakeStoreMock.getThisInstanceIncompleteBakeIds() >> Sets.newHashSet(JOB_ID)
     bakeStoreMock.retrieveBakeStatusById(JOB_ID) >> { throw new RuntimeException() }
-    def statusHandler = new StatusHandler(bakeStoreMock, instanceId)
 
     @Subject
-    def statusEndpoint = new InstanceStatusEndpoint(statusHandler)
+    def statusHandler = new StatusHandler(bakeStoreMock, instanceId)
 
     when:
-    statusEndpoint.invoke()
+    statusHandler.instanceIncompleteBakes()
 
     then:
     thrown(RuntimeException)

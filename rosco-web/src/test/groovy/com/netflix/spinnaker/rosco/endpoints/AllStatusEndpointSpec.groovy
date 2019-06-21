@@ -34,13 +34,12 @@ class AllStatusEndpointSpec extends Specification {
   void 'all instances incomplete bakes with status'() {
     setup:
     def bakeStoreMock = Mock(RedisBackedBakeStore)
-    def statusHandler = new StatusHandler(bakeStoreMock, localInstanceId)
 
     @Subject
-    def statusEndpoint = new AllStatusEndpoint(statusHandler)
+    def statusHandler = new StatusHandler(bakeStoreMock, localInstanceId)
 
     when:
-    def instances = statusEndpoint.invoke()
+    def instances = statusHandler.allIncompleteBakes()
     then:
     1 * bakeStoreMock.getAllIncompleteBakeIds() >> [(localInstanceId): Sets.newHashSet(LOCAL_JOB_ID), (remoteInstanceId): Sets.newHashSet(REMOTE_JOB_ID)]
     1 * bakeStoreMock.retrieveBakeStatusById(LOCAL_JOB_ID) >> localRunningBakeStatus
@@ -54,11 +53,8 @@ class AllStatusEndpointSpec extends Specification {
     bakeStoreMock.getAllIncompleteBakeIds() >> new HashMap<String, Set<String>>()
     def statusHandler = new StatusHandler(bakeStoreMock, localInstanceId)
 
-    @Subject
-    def statusEndpoint = new AllStatusEndpoint(statusHandler)
-
     when:
-    def instances = statusEndpoint.invoke()
+    def instances = statusHandler.allIncompleteBakes()
 
     then:
     1 * bakeStoreMock.getAllIncompleteBakeIds()
@@ -70,11 +66,8 @@ class AllStatusEndpointSpec extends Specification {
     def bakeStoreMock = Mock(RedisBackedBakeStore)
     def statusHandler = new StatusHandler(bakeStoreMock, localInstanceId)
 
-    @Subject
-    def statusEndpoint = new AllStatusEndpoint(statusHandler)
-
     when:
-    def instances = statusEndpoint.invoke()
+    def instances = statusHandler.allIncompleteBakes()
 
     then:
     instances == [instance: localInstanceId, instances: [:]]
@@ -86,11 +79,8 @@ class AllStatusEndpointSpec extends Specification {
     bakeStoreMock.getAllIncompleteBakeIds() >> { throw new RuntimeException() }
     def statusHandler = new StatusHandler(bakeStoreMock, localInstanceId)
 
-    @Subject
-    def statusEndpoint = new AllStatusEndpoint(statusHandler)
-
     when:
-    statusEndpoint.invoke()
+    statusHandler.allIncompleteBakes()
 
     then:
     thrown(RuntimeException)
@@ -104,11 +94,8 @@ class AllStatusEndpointSpec extends Specification {
     bakeStoreMock.retrieveBakeStatusById(REMOTE_JOB_ID) >> { throw new RuntimeException() }
     def statusHandler = new StatusHandler(bakeStoreMock, localInstanceId)
 
-    @Subject
-    def statusEndpoint = new AllStatusEndpoint(statusHandler)
-
     when:
-    statusEndpoint.invoke()
+    statusHandler.allIncompleteBakes()
 
     then:
     thrown(RuntimeException)
