@@ -3,6 +3,7 @@ package com.netflix.spinnaker.rosco.manifests.helm;
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
 import com.netflix.spinnaker.rosco.manifests.TemplateUtils;
+import com.netflix.spinnaker.rosco.services.ClouddriverService;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -13,6 +14,11 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class HelmTemplateUtils extends TemplateUtils {
+
+  public HelmTemplateUtils(ClouddriverService clouddriverService) {
+    super(clouddriverService);
+  }
+
   public BakeRecipe buildBakeRecipe(BakeManifestEnvironment env, HelmBakeManifestRequest request) {
     BakeRecipe result = new BakeRecipe();
     result.setName(request.getOutputName());

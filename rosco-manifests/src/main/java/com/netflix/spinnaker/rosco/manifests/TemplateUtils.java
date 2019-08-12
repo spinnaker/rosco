@@ -4,10 +4,8 @@ import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 import com.netflix.spinnaker.kork.core.RetrySupport;
 import com.netflix.spinnaker.kork.web.exceptions.InvalidRequestException;
 import com.netflix.spinnaker.rosco.services.ClouddriverService;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
@@ -18,16 +16,18 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import retrofit.client.Response;
 
 @Component
 @Slf4j
 public abstract class TemplateUtils {
-  @Autowired ClouddriverService clouddriverService;
-
+  private final ClouddriverService clouddriverService;
   private RetrySupport retrySupport = new RetrySupport();
+
+  public TemplateUtils(ClouddriverService clouddriverService) {
+    this.clouddriverService = clouddriverService;
+  }
 
   private String nameFromReference(String reference) {
     try {
@@ -45,19 +45,36 @@ public abstract class TemplateUtils {
     }
     Path path =
         Paths.get(env.getStagingPath().toString(), nameFromReference(artifact.getReference()));
-    OutputStream outputStream = new FileOutputStream(path.toString());
-
-    Response response =
-        retrySupport.retry(() -> clouddriverService.fetchArtifact(artifact), 5, 1000, true);
-
-    if (response.getBody() != null) {
-      InputStream inputStream = response.getBody().in();
-      IOUtils.copy(inputStream, outputStream);
-      inputStream.close();
-    }
-    outputStream.close();
-
+    downloadArtifact(artifact, path.toString());
     return path;
+  }
+
+  protected void downloadArtifactToTmpFileStructure(
+      BakeManifestEnvironment env, Artifact artifact, String referenceBaseURL) throws IOException {
+    if (artifact.getReference() == null) {
+      throw new InvalidRequestException("Input artifact has an empty 'reference' field.");
+    }
+    Path artifactPath = Paths.get(artifact.getReference().replace(referenceBaseURL, ""));
+    Path tmpPath =
+        Paths.get(env.getStagingPath().toString().concat(artifactPath.getParent().toString()));
+    Files.createDirectories(tmpPath);
+    File newfile = new File(env.getStagingPath().toString().concat(artifactPath.toString()));
+    if (!newfile.createNewFile()) {
+      throw new IOException("creating file " + newfile.getName() + "failed.");
+    }
+    downloadArtifact(artifact, newfile.getPath());
+  }
+
+  private void downloadArtifact(Artifact artifact, String path) throws IOException {
+    try (OutputStream outputStream = new FileOutputStream(path)) {
+      Response response =
+          retrySupport.retry(() -> clouddriverService.fetchArtifact(artifact), 5, 1000, true);
+      if (response.getBody() != null) {
+        try (InputStream inputStream = response.getBody().in()) {
+          IOUtils.copy(inputStream, outputStream);
+        }
+      }
+    }
   }
 
   public static class BakeManifestEnvironment {

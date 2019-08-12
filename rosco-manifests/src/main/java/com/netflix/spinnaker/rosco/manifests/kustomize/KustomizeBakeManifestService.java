@@ -1,4 +1,20 @@
-package com.netflix.spinnaker.rosco.manifests.helm;
+/*
+ * Copyright 2019 Armory, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.netflix.spinnaker.rosco.manifests.kustomize;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
@@ -16,30 +32,38 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 
 @Component
-public class HelmBakeManifestService implements BakeManifestService {
-  private final HelmTemplateUtils helmTemplateUtils;
+public class KustomizeBakeManifestService implements BakeManifestService {
+  private final KustomizeTemplateUtils kustomizeTemplateUtils;
   private final JobExecutor jobExecutor;
   private final ObjectMapper objectMapper = new ObjectMapper();
-  private static final String HELM_TYPE = "HELM2";
 
-  public HelmBakeManifestService(HelmTemplateUtils helmTemplateUtils, JobExecutor jobExecutor) {
-    this.helmTemplateUtils = helmTemplateUtils;
+  private static final String KUSTOMIZE = "KUSTOMIZE";
+
+  public KustomizeBakeManifestService(
+      KustomizeTemplateUtils kustomizeTemplateUtils, JobExecutor jobExecutor) {
+    this.kustomizeTemplateUtils = kustomizeTemplateUtils;
     this.jobExecutor = jobExecutor;
   }
 
   @Override
   public boolean handles(String type) {
-    return type.toUpperCase().equals(HELM_TYPE);
+    return type.toUpperCase().equals(KUSTOMIZE);
   }
 
+  /**
+   * bake accepts
+   *
+   * @param request
+   * @return
+   */
   public Artifact bake(Map<String, Object> request) {
-    HelmBakeManifestRequest bakeManifestRequest =
-        objectMapper.convertValue(request, HelmBakeManifestRequest.class);
+    KustomizeBakeManifestRequest bakeManifestRequest =
+        objectMapper.convertValue(request, KustomizeBakeManifestRequest.class);
     BakeManifestEnvironment env = new BakeManifestEnvironment();
-    BakeRecipe recipe = helmTemplateUtils.buildBakeRecipe(env, bakeManifestRequest);
-    BakeStatus bakeStatus;
-
+    BakeRecipe recipe = kustomizeTemplateUtils.buildBakeRecipe(env, bakeManifestRequest);
+    BakeStatus bakeStatus = null;
     try {
+
       JobRequest jobRequest =
           new JobRequest(
               recipe.getCommand(),
@@ -48,30 +72,25 @@ public class HelmBakeManifestService implements BakeManifestService {
               AuthenticatedRequest.getSpinnakerExecutionId().orElse(null),
               false);
       String jobId = jobExecutor.startJob(jobRequest);
-
       bakeStatus = jobExecutor.updateJob(jobId);
-
       while (bakeStatus == null || bakeStatus.getState() == BakeStatus.State.RUNNING) {
         try {
           Thread.sleep(1000);
         } catch (InterruptedException ignored) {
         }
-
         bakeStatus = jobExecutor.updateJob(jobId);
       }
-
       if (bakeStatus.getResult() != BakeStatus.Result.SUCCESS) {
         throw new IllegalStateException(
             "Bake of " + request + " failed: " + bakeStatus.getLogsContent());
       }
+      return Artifact.builder()
+          .type("embedded/base64")
+          .name(bakeManifestRequest.getOutputArtifactName())
+          .reference(Base64.getEncoder().encodeToString(bakeStatus.getOutputContent().getBytes()))
+          .build();
     } finally {
       env.cleanup();
     }
-
-    return Artifact.builder()
-        .type("embedded/base64")
-        .name(bakeManifestRequest.getOutputArtifactName())
-        .reference(Base64.getEncoder().encodeToString(bakeStatus.getOutputContent().getBytes()))
-        .build();
   }
 }
