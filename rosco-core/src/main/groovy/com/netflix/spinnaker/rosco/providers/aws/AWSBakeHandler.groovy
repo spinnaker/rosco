@@ -174,7 +174,7 @@ public class AWSBakeHandler extends CloudProviderBakeHandler {
   Bake scrapeCompletedBakeResults(String region, String bakeId, String logsContent) {
     String amiId
     String imageName
-    List<Artifact> artifacts = new ArrayList()
+    List<Artifact> artifacts = new ArrayList<>()
     // TODO(duftler): Presently scraping the logs for the image name/id. Would be better to not be reliant on the log
     // format not changing. Resolve this by storing bake details in redis and querying oort for amiId from amiName.
     boolean foundAmisCreated = false
