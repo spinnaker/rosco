@@ -24,10 +24,12 @@ import com.netflix.spinnaker.rosco.api.BakeRequest
 import com.netflix.spinnaker.rosco.providers.CloudProviderBakeHandler
 import com.netflix.spinnaker.rosco.providers.aws.config.RoscoAWSConfiguration
 import com.netflix.spinnaker.rosco.providers.util.ImageNameFactory
+import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
 @Component
+@Slf4j
 public class AWSBakeHandler extends CloudProviderBakeHandler {
 
   private static final String IMAGE_NAME_TOKEN = "amazon-(chroot|ebs): Creating the AMI:"
@@ -100,6 +102,7 @@ public class AWSBakeHandler extends CloudProviderBakeHandler {
     if (!awsVirtualizationSettings.sourceAmi) {
       def property = "aws.base.${bakeRequest.base_os}.${bakeRequest.vm_type}.${bakeRequest.base_label}.$region"
       awsVirtualizationSettings.sourceAmi = dynamicConfigService.getConfig(String, property, null)
+      log.debug("Found ami $awsVirtualizationSettings.sourceAmi for property $property")
     }
 
     return awsVirtualizationSettings
