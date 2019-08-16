@@ -247,10 +247,8 @@ class BakeryController {
         bake.ami = bake.artifact.reference
         bake.artifacts = null
 
-        return bake
-      } else {
-        return bake
       }
+      return bake
     }
 
     throw new IllegalArgumentException("Unable to retrieve bake details for '$bakeId'.")
