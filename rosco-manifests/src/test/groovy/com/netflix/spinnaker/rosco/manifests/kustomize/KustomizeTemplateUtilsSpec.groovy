@@ -4,10 +4,8 @@ import com.netflix.spinnaker.kork.artifacts.model.Artifact
 import com.netflix.spinnaker.rosco.manifests.kustomize.mapping.ConfigMapGenerator
 import com.netflix.spinnaker.rosco.manifests.kustomize.mapping.Kustomization
 import com.netflix.spinnaker.rosco.services.ClouddriverService
-import org.checkerframework.checker.units.qual.A
 import spock.lang.Specification
 
-import java.util.stream.Collectors
 
 class KustomizeTemplateUtilsSpec extends Specification {
 
@@ -27,7 +25,7 @@ class KustomizeTemplateUtilsSpec extends Specification {
         def filesToFetch = kustomizationTemplateUtils.getFilesFromArtifact(baseArtifact)
 
         then:
-        1 * kustomizationFileReader.getKustomization(baseArtifact, "kustomization.yml") >> {
+        1 * kustomizationFileReader.getKustomization(_, "kustomization.yml") >> {
             Kustomization k = new Kustomization()
             k.setResources(Arrays.asList("deployment.yml", "service.yml"))
             k.setKustomizationFilename("kustomization.yml")

@@ -110,24 +110,39 @@ public class KustomizeTemplateUtils extends TemplateUtils {
     }
   }
 
+  /**
+   * getFilesFromArtifact will use a single input artifact to determine the dependency tree of files
+   * mentoined it's (and subsequent) kustomization file.
+   */
   private HashSet<String> getFilesFromArtifact(Artifact artifact) throws IOException {
+    // referenceBaseURL is the base URL without the artifacts name. works for github and bitbucket
+    // artifacts,
     String referenceBaseURL = artifact.getReference().replace(artifact.getName(), "");
+    // filename is the base name of the file
     String filename = FilenameUtils.getName(artifact.getName());
+    // get the base directory of the original file. we'll use this to fetch sibiling files
     Path base = Paths.get(artifact.getName()).getParent();
-    artifact.setName(base.toString());
     return getFilesFromArtifact(artifact, referenceBaseURL, base, filename);
   }
 
   private HashSet<String> getFilesFromArtifact(
       Artifact artifact, String referenceBaseURL, Path base, String filename) throws IOException {
+    // filesToDownload will be used to collect all of the files we need to fetch later
     HashSet<String> filesToDownload = new HashSet<>();
+
     String referenceBase = referenceBaseURL.concat(base.toString());
-    Path artifactPath = Paths.get(referenceBase);
-    artifact.setReference(artifactPath.toString());
-    Kustomization kustomization = kustomizationFileReader.getKustomization(artifact, filename);
+    Artifact testArtifact = artifactFromBase(artifact, referenceBase, base.toString());
+
+    Kustomization kustomization = kustomizationFileReader.getKustomization(testArtifact, filename);
+    // nonEvaluateFiles are files we know can't be references to other kustomizations
+    // so we know they only need to be collected for download later
     Set<String> nonEvaluateFiles = kustomization.getFilesToDownload(referenceBase);
     filesToDownload.addAll(nonEvaluateFiles);
+
     for (String evaluate : kustomization.getFilesToEvaluate()) {
+      // we're assuming that files that look like folders are referencing
+      // kustomizations above or below the current directory. if the file doesn't
+      // look like a folder then we know it should be downloaded later.
       if (isFolder(evaluate)) {
         Path tmpBase = Paths.get(FilenameUtils.normalize(base.resolve(evaluate).toString()));
         artifact.setName(tmpBase.toString());
@@ -137,6 +152,15 @@ public class KustomizeTemplateUtils extends TemplateUtils {
       }
     }
     return filesToDownload;
+  }
+
+  private Artifact artifactFromBase(Artifact artifact, String reference, String name) {
+    return Artifact.builder()
+        .reference(reference)
+        .name(name)
+        .type(artifact.getType())
+        .artifactAccount(artifact.getArtifactAccount())
+        .build();
   }
 
   private boolean isFolder(String evaluate) {

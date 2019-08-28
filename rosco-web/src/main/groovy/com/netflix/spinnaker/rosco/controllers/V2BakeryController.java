@@ -2,6 +2,7 @@ package com.netflix.spinnaker.rosco.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
+import com.netflix.spinnaker.rosco.manifests.BakeManifestException;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestRequest;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestService;
 import groovy.util.logging.Slf4j;
@@ -24,7 +25,8 @@ public class V2BakeryController {
   }
 
   @RequestMapping(value = "/api/v2/manifest/bake/{type}", method = RequestMethod.POST)
-  Artifact doBake(@PathVariable("type") String type, @RequestBody Map<String, Object> request) {
+  Artifact doBake(@PathVariable("type") String type, @RequestBody Map<String, Object> request)
+      throws BakeManifestException {
     BakeManifestService service =
         bakeManifestServices.stream()
             .filter(s -> s.handles(type))
@@ -36,6 +38,7 @@ public class V2BakeryController {
 
     BakeManifestRequest bakeManifestRequest =
         (BakeManifestRequest) objectMapper.convertValue(request, service.requestType());
+
     return service.bake(bakeManifestRequest);
   }
 }

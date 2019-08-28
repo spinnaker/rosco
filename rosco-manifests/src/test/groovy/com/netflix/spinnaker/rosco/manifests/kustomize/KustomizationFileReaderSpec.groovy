@@ -15,6 +15,8 @@ class KustomizationFileReaderSpec extends Specification {
         resources:
         - deployment.yml
         - service.yml
+        
+        namePrefix: demo-
         """
         def clouddriverService = Mock(ClouddriverService)
         def kustomizationFileReader = new KustomizationFileReader(clouddriverService)
@@ -31,7 +33,7 @@ class KustomizationFileReaderSpec extends Specification {
 
         then:
         1 * clouddriverService.fetchArtifact(_ as Artifact) >> { Artifact a ->
-            return new Response("test", 200, "", [], new TypedString(kustomizationYaml.trim()))
+            return new Response("test", 200, "", [], new TypedString(kustomizationYaml.stripMargin()))
         }
         k.getResources().sort() == ["deployment.yml", "service.yml"].sort()
         k.getKustomizationFilename() == "kustomization.yml"

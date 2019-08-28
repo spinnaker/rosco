@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.representer.Representer;
 import retrofit.client.Response;
 
 @Component
@@ -55,31 +56,26 @@ public class KustomizationFileReader {
                     a.equals(possibleName) ? -1 : (b.equals(possibleName) ? 1 : a.compareTo(b)))
             .collect(Collectors.toList());
 
-    Kustomization kustomization =
-        names.stream()
-            .map(
-                name -> {
-                  try {
-                    Artifact testArtifact =
-                        artifactFromBase(artifact, artifactPath.resolve(name).toString());
-                    Kustomization k = convert(testArtifact);
-                    k.setKustomizationFilename(name);
-                    return k;
-                  } catch (Exception e) {
-                    log.error(
-                        "kustomization file cannot be found for {}",
-                        artifactPath.resolve(name).toString());
-                    return null;
-                  }
-                })
-            .filter(Objects::nonNull)
-            .findFirst()
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        "Unable to find any kustomization file for " + artifact.getName()));
+    Kustomization k = null;
+    for (String name : names) {
+      try {
+        Artifact testArtifact = artifactFromBase(artifact, artifactPath.resolve(name).toString());
+        k = convert(testArtifact);
+        k.setKustomizationFilename(name);
+        break;
+      } catch (Exception e) {
+        log.error(
+            "kustomization file cannot be found for {}", artifactPath.resolve(name).toString());
+        continue;
+      }
+    }
 
-    return kustomization;
+    if (k == null) {
+      throw new IllegalArgumentException(
+          "Unable to find any kustomization file for " + artifact.getName());
+    }
+
+    return k;
   }
 
   private Artifact artifactFromBase(Artifact artifact, String path) {
@@ -92,13 +88,13 @@ public class KustomizationFileReader {
 
   private Kustomization convert(Artifact artifact) throws IOException {
     // TODO(ethanfrogers): figure out how to use safe constructor here.
-    Constructor constructor = new Constructor(Kustomization.class);
-    Yaml yaml = new Yaml(constructor);
-    InputStream contents = downloadFile(artifact);
-    return yaml.loadAs(contents, Kustomization.class);
+    Representer representer = new Representer();
+    representer.getPropertyUtils().setSkipMissingProperties(true);
+    return new Yaml(new Constructor(Kustomization.class), representer).load(downloadFile(artifact));
   }
 
   private InputStream downloadFile(Artifact artifact) throws IOException {
+    log.info("downloading file {}", artifact.getReference());
     Response response =
         retrySupport.retry(() -> clouddriverService.fetchArtifact(artifact), 5, 1000, true);
     return response.getBody().in();
