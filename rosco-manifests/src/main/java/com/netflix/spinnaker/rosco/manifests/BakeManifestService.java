@@ -17,10 +17,11 @@
 package com.netflix.spinnaker.rosco.manifests;
 
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
-import java.util.Map;
 
-public interface BakeManifestService {
-  Artifact bake(Map<String, Object> bakeManifestRequest);
+public interface BakeManifestService<T> {
+  Artifact bake(T bakeManifestRequest);
+
+  Class<T> requestType();
 
   boolean handles(String type);
 }

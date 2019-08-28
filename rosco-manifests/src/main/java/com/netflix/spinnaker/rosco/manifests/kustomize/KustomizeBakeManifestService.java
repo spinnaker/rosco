@@ -27,12 +27,12 @@ import com.netflix.spinnaker.rosco.manifests.TemplateUtils.BakeManifestEnvironme
 import com.netflix.spinnaker.security.AuthenticatedRequest;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Map;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 
 @Component
-public class KustomizeBakeManifestService implements BakeManifestService {
+public class KustomizeBakeManifestService
+    implements BakeManifestService<KustomizeBakeManifestRequest> {
   private final KustomizeTemplateUtils kustomizeTemplateUtils;
   private final JobExecutor jobExecutor;
   private final ObjectMapper objectMapper = new ObjectMapper();
@@ -46,21 +46,18 @@ public class KustomizeBakeManifestService implements BakeManifestService {
   }
 
   @Override
+  public Class<KustomizeBakeManifestRequest> requestType() {
+    return KustomizeBakeManifestRequest.class;
+  }
+
+  @Override
   public boolean handles(String type) {
     return type.toUpperCase().equals(KUSTOMIZE);
   }
 
-  /**
-   * bake accepts
-   *
-   * @param request
-   * @return
-   */
-  public Artifact bake(Map<String, Object> request) {
-    KustomizeBakeManifestRequest bakeManifestRequest =
-        objectMapper.convertValue(request, KustomizeBakeManifestRequest.class);
+  public Artifact bake(KustomizeBakeManifestRequest kustomizeBakeManifestRequest) {
     BakeManifestEnvironment env = new BakeManifestEnvironment();
-    BakeRecipe recipe = kustomizeTemplateUtils.buildBakeRecipe(env, bakeManifestRequest);
+    BakeRecipe recipe = kustomizeTemplateUtils.buildBakeRecipe(env, kustomizeBakeManifestRequest);
     BakeStatus bakeStatus = null;
     try {
 
@@ -82,11 +79,11 @@ public class KustomizeBakeManifestService implements BakeManifestService {
       }
       if (bakeStatus.getResult() != BakeStatus.Result.SUCCESS) {
         throw new IllegalStateException(
-            "Bake of " + request + " failed: " + bakeStatus.getLogsContent());
+            "Bake of " + kustomizeBakeManifestRequest + " failed: " + bakeStatus.getLogsContent());
       }
       return Artifact.builder()
           .type("embedded/base64")
-          .name(bakeManifestRequest.getOutputArtifactName())
+          .name(kustomizeBakeManifestRequest.getOutputArtifactName())
           .reference(Base64.getEncoder().encodeToString(bakeStatus.getOutputContent().getBytes()))
           .build();
     } finally {
