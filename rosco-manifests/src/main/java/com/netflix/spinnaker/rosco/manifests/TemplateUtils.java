@@ -21,7 +21,7 @@ import retrofit.client.Response;
 
 @Component
 @Slf4j
-public abstract class TemplateUtils {
+public class TemplateUtils {
   private final ClouddriverService clouddriverService;
   private RetrySupport retrySupport = new RetrySupport();
 
@@ -55,14 +55,25 @@ public abstract class TemplateUtils {
       throw new InvalidRequestException("Input artifact has an empty 'reference' field.");
     }
     Path artifactPath = Paths.get(artifact.getReference().replace(referenceBaseURL, ""));
-    Path tmpPath =
-        Paths.get(env.getStagingPath().toString().concat(artifactPath.getParent().toString()));
+    String stagingPath = env.getStagingPath().toString();
+    String artifactParentPath = artifactPath.getParent().toString();
+
+    Path tmpPath = Paths.get(stagingPath.concat(artifactParentPath));
+    // ensure tmp path doesn't break outside of the staging directory
+    if (!isWithinParent(stagingPath, tmpPath.toString())) {
+      throw new IllegalStateException("attempting to create a file outside of the staging path.");
+    }
     Files.createDirectories(tmpPath);
+
     File newfile = new File(env.getStagingPath().toString().concat(artifactPath.toString()));
     if (!newfile.createNewFile()) {
       throw new IOException("creating file " + newfile.getName() + "failed.");
     }
     downloadArtifact(artifact, newfile.getPath());
+  }
+
+  public boolean isWithinParent(String parent, String child) {
+    return child.startsWith(parent);
   }
 
   private void downloadArtifact(Artifact artifact, String path) throws IOException {
