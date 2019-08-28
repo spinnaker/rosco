@@ -36,4 +36,24 @@ class KustomizationFileReaderSpec extends Specification {
         k.getResources().sort() == ["deployment.yml", "service.yml"].sort()
         k.getKustomizationFilename() == "kustomization.yml"
     }
+
+    def "getKustomization throws an exception if it can't find a valid kustomization file"() {
+        given:
+        def clouddriverService = Mock(ClouddriverService) {
+            fetchArtifact(_) >> {
+                return new Response("test", 500, "", [], null)
+            }
+        }
+        def kustomizationFileReader = new KustomizationFileReader(clouddriverService)
+        def invalidArtifact = Artifact.builder()
+            .reference("https://api.github.com/repos/org/repo/contents/production")
+            .build()
+
+        when:
+        kustomizationFileReader.getKustomization(invalidArtifact, "kustomization.yml")
+
+        then:
+        IllegalArgumentException ex = thrown()
+        ex != null
+    }
 }

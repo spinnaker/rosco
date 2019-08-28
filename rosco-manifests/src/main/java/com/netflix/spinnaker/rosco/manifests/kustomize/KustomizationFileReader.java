@@ -31,7 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
-import retrofit.RetrofitError;
 import retrofit.client.Response;
 
 @Component
@@ -46,7 +45,7 @@ public class KustomizationFileReader {
     this.clouddriverService = clouddriverService;
   }
 
-  public Kustomization getKustomization(Artifact artifact, String possibleName) throws IOException {
+  public Kustomization getKustomization(Artifact artifact, String possibleName) {
     Path artifactPath = Paths.get(artifact.getReference());
     // sort list of names, trying the possibleName first.
     List<String> names =
@@ -56,18 +55,31 @@ public class KustomizationFileReader {
                     a.equals(possibleName) ? -1 : (b.equals(possibleName) ? 1 : a.compareTo(b)))
             .collect(Collectors.toList());
 
-    for (String name : names) {
-      try {
-        Artifact testArtifact = artifactFromBase(artifact, artifactPath.resolve(name).toString());
-        Kustomization kustomization = convert(testArtifact);
-        kustomization.setKustomizationFilename(name);
-        return kustomization;
-      } catch (RetrofitError | IOException e) {
-        log.error("Unable to convert kustomization file to Object: " + name);
-      }
-    }
+    Kustomization kustomization =
+        names.stream()
+            .map(
+                name -> {
+                  try {
+                    Artifact testArtifact =
+                        artifactFromBase(artifact, artifactPath.resolve(name).toString());
+                    Kustomization k = convert(testArtifact);
+                    k.setKustomizationFilename(name);
+                    return k;
+                  } catch (Exception e) {
+                    log.error(
+                        "kustomization file cannot be found for {}",
+                        artifactPath.resolve(name).toString());
+                    return null;
+                  }
+                })
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        "Unable to find any kustomization file for " + artifact.getName()));
 
-    return null;
+    return kustomization;
   }
 
   private Artifact artifactFromBase(Artifact artifact, String path) {
