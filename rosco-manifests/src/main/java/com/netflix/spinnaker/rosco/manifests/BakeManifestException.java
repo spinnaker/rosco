@@ -1,7 +1,7 @@
 /*
- * Copyright 2019 Armory, Inc.
+ * Copyright 2019 Armory
  *
- * Licensed under the Apache License, Version 2.0 (the "License")
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -16,12 +16,9 @@
 
 package com.netflix.spinnaker.rosco.manifests;
 
-import com.netflix.spinnaker.kork.artifacts.model.Artifact;
+public class BakeManifestException extends Exception {
 
-public interface BakeManifestService<T> {
-  Artifact bake(T bakeManifestRequest) throws BakeManifestException;
-
-  Class<T> requestType();
-
-  boolean handles(String type);
+  public BakeManifestException(String message) {
+    super(message);
+  }
 }

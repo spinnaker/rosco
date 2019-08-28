@@ -5,6 +5,7 @@ import com.netflix.spinnaker.rosco.api.BakeStatus;
 import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
 import com.netflix.spinnaker.rosco.jobs.JobExecutor;
 import com.netflix.spinnaker.rosco.jobs.JobRequest;
+import com.netflix.spinnaker.rosco.manifests.BakeManifestException;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestService;
 import com.netflix.spinnaker.rosco.manifests.TemplateUtils.BakeManifestEnvironment;
 import com.netflix.spinnaker.security.AuthenticatedRequest;
@@ -34,7 +35,7 @@ public class HelmBakeManifestService implements BakeManifestService<HelmBakeMani
     return type.toUpperCase().equals(HELM_TYPE);
   }
 
-  public Artifact bake(HelmBakeManifestRequest bakeManifestRequest) {
+  public Artifact bake(HelmBakeManifestRequest bakeManifestRequest) throws BakeManifestException {
     BakeManifestEnvironment env = new BakeManifestEnvironment();
     BakeRecipe recipe = helmTemplateUtils.buildBakeRecipe(env, bakeManifestRequest);
     BakeStatus bakeStatus;
@@ -55,6 +56,9 @@ public class HelmBakeManifestService implements BakeManifestService<HelmBakeMani
         try {
           Thread.sleep(1000);
         } catch (InterruptedException ignored) {
+          jobExecutor.cancelJob(jobId);
+          Thread.currentThread().interrupt();
+          throw new BakeManifestException("Helm bake manifest was interrupted.");
         }
 
         bakeStatus = jobExecutor.updateJob(jobId);

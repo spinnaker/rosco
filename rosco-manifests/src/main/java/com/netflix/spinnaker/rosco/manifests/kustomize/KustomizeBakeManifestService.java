@@ -22,6 +22,7 @@ import com.netflix.spinnaker.rosco.api.BakeStatus;
 import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
 import com.netflix.spinnaker.rosco.jobs.JobExecutor;
 import com.netflix.spinnaker.rosco.jobs.JobRequest;
+import com.netflix.spinnaker.rosco.manifests.BakeManifestException;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestService;
 import com.netflix.spinnaker.rosco.manifests.TemplateUtils.BakeManifestEnvironment;
 import com.netflix.spinnaker.security.AuthenticatedRequest;
@@ -55,12 +56,12 @@ public class KustomizeBakeManifestService
     return type.toUpperCase().equals(KUSTOMIZE);
   }
 
-  public Artifact bake(KustomizeBakeManifestRequest kustomizeBakeManifestRequest) {
+  public Artifact bake(KustomizeBakeManifestRequest kustomizeBakeManifestRequest)
+      throws BakeManifestException {
     BakeManifestEnvironment env = new BakeManifestEnvironment();
     BakeRecipe recipe = kustomizeTemplateUtils.buildBakeRecipe(env, kustomizeBakeManifestRequest);
     BakeStatus bakeStatus = null;
     try {
-
       JobRequest jobRequest =
           new JobRequest(
               recipe.getCommand(),
@@ -74,6 +75,9 @@ public class KustomizeBakeManifestService
         try {
           Thread.sleep(1000);
         } catch (InterruptedException ignored) {
+          jobExecutor.cancelJob(jobId);
+          Thread.currentThread().interrupt();
+          throw new BakeManifestException("Kustomize bake was interrupted.");
         }
         bakeStatus = jobExecutor.updateJob(jobId);
       }
