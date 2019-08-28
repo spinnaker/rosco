@@ -121,34 +121,30 @@ public class KustomizeTemplateUtils extends TemplateUtils {
   private HashSet<String> getFilesFromArtifact(
       Artifact artifact, String referenceBaseURL, Path base, String filename) throws IOException {
     HashSet<String> filesToDownload = new HashSet<>();
-    Path artifactPath = Paths.get(referenceBaseURL.concat(base.toString()));
+    String referenceBase = referenceBaseURL.concat(base.toString());
+    Path artifactPath = Paths.get(referenceBase);
     artifact.setReference(artifactPath.toString());
     Kustomization kustomization = kustomizationFileReader.getKustomization(artifact, filename);
-    filesToDownload.addAll(
-        kustomization.getFilesToDownload(referenceBaseURL.concat(base.toString())));
-    if (kustomization.getFilesToEvaluate() != null
-        && !kustomization.getFilesToEvaluate().isEmpty()) {
-      for (String evaluate : kustomization.getFilesToEvaluate()) {
-        boolean isFolder = false;
-        if (evaluate.contains(".")) {
-          String tmp = evaluate.substring(evaluate.lastIndexOf(".") + 1);
-          if (!tmp.contains("/")) {
-            filesToDownload.add(
-                referenceBaseURL.concat(base.toString()).concat(File.separator).concat(evaluate));
-          } else {
-            isFolder = true;
-          }
-        } else {
-          isFolder = true;
-        }
-        if (isFolder) {
-          Path tmpBase = Paths.get(FilenameUtils.normalize(base.resolve(evaluate).toString()));
-          artifact.setName(tmpBase.toString());
-          filesToDownload.addAll(
-              getFilesFromArtifact(artifact, referenceBaseURL, tmpBase, filename));
-        }
+    Set<String> nonEvaluateFiles = kustomization.getFilesToDownload(referenceBase);
+    filesToDownload.addAll(nonEvaluateFiles);
+    for (String evaluate : kustomization.getFilesToEvaluate()) {
+      if (isFolder(evaluate)) {
+        Path tmpBase = Paths.get(FilenameUtils.normalize(base.resolve(evaluate).toString()));
+        artifact.setName(tmpBase.toString());
+        filesToDownload.addAll(getFilesFromArtifact(artifact, referenceBaseURL, tmpBase, filename));
+      } else {
+        filesToDownload.add(referenceBase.concat(File.separator).concat(evaluate));
       }
     }
     return filesToDownload;
+  }
+
+  private boolean isFolder(String evaluate) {
+    if (evaluate.contains(".")) {
+      String tmp = evaluate.substring(evaluate.lastIndexOf(".") + 1);
+      return tmp.contains("/");
+    } else {
+      return true;
+    }
   }
 }
