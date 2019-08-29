@@ -86,7 +86,7 @@ public class KustomizeTemplateUtils extends TemplateUtils {
     if (artifact.getReference() == null) {
       throw new InvalidRequestException("Input artifact has an empty 'reference' field.");
     }
-    Path artifactFileName = Paths.get(extractReferenceBase(artifact));
+    Path artifactFileName = Paths.get(extractArtifactName(artifact, referenceBaseURL));
     Path artifactFilePath = env.getStagingPath().resolve(artifactFileName);
     // ensure file write doesn't break out of the staging directory ex. ../etc
     Path artifactParentDirectory = artifactFilePath.getParent();
@@ -122,6 +122,10 @@ public class KustomizeTemplateUtils extends TemplateUtils {
     } catch (IOException e) {
       throw new IllegalStateException("Error setting references in artifacts " + e.getMessage(), e);
     }
+  }
+
+  private String extractArtifactName(Artifact artifact, String base) {
+    return artifact.getReference().replace(base, "");
   }
 
   private String extractReferenceBase(Artifact artifact) {
