@@ -17,12 +17,14 @@
 package com.netflix.spinnaker.rosco.manifests.kustomize;
 
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
+import com.netflix.spinnaker.kork.web.exceptions.InvalidRequestException;
 import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
 import com.netflix.spinnaker.rosco.manifests.TemplateUtils;
 import com.netflix.spinnaker.rosco.manifests.kustomize.mapping.Kustomization;
 import com.netflix.spinnaker.rosco.services.ClouddriverService;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -58,7 +60,7 @@ public class KustomizeTemplateUtils extends TemplateUtils {
         && !kustomizationfilename.toUpperCase().contains("KUSTOMIZATION")) {
       throw new IllegalArgumentException("The inputArtifact should be a valid kustomization file.");
     }
-    String referenceBaseURL = artifact.getReference().replace(artifact.getName(), "");
+    String referenceBaseURL = extractReferenceBase(artifact);
     Path templatePath = env.getStagingPath().resolve(artifact.getName());
 
     try {
@@ -77,6 +79,23 @@ public class KustomizeTemplateUtils extends TemplateUtils {
     result.setCommand(command);
 
     return result;
+  }
+
+  protected void downloadArtifactToTmpFileStructure(
+      BakeManifestEnvironment env, Artifact artifact, String referenceBaseURL) throws IOException {
+    if (artifact.getReference() == null) {
+      throw new InvalidRequestException("Input artifact has an empty 'reference' field.");
+    }
+    Path artifactFileName = Paths.get(extractReferenceBase(artifact));
+    Path artifactFilePath = env.getStagingPath().resolve(artifactFileName);
+    // ensure file write doesn't break out of the staging directory ex. ../etc
+    Path artifactParentDirectory = artifactFilePath.getParent();
+    if (!artifactParentDirectory.startsWith(env.getStagingPath())) {
+      throw new IllegalStateException("attempting to create a file outside of the staging path.");
+    }
+    Files.createDirectories(artifactParentDirectory);
+    File newFile = artifactFilePath.toFile();
+    downloadArtifact(artifact, newFile);
   }
 
   private List<Artifact> getArtifacts(Artifact artifact) {
@@ -105,6 +124,12 @@ public class KustomizeTemplateUtils extends TemplateUtils {
     }
   }
 
+  private String extractReferenceBase(Artifact artifact) {
+    // strip the base reference url to get the full path that the file should be written to
+    // example: https://api.github.com/repos/org/repo/contents/kustomize.yml == kustomize.yml
+    return artifact.getReference().replace(artifact.getName(), "");
+  }
+
   /**
    * getFilesFromArtifact will use a single input artifact to determine the dependency tree of files
    * mentoined it's (and subsequent) kustomization file.
@@ -112,10 +137,10 @@ public class KustomizeTemplateUtils extends TemplateUtils {
   private HashSet<String> getFilesFromArtifact(Artifact artifact) throws IOException {
     // referenceBaseURL is the base URL without the artifacts name. works for github and bitbucket
     // artifacts,
-    String referenceBaseURL = artifact.getReference().replace(artifact.getName(), "");
+    String referenceBaseURL = extractReferenceBase(artifact);
     // filename is the base name of the file
     String filename = FilenameUtils.getName(artifact.getName());
-    // get the base directory of the original file. we'll use this to fetch sibiling files
+    // get the base directory of the original file. we'll use this to fetch sibling files
     Path base = Paths.get(artifact.getName()).getParent();
     return getFilesFromArtifact(artifact, referenceBaseURL, base, filename);
   }
