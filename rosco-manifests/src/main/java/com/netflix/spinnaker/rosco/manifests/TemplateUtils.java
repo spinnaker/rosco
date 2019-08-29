@@ -43,10 +43,9 @@ public class TemplateUtils {
     if (artifact.getReference() == null) {
       throw new InvalidRequestException("Input artifact has an empty 'reference' field.");
     }
-    Path path =
-        Paths.get(env.getStagingPath().toString(), nameFromReference(artifact.getReference()));
-    downloadArtifact(artifact, path.toString());
-    return path;
+    File targetFile = env.getStagingPath().resolve(nameFromReference(artifact.getReference())).toFile();
+    downloadArtifact(artifact, targetFile);
+    return targetFile.toPath();
   }
 
   protected void downloadArtifactToTmpFileStructure(
@@ -54,30 +53,23 @@ public class TemplateUtils {
     if (artifact.getReference() == null) {
       throw new InvalidRequestException("Input artifact has an empty 'reference' field.");
     }
-    Path artifactPath = Paths.get(artifact.getReference().replace(referenceBaseURL, ""));
-    String stagingPath = env.getStagingPath().toString();
-    String artifactParentPath = artifactPath.getParent().toString();
-
-    Path tmpPath = Paths.get(stagingPath.concat(artifactParentPath));
-    // ensure tmp path doesn't break outside of the staging directory
-    if (!isWithinParent(stagingPath, tmpPath.toString())) {
+    // strip the base reference url to get the full path that the file should be written to
+    // example: https://api.github.com/repos/org/repo/contents/kustomize.yml == kustomize.yml
+    Path artifactFileName = Paths.get(artifact.getReference().replace(referenceBaseURL, ""));
+    Path artifactFilePath = env.getStagingPath().resolve(artifactFileName);
+    // ensure file write doesn't break out of the staging directory ex. ../etc
+    Path artifactParentDirectory = artifactFilePath.getParent();
+    if (!artifactParentDirectory.startsWith(env.getStagingPath())) {
       throw new IllegalStateException("attempting to create a file outside of the staging path.");
     }
-    Files.createDirectories(tmpPath);
-
-    File newfile = new File(env.getStagingPath().toString().concat(artifactPath.toString()));
-    if (!newfile.createNewFile()) {
-      throw new IOException("creating file " + newfile.getName() + "failed.");
-    }
-    downloadArtifact(artifact, newfile.getPath());
+    Files.createDirectories(artifactParentDirectory);
+    File newFile = artifactFilePath.toFile();
+    downloadArtifact(artifact, newFile);
   }
 
-  public boolean isWithinParent(String parent, String child) {
-    return child.startsWith(parent);
-  }
 
-  private void downloadArtifact(Artifact artifact, String path) throws IOException {
-    try (OutputStream outputStream = new FileOutputStream(path)) {
+  private void downloadArtifact(Artifact artifact, File targetFile) throws IOException {
+    try (OutputStream outputStream = new FileOutputStream(targetFile)) {
       Response response =
           retrySupport.retry(() -> clouddriverService.fetchArtifact(artifact), 5, 1000, true);
       if (response.getBody() != null) {

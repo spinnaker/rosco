@@ -59,12 +59,7 @@ public class KustomizeTemplateUtils extends TemplateUtils {
       throw new IllegalArgumentException("The inputArtifact should be a valid kustomization file.");
     }
     String referenceBaseURL = artifact.getReference().replace(artifact.getName(), "");
-    String templatePath =
-        Paths.get(
-                env.getStagingPath()
-                    .toString()
-                    .concat(Paths.get(artifact.getName()).getParent().toString()))
-            .toString();
+    Path templatePath = env.getStagingPath().resolve(artifact.getName());
 
     try {
       List<Artifact> artifacts = getArtifacts(artifact);
@@ -78,7 +73,7 @@ public class KustomizeTemplateUtils extends TemplateUtils {
     List<String> command = new ArrayList<>();
     command.add("kustomize");
     command.add("build");
-    command.add(templatePath);
+    command.add(templatePath.getParent().toString());
     result.setCommand(command);
 
     return result;
