@@ -6,6 +6,8 @@ import com.netflix.spinnaker.rosco.manifests.kustomize.mapping.Kustomization
 import com.netflix.spinnaker.rosco.services.ClouddriverService
 import spock.lang.Specification
 
+import java.nio.file.Paths
+
 
 class KustomizeTemplateUtilsSpec extends Specification {
 
@@ -26,10 +28,7 @@ class KustomizeTemplateUtilsSpec extends Specification {
 
         then:
         kustomizationFileReader.getKustomization(_, "kustomization.yml") >> {
-            Kustomization k = new Kustomization()
-            k.setResources(Arrays.asList("deployment.yml", "service.yml"))
-            k.setKustomizationFilename("kustomization.yml")
-            return k
+            return new Kustomization(resources: ["deployment.yml", "service.yml"], selfReference: referenceBase + "/kustomization.yml")
         }
         filesToFetch.sort() == [referenceBase.concat("/deployment.yml"),
                                 referenceBase.concat("/kustomization.yml"),
@@ -55,14 +54,11 @@ class KustomizeTemplateUtilsSpec extends Specification {
         // the base artifact supplies deployment.yml, service.yml and production (a subdirectory)
         // production supplies configMap.yml
         kustomizationFileReader.getKustomization(_ as Artifact, _ as String) >> { Artifact a, String s ->
-            Kustomization k = new Kustomization()
             if (a.getName() == "base") {
-                k.setResources(Arrays.asList("deployment.yml", "service.yml", "production"))
+                return new Kustomization(resources: ["deployment.yml", "service.yml", "production"], selfReference: referenceBase + "/kustomization.yml")
             } else if (a.getName() == "base/production") {
-                k.setResources(Arrays.asList("configMap.yml"))
+                return new Kustomization(resources: ["configMap.yml"], selfReference: referenceBase + "/production/kustomization.yml")
             }
-            k.setKustomizationFilename(s)
-            return k
         }
         filesToFetch.sort() == [
                 referenceBase + "/kustomization.yml",
@@ -75,13 +71,13 @@ class KustomizeTemplateUtilsSpec extends Specification {
 
     def "getFilesFromParent returns a list of files where one of the resources is referencing another kustomization"() {
         given:
-        def referenceBase = "https://api.github.com/repos/kubernetes-sigs/kustomize/contents/"
+        def referenceBase = "https://api.github.com/repos/kubernetes-sigs/kustomize/contents"
         def clouddriverService = Mock(ClouddriverService)
         def kustomizationFileReader = Mock(KustomizationFileReader)
         def kustomizationTemplateUtils = new KustomizeTemplateUtils(kustomizationFileReader, clouddriverService)
         def baseArtifact = Artifact.builder()
                 .name("examples/ldap/overlays/production/kustomization.yaml")
-                .reference(referenceBase + "examples/ldap/overlays/production/kustomization.yaml")
+                .reference(referenceBase + "/examples/ldap/overlays/production/kustomization.yaml")
                 .artifactAccount("github")
                 .build()
 
@@ -93,40 +89,39 @@ class KustomizeTemplateUtilsSpec extends Specification {
         // production supplies deployment.yaml, ../../base up two levels and provides a ConfigMapGenerator
         // which supplies a env.startup.txt file
         kustomizationFileReader.getKustomization(_ as Artifact, _ as String) >> { Artifact a, String s ->
-            Kustomization k = new Kustomization()
             if (a.getName() == "examples/ldap/overlays/production") {
-                k.setResources(Arrays.asList("../../base"))
-                k.setPatchesStrategicMerge(Arrays.asList("deployment.yaml"))
+                return new Kustomization(
+                        resources: ["../../base"],
+                        patchesStrategicMerge: ["deployment.yaml"],
+                        selfReference: referenceBase + "/examples/ldap/overlays/production/kustomization.yaml")
             } else if (a.getName() == "examples/ldap/base") {
-                k.setResources(Arrays.asList("deployment.yaml", "service.yaml"))
-                List<ConfigMapGenerator> lcm = new ArrayList<>();
-                ConfigMapGenerator cmg = new ConfigMapGenerator();
-                cmg.setFiles(Arrays.asList("env.startup.txt"))
-                lcm.add(cmg)
-                k.setConfigMapGenerator(lcm)
+                return new Kustomization(
+                        resources: ["deployment.yaml", "service.yaml"],
+                        configMapGenerator: [new ConfigMapGenerator(files: ["env.startup.txt"])],
+                        selfReference: referenceBase + "/examples/ldap/base/kustomization.yaml"
+                )
             }
-            k.setKustomizationFilename(s)
-            return k
+
         }
         filesToFetch.sort() == [
-                referenceBase + "examples/ldap/overlays/production/deployment.yaml",
-                referenceBase + "examples/ldap/overlays/production/kustomization.yaml",
-                referenceBase + "examples/ldap/base/service.yaml",
-                referenceBase + "examples/ldap/base/deployment.yaml",
-                referenceBase + "examples/ldap/base/kustomization.yaml",
-                referenceBase + "examples/ldap/base/env.startup.txt"
+                referenceBase + "/examples/ldap/overlays/production/deployment.yaml",
+                referenceBase + "/examples/ldap/overlays/production/kustomization.yaml",
+                referenceBase + "/examples/ldap/base/service.yaml",
+                referenceBase + "/examples/ldap/base/deployment.yaml",
+                referenceBase + "/examples/ldap/base/kustomization.yaml",
+                referenceBase + "/examples/ldap/base/env.startup.txt"
         ].sort()
     }
 
     def "getFilesFromSameFolder returns a list of files where one of the resources is referencing to a kustomization"() {
         given:
-        def referenceBase = "https://api.github.com/repos/kubernetes-sigs/kustomize/contents/"
+        def referenceBase = "https://api.github.com/repos/kubernetes-sigs/kustomize/contents"
         def clouddriverService = Mock(ClouddriverService)
         def kustomizationFileReader = Mock(KustomizationFileReader)
         def kustomizationTemplateUtils = new KustomizeTemplateUtils(kustomizationFileReader, clouddriverService)
         def baseArtifact = Artifact.builder()
                 .name("examples/helloWorld/kustomization.yaml")
-                .reference(referenceBase + "examples/helloWorld/kustomization.yaml")
+                .reference(referenceBase + "/examples/helloWorld/kustomization.yaml")
                 .artifactAccount("github")
                 .build()
 
@@ -136,30 +131,27 @@ class KustomizeTemplateUtilsSpec extends Specification {
         then:
         // the base artifact supplies deployment.yml, service.yml and configMap.yaml
         kustomizationFileReader.getKustomization(_ as Artifact, _ as String) >> { Artifact a, String s ->
-            Kustomization k = new Kustomization()
-            if (a.getName() == "examples/helloWorld") {
-                k.setResources(Arrays.asList("deployment.yaml", "service.yaml", "configMap.yaml"))
-            }
-            k.setKustomizationFilename(s)
-            return k
+            return new Kustomization(
+                    resources: ["deployment.yaml", "service.yaml", "configMap.yaml"],
+                    selfReference: referenceBase + "/examples/helloWorld/kustomization.yaml")
         }
         filesToFetch.sort() == [
-                referenceBase + "examples/helloWorld/deployment.yaml",
-                referenceBase + "examples/helloWorld/service.yaml",
-                referenceBase + "examples/helloWorld/configMap.yaml",
-                referenceBase + "examples/helloWorld/kustomization.yaml"
+                referenceBase + "/examples/helloWorld/deployment.yaml",
+                referenceBase + "/examples/helloWorld/service.yaml",
+                referenceBase + "/examples/helloWorld/configMap.yaml",
+                referenceBase + "/examples/helloWorld/kustomization.yaml"
         ].sort()
     }
 
     def "getFilesFromMixedFolders returns a list of files where one of the resources is referencing another kustomization (5)"() {
         given:
-        def referenceBase = "https://api.github.com/repos/kubernetes-sigs/kustomize/contents/"
+        def referenceBase = "https://api.github.com/repos/kubernetes-sigs/kustomize/contents"
         def clouddriverService = Mock(ClouddriverService)
         def kustomizationFileReader = Mock(KustomizationFileReader)
         def kustomizationTemplateUtils = new KustomizeTemplateUtils(kustomizationFileReader, clouddriverService)
         def baseArtifact = Artifact.builder()
                 .name("examples/multibases/kustomization.yaml")
-                .reference(referenceBase + "examples/multibases/kustomization.yaml")
+                .reference(referenceBase + "/examples/multibases/kustomization.yaml")
                 .artifactAccount("github")
                 .build()
 
@@ -168,28 +160,26 @@ class KustomizeTemplateUtilsSpec extends Specification {
 
         then:
         kustomizationFileReader.getKustomization(_ as Artifact, _ as String) >> { Artifact a, String s ->
-            Kustomization k = new Kustomization()
+            String selfReference = referenceBase + "/${a.getName()}/kustomization.yaml"
             if (a.getName() == "examples/multibases") {
-                k.setResources(Arrays.asList("dev", "staging", "production"))
+                return new Kustomization(resources: ["dev", "staging", "production"], selfReference: selfReference)
             } else if (a.getName() == "examples/multibases/dev") {
-                k.setResources(Arrays.asList("../base"))
+                return new Kustomization(resources: ["../base"], selfReference: selfReference)
             } else if (a.getName() == "examples/multibases/staging") {
-                k.setResources(Arrays.asList("../base"))
+                return new Kustomization(resources: ["../base"], selfReference: selfReference)
             } else if (a.getName() == "examples/multibases/production") {
-                k.setResources(Arrays.asList("../base"))
+                return new Kustomization(resources: ["../base"], selfReference: selfReference)
             } else if (a.getName() == "examples/multibases/base") {
-                k.setResources(Arrays.asList("pod.yaml"))
+                return new Kustomization(resources: ["pod.yaml"], selfReference: selfReference)
             }
-            k.setKustomizationFilename(s)
-            return k
         }
         filesToFetch.sort() == [
-                referenceBase + "examples/multibases/dev/kustomization.yaml",
-                referenceBase + "examples/multibases/staging/kustomization.yaml",
-                referenceBase + "examples/multibases/production/kustomization.yaml",
-                referenceBase + "examples/multibases/base/kustomization.yaml",
-                referenceBase + "examples/multibases/base/pod.yaml",
-                referenceBase + "examples/multibases/kustomization.yaml"
+                referenceBase + "/examples/multibases/dev/kustomization.yaml",
+                referenceBase + "/examples/multibases/staging/kustomization.yaml",
+                referenceBase + "/examples/multibases/production/kustomization.yaml",
+                referenceBase + "/examples/multibases/base/kustomization.yaml",
+                referenceBase + "/examples/multibases/base/pod.yaml",
+                referenceBase + "/examples/multibases/kustomization.yaml"
         ].sort()
     }
 
@@ -209,5 +199,22 @@ class KustomizeTemplateUtilsSpec extends Specification {
         "child"           | true
         "file.file"       | false
         "child/file.file" | false
+    }
+
+    def "pathIsWithinBase ensures we don't break out of the tmp directory"() {
+        given:
+        def kustomizationTemplateUtils = new KustomizeTemplateUtils(Mock(KustomizationFileReader), Mock(ClouddriverService))
+
+        when:
+        def isWithinBase = kustomizationTemplateUtils.pathIsWithinBase(Paths.get(base), Paths.get(check))
+
+        then:
+        isWithinBase == result
+
+        where:
+        base        | check             | result
+        "/tmp"      | "../"             | false
+        "/tmp/test" | "../"             | false
+        "/tmp/test" | "/tmp/test/chuck" | true
     }
 }

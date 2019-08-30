@@ -24,6 +24,7 @@ import com.netflix.spinnaker.rosco.manifests.kustomize.mapping.Kustomization;
 import com.netflix.spinnaker.rosco.services.ClouddriverService;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -91,12 +92,16 @@ public class KustomizeTemplateUtils extends TemplateUtils {
     Path artifactFilePath = env.getStagingPath().resolve(artifactFileName);
     // ensure file write doesn't break out of the staging directory ex. ../etc
     Path artifactParentDirectory = artifactFilePath.getParent();
-    if (!artifactParentDirectory.startsWith(env.getStagingPath())) {
+    if (!pathIsWithinBase(env.getStagingPath(), artifactParentDirectory)) {
       throw new IllegalStateException("attempting to create a file outside of the staging path.");
     }
     Files.createDirectories(artifactParentDirectory);
     File newFile = artifactFilePath.toFile();
     downloadArtifact(artifact, newFile);
+  }
+
+  private boolean pathIsWithinBase(Path base, Path check) {
+    return check.normalize().startsWith(base);
   }
 
   private List<Artifact> getArtifacts(Artifact artifact) {
@@ -159,10 +164,15 @@ public class KustomizeTemplateUtils extends TemplateUtils {
     Artifact testArtifact = artifactFromBase(artifact, referenceBase, base.toString());
 
     Kustomization kustomization = kustomizationFileReader.getKustomization(testArtifact, filename);
+    // kustomization.setKustomizationFilename(base.resolve(filename).toString());
     // nonEvaluateFiles are files we know can't be references to other kustomizations
     // so we know they only need to be collected for download later
-    Set<String> nonEvaluateFiles = kustomization.getFilesToDownload(referenceBase);
-    filesToDownload.addAll(nonEvaluateFiles);
+    Set<String> nonEvaluateFiles = kustomization.getFilesToDownload();
+    filesToDownload.addAll(
+        nonEvaluateFiles.stream()
+            .map(f -> createUrlFromBase(referenceBase, f))
+            .collect(Collectors.toSet()));
+    filesToDownload.add(kustomization.getSelfReference());
 
     for (String evaluate : kustomization.getFilesToEvaluate()) {
       // we're assuming that files that look like folders are referencing
@@ -179,6 +189,14 @@ public class KustomizeTemplateUtils extends TemplateUtils {
     return filesToDownload;
   }
 
+  private String createUrlFromBase(String base, String path) {
+    try {
+      return new URI(base + "/").resolve(path).toString();
+    } catch (Exception e) {
+      throw new IllegalArgumentException("unable to form valid URL from " + base + " and " + path);
+    }
+  }
+
   private Artifact artifactFromBase(Artifact artifact, String reference, String name) {
     return Artifact.builder()
         .reference(reference)
@@ -189,11 +207,6 @@ public class KustomizeTemplateUtils extends TemplateUtils {
   }
 
   private boolean isFolder(String evaluate) {
-    if (evaluate.contains(".")) {
-      String tmp = evaluate.substring(evaluate.lastIndexOf(".") + 1);
-      return tmp.contains("/");
-    } else {
-      return true;
-    }
+    return FilenameUtils.getExtension(evaluate) == "";
   }
 }

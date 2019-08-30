@@ -17,7 +17,6 @@
 package com.netflix.spinnaker.rosco.manifests.kustomize.mapping;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,31 +43,30 @@ public class Kustomization {
 
   private List<PatchesJson6902> patchesJson6902 = new ArrayList<>();
 
-  private String kustomizationFilename;
+  /** Self reference is the artifact reference which sourced this Kustomization */
+  private String selfReference;
 
   @JsonIgnore private Map<String, Object> additionalProperties = new HashMap<>();
 
-  public Set<String> getFilesToEvaluate() {
+  public Set<String> getFilesToDownload() {
     HashSet<String> toEvaluate = new HashSet<>();
-    toEvaluate.addAll(resources);
     toEvaluate.addAll(crds);
     toEvaluate.addAll(generators);
     toEvaluate.addAll(patchesStrategicMerge);
     toEvaluate.addAll(patches.stream().map(Patch::getPath).collect(Collectors.toList()));
     toEvaluate.addAll(
         patchesJson6902.stream().map(PatchesJson6902::getPath).collect(Collectors.toList()));
-    return toEvaluate;
-  }
-
-  public Set<String> getFilesToDownload(String artifactPath) {
-    HashSet<String> toDownload = new HashSet<>();
-    toDownload.add(artifactPath.concat(File.separator).concat(this.kustomizationFilename));
-    toDownload.addAll(
+    toEvaluate.addAll(
         this.configMapGenerator.stream()
             .map(configMapGenerator -> configMapGenerator.getFiles())
             .flatMap(files -> files.stream())
-            .map(file -> artifactPath.concat(File.separator).concat(file))
             .collect(Collectors.toSet()));
+    return toEvaluate;
+  }
+
+  public Set<String> getFilesToEvaluate() {
+    HashSet<String> toDownload = new HashSet<>();
+    toDownload.addAll(this.getResources());
     return toDownload;
   }
 }

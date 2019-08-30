@@ -23,6 +23,7 @@ import com.netflix.spinnaker.rosco.manifests.kustomize.mapping.Kustomization;
 import com.netflix.spinnaker.rosco.services.ClouddriverService;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -59,13 +60,14 @@ public class KustomizationFileReader {
     Kustomization k = null;
     for (String name : names) {
       try {
-        Artifact testArtifact = artifactFromBase(artifact, artifactPath.resolve(name).toString());
+        String artifactReference = new URI(artifact.getReference() + "/").resolve(name).toString();
+        Artifact testArtifact = artifactFromBase(artifact, artifactReference);
         k = convert(testArtifact);
-        k.setKustomizationFilename(name);
+        k.setSelfReference(artifactReference);
         break;
       } catch (Exception e) {
         log.error(
-            "kustomization file cannot be found for {}", artifactPath.resolve(name).toString());
+            "kustomization file {} cannot be found at location", name, artifact.getReference());
       }
     }
 
@@ -92,7 +94,7 @@ public class KustomizationFileReader {
   }
 
   private InputStream downloadFile(Artifact artifact) throws IOException {
-    log.info("downloading file {}", artifact.getReference());
+    log.info("downloading kustomization file {}", artifact.getReference());
     Response response =
         retrySupport.retry(() -> clouddriverService.fetchArtifact(artifact), 5, 1000, true);
     return response.getBody().in();
