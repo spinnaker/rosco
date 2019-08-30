@@ -17,31 +17,24 @@
 package com.netflix.spinnaker.rosco.manifests.kustomize;
 
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
-import com.netflix.spinnaker.rosco.api.BakeStatus;
 import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
 import com.netflix.spinnaker.rosco.jobs.JobExecutor;
-import com.netflix.spinnaker.rosco.jobs.JobRequest;
-import com.netflix.spinnaker.rosco.manifests.BakeManifestException;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestService;
 import com.netflix.spinnaker.rosco.manifests.TemplateUtils.BakeManifestEnvironment;
-import com.netflix.spinnaker.security.AuthenticatedRequest;
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.UUID;
 import org.springframework.stereotype.Component;
 
 @Component
 public class KustomizeBakeManifestService
-    implements BakeManifestService<KustomizeBakeManifestRequest> {
+    extends BakeManifestService<KustomizeBakeManifestRequest> {
   private final KustomizeTemplateUtils kustomizeTemplateUtils;
-  private final JobExecutor jobExecutor;
 
   private static final String KUSTOMIZE = "KUSTOMIZE";
 
   public KustomizeBakeManifestService(
       KustomizeTemplateUtils kustomizeTemplateUtils, JobExecutor jobExecutor) {
+    super(jobExecutor);
     this.kustomizeTemplateUtils = kustomizeTemplateUtils;
-    this.jobExecutor = jobExecutor;
   }
 
   @Override
@@ -54,42 +47,15 @@ public class KustomizeBakeManifestService
     return type.toUpperCase().equals(KUSTOMIZE);
   }
 
-  public Artifact bake(KustomizeBakeManifestRequest kustomizeBakeManifestRequest)
-      throws BakeManifestException {
+  public Artifact bake(KustomizeBakeManifestRequest kustomizeBakeManifestRequest) {
     BakeManifestEnvironment env = new BakeManifestEnvironment();
     BakeRecipe recipe = kustomizeTemplateUtils.buildBakeRecipe(env, kustomizeBakeManifestRequest);
-    BakeStatus bakeStatus = null;
-    try {
-      JobRequest jobRequest =
-          new JobRequest(
-              recipe.getCommand(),
-              new ArrayList<>(),
-              UUID.randomUUID().toString(),
-              AuthenticatedRequest.getSpinnakerExecutionId().orElse(null),
-              false);
-      String jobId = jobExecutor.startJob(jobRequest);
-      bakeStatus = jobExecutor.updateJob(jobId);
-      while (bakeStatus == null || bakeStatus.getState() == BakeStatus.State.RUNNING) {
-        try {
-          Thread.sleep(1000);
-        } catch (InterruptedException ignored) {
-          jobExecutor.cancelJob(jobId);
-          Thread.currentThread().interrupt();
-          throw new BakeManifestException("Kustomize bake was interrupted.");
-        }
-        bakeStatus = jobExecutor.updateJob(jobId);
-      }
-      if (bakeStatus.getResult() != BakeStatus.Result.SUCCESS) {
-        throw new IllegalStateException(
-            "Bake of " + kustomizeBakeManifestRequest + " failed: " + bakeStatus.getLogsContent());
-      }
-      return Artifact.builder()
-          .type("embedded/base64")
-          .name(kustomizeBakeManifestRequest.getOutputArtifactName())
-          .reference(Base64.getEncoder().encodeToString(bakeStatus.getOutputContent().getBytes()))
-          .build();
-    } finally {
-      env.cleanup();
-    }
+
+    byte[] bakeResult = doBake(env, recipe);
+    return Artifact.builder()
+        .type("embedded/base64")
+        .name(kustomizeBakeManifestRequest.getOutputArtifactName())
+        .reference(Base64.getEncoder().encodeToString(bakeResult))
+        .build();
   }
 }

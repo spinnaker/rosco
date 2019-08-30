@@ -86,7 +86,6 @@ public class KustomizationFileReader {
   }
 
   private Kustomization convert(Artifact artifact) throws IOException {
-    // TODO(ethanfrogers): figure out how to use safe constructor here.
     Representer representer = new Representer();
     representer.getPropertyUtils().setSkipMissingProperties(true);
     return new Yaml(new Constructor(Kustomization.class), representer).load(downloadFile(artifact));

@@ -17,11 +17,55 @@
 package com.netflix.spinnaker.rosco.manifests;
 
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
+import com.netflix.spinnaker.rosco.api.BakeStatus;
+import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
+import com.netflix.spinnaker.rosco.jobs.JobExecutor;
+import com.netflix.spinnaker.rosco.jobs.JobRequest;
+import com.netflix.spinnaker.security.AuthenticatedRequest;
+import java.util.ArrayList;
+import java.util.UUID;
 
-public interface BakeManifestService<T> {
-  Artifact bake(T bakeManifestRequest) throws BakeManifestException;
+public abstract class BakeManifestService<T> {
+  private final JobExecutor jobExecutor;
 
-  Class<T> requestType();
+  public BakeManifestService(JobExecutor jobExecutor) {
+    this.jobExecutor = jobExecutor;
+  }
 
-  boolean handles(String type);
+  public abstract Artifact bake(T bakeManifestRequest);
+
+  public abstract Class<T> requestType();
+
+  public abstract boolean handles(String type);
+
+  protected byte[] doBake(TemplateUtils.BakeManifestEnvironment environment, BakeRecipe recipe) {
+    BakeStatus bakeStatus = null;
+    try {
+      JobRequest jobRequest =
+          new JobRequest(
+              recipe.getCommand(),
+              new ArrayList<>(),
+              UUID.randomUUID().toString(),
+              AuthenticatedRequest.getSpinnakerExecutionId().orElse(null),
+              false);
+
+      String jobId = jobExecutor.startJob(jobRequest);
+      bakeStatus = jobExecutor.updateJob(jobId);
+      while (bakeStatus == null || bakeStatus.getState() == BakeStatus.State.RUNNING) {
+        try {
+          Thread.sleep(1000);
+        } catch (InterruptedException ie) {
+          jobExecutor.cancelJob(jobId);
+          Thread.currentThread().interrupt();
+        }
+        bakeStatus = jobExecutor.updateJob(jobId);
+      }
+      if (bakeStatus.getResult() != BakeStatus.Result.SUCCESS) {
+        throw new IllegalStateException("Bake failed: " + bakeStatus.getLogsContent());
+      }
+    } finally {
+      environment.cleanup();
+    }
+    return bakeStatus.getOutputContent().getBytes();
+  }
 }
