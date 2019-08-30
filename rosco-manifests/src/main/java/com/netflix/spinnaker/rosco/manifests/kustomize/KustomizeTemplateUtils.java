@@ -56,8 +56,9 @@ public class KustomizeTemplateUtils extends TemplateUtils {
       throw new IllegalArgumentException("Exactly one input artifact must be provided to bake.");
     }
     String kustomizationfilename = FilenameUtils.getName(artifact.getReference());
-    if (kustomizationfilename != null
-        && !kustomizationfilename.toUpperCase().contains("KUSTOMIZATION")) {
+    if (kustomizationfilename == null
+        || (kustomizationfilename != null
+            && !kustomizationfilename.toUpperCase().contains("KUSTOMIZATION"))) {
       throw new IllegalArgumentException("The inputArtifact should be a valid kustomization file.");
     }
     String referenceBaseURL = extractReferenceBase(artifact);

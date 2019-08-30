@@ -66,7 +66,6 @@ public class KustomizationFileReader {
       } catch (Exception e) {
         log.error(
             "kustomization file cannot be found for {}", artifactPath.resolve(name).toString());
-        continue;
       }
     }
 

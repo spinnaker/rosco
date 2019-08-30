@@ -25,7 +25,7 @@ class KustomizeTemplateUtilsSpec extends Specification {
         def filesToFetch = kustomizationTemplateUtils.getFilesFromArtifact(baseArtifact)
 
         then:
-        1 * kustomizationFileReader.getKustomization(_, "kustomization.yml") >> {
+        kustomizationFileReader.getKustomization(_, "kustomization.yml") >> {
             Kustomization k = new Kustomization()
             k.setResources(Arrays.asList("deployment.yml", "service.yml"))
             k.setKustomizationFilename("kustomization.yml")
@@ -54,7 +54,7 @@ class KustomizeTemplateUtilsSpec extends Specification {
         then:
         // the base artifact supplies deployment.yml, service.yml and production (a subdirectory)
         // production supplies configMap.yml
-        2 * kustomizationFileReader.getKustomization(_ as Artifact, _ as String) >> { Artifact a, String s ->
+        kustomizationFileReader.getKustomization(_ as Artifact, _ as String) >> { Artifact a, String s ->
             Kustomization k = new Kustomization()
             if (a.getName() == "base") {
                 k.setResources(Arrays.asList("deployment.yml", "service.yml", "production"))
@@ -92,7 +92,7 @@ class KustomizeTemplateUtilsSpec extends Specification {
         // the base artifact supplies deployment.yml, service.yml and production (a subdirectory)
         // production supplies deployment.yaml, ../../base up two levels and provides a ConfigMapGenerator
         // which supplies a env.startup.txt file
-        2 * kustomizationFileReader.getKustomization(_ as Artifact, _ as String) >> { Artifact a, String s ->
+        kustomizationFileReader.getKustomization(_ as Artifact, _ as String) >> { Artifact a, String s ->
             Kustomization k = new Kustomization()
             if (a.getName() == "examples/ldap/overlays/production") {
                 k.setResources(Arrays.asList("../../base"))
@@ -135,7 +135,7 @@ class KustomizeTemplateUtilsSpec extends Specification {
 
         then:
         // the base artifact supplies deployment.yml, service.yml and configMap.yaml
-        1 * kustomizationFileReader.getKustomization(_ as Artifact, _ as String) >> { Artifact a, String s ->
+        kustomizationFileReader.getKustomization(_ as Artifact, _ as String) >> { Artifact a, String s ->
             Kustomization k = new Kustomization()
             if (a.getName() == "examples/helloWorld") {
                 k.setResources(Arrays.asList("deployment.yaml", "service.yaml", "configMap.yaml"))
@@ -167,7 +167,7 @@ class KustomizeTemplateUtilsSpec extends Specification {
         def filesToFetch = kustomizationTemplateUtils.getFilesFromArtifact(baseArtifact)
 
         then:
-        7 * kustomizationFileReader.getKustomization(_ as Artifact, _ as String) >> { Artifact a, String s ->
+        kustomizationFileReader.getKustomization(_ as Artifact, _ as String) >> { Artifact a, String s ->
             Kustomization k = new Kustomization()
             if (a.getName() == "examples/multibases") {
                 k.setResources(Arrays.asList("dev", "staging", "production"))
@@ -191,5 +191,23 @@ class KustomizeTemplateUtilsSpec extends Specification {
                 referenceBase + "examples/multibases/base/pod.yaml",
                 referenceBase + "examples/multibases/kustomization.yaml"
         ].sort()
+    }
+
+    def "isFolder checks if a string looks like a folder"() {
+        given:
+        def kustomizationTemplateUtils = new KustomizeTemplateUtils(Mock(KustomizationFileReader), Mock(ClouddriverService))
+
+        when:
+        def isFolder = kustomizationTemplateUtils.isFolder(path)
+
+        then:
+        isFolder == result
+
+        where:
+        path              | result
+        "../sibling"      | true
+        "child"           | true
+        "file.file"       | false
+        "child/file.file" | false
     }
 }

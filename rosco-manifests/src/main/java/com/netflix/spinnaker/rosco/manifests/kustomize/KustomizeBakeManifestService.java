@@ -16,7 +16,6 @@
 
 package com.netflix.spinnaker.rosco.manifests.kustomize;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 import com.netflix.spinnaker.rosco.api.BakeStatus;
 import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
@@ -36,7 +35,6 @@ public class KustomizeBakeManifestService
     implements BakeManifestService<KustomizeBakeManifestRequest> {
   private final KustomizeTemplateUtils kustomizeTemplateUtils;
   private final JobExecutor jobExecutor;
-  private final ObjectMapper objectMapper = new ObjectMapper();
 
   private static final String KUSTOMIZE = "KUSTOMIZE";
 

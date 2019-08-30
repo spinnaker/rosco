@@ -48,7 +48,7 @@ public class Kustomization {
 
   @JsonIgnore private Map<String, Object> additionalProperties = new HashMap<>();
 
-  public HashSet<String> getFilesToEvaluate() {
+  public Set<String> getFilesToEvaluate() {
     HashSet<String> toEvaluate = new HashSet<>();
     toEvaluate.addAll(resources);
     toEvaluate.addAll(crds);

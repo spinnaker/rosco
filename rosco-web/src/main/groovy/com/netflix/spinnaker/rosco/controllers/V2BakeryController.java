@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @Slf4j
 public class V2BakeryController {
-  List<BakeManifestService> bakeManifestServices;
+  private final List<BakeManifestService> bakeManifestServices;
   ObjectMapper objectMapper = new ObjectMapper();
 
   public V2BakeryController(List<BakeManifestService> bakeManifestServices) {

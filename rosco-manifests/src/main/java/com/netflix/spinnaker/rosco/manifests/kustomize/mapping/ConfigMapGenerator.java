@@ -16,6 +16,7 @@
 
 package com.netflix.spinnaker.rosco.manifests.kustomize.mapping;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +27,7 @@ public class ConfigMapGenerator {
 
   private String name;
 
-  private List<String> files = null;
+  private List<String> files = new ArrayList<>();
 
   private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 }
