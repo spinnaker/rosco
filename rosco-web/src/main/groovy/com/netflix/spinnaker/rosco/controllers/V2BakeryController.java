@@ -18,10 +18,12 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class V2BakeryController {
   private final List<BakeManifestService> bakeManifestServices;
-  ObjectMapper objectMapper = new ObjectMapper();
+  private final ObjectMapper objectMapper;
 
-  public V2BakeryController(List<BakeManifestService> bakeManifestServices) {
+  public V2BakeryController(
+      List<BakeManifestService> bakeManifestServices, ObjectMapper objectMapper) {
     this.bakeManifestServices = bakeManifestServices;
+    this.objectMapper = objectMapper;
   }
 
   @RequestMapping(value = "/api/v2/manifest/bake/{type}", method = RequestMethod.POST)
