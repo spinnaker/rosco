@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.UUID;
 
-public abstract class BakeManifestService<T> {
+public abstract class BakeManifestService<T extends BakeManifestRequest> {
   private final JobExecutor jobExecutor;
 
   public BakeManifestService(JobExecutor jobExecutor) {
