@@ -5,6 +5,7 @@ import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestRequest;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestService;
 import groovy.util.logging.Slf4j;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,7 +25,8 @@ public class V2BakeryController {
   }
 
   @RequestMapping(value = "/api/v2/manifest/bake/{type}", method = RequestMethod.POST)
-  Artifact doBake(@PathVariable("type") String type, @RequestBody Map<String, Object> request) {
+  Artifact doBake(@PathVariable("type") String type, @RequestBody Map<String, Object> request)
+      throws IOException {
     BakeManifestService service =
         bakeManifestServices.stream()
             .filter(s -> s.handles(type))
