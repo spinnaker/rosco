@@ -133,7 +133,7 @@ public class HelmTemplateUtils extends TemplateUtils {
   protected Path downloadArtifactToTmpFile(BakeManifestEnvironment env, Artifact artifact)
       throws IOException {
     String uniqueKey = uniqueKey(artifact);
-    File targetFile = env.getStagingPath().resolve(nameFromReference(uniqueKey)).toFile();
+    File targetFile = env.resolvePath(nameFromReference(uniqueKey)).toFile();
     downloadArtifact(artifact, targetFile);
     return targetFile.toPath();
   }

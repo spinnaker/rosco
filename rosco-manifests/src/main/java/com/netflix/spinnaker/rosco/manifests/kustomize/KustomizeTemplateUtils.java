@@ -64,7 +64,7 @@ public class KustomizeTemplateUtils extends TemplateUtils {
       throw new IllegalArgumentException("The inputArtifact should be a valid kustomization file.");
     }
     String referenceBaseURL = extractReferenceBase(artifact);
-    Path templatePath = env.getStagingPath().resolve(artifact.getName());
+    Path templatePath = env.resolvePath(artifact.getName());
 
     try {
       List<Artifact> artifacts = getArtifacts(artifact);
@@ -90,19 +90,11 @@ public class KustomizeTemplateUtils extends TemplateUtils {
       throw new InvalidRequestException("Input artifact has an empty 'reference' field.");
     }
     Path artifactFileName = Paths.get(extractArtifactName(artifact, referenceBaseURL));
-    Path artifactFilePath = env.getStagingPath().resolve(artifactFileName);
-    // ensure file write doesn't break out of the staging directory ex. ../etc
+    Path artifactFilePath = env.resolvePath(artifactFileName);
     Path artifactParentDirectory = artifactFilePath.getParent();
-    if (!pathIsWithinBase(env.getStagingPath(), artifactParentDirectory)) {
-      throw new IllegalStateException("attempting to create a file outside of the staging path.");
-    }
     Files.createDirectories(artifactParentDirectory);
     File newFile = artifactFilePath.toFile();
     downloadArtifact(artifact, newFile);
-  }
-
-  private boolean pathIsWithinBase(Path base, Path check) {
-    return check.normalize().startsWith(base);
   }
 
   private List<Artifact> getArtifacts(Artifact artifact) {

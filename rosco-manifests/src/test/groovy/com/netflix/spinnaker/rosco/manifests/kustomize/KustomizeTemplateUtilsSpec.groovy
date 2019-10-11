@@ -200,21 +200,4 @@ class KustomizeTemplateUtilsSpec extends Specification {
         "file.file"       | false
         "child/file.file" | false
     }
-
-    def "pathIsWithinBase ensures we don't break out of the tmp directory"() {
-        given:
-        def kustomizationTemplateUtils = new KustomizeTemplateUtils(Mock(KustomizationFileReader), Mock(ClouddriverService))
-
-        when:
-        def isWithinBase = kustomizationTemplateUtils.pathIsWithinBase(Paths.get(base), Paths.get(check))
-
-        then:
-        isWithinBase == result
-
-        where:
-        base        | check             | result
-        "/tmp"      | "../"             | false
-        "/tmp/test" | "../"             | false
-        "/tmp/test" | "/tmp/test/chuck" | true
-    }
 }
