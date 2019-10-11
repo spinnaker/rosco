@@ -19,10 +19,9 @@ package com.netflix.spinnaker.rosco.manifests.kustomize;
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 import com.netflix.spinnaker.kork.web.exceptions.InvalidRequestException;
 import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
+import com.netflix.spinnaker.rosco.manifests.ArtifactDownloader;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestEnvironment;
-import com.netflix.spinnaker.rosco.manifests.TemplateUtils;
 import com.netflix.spinnaker.rosco.manifests.kustomize.mapping.Kustomization;
-import com.netflix.spinnaker.rosco.services.ClouddriverService;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -40,13 +39,14 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
-public class KustomizeTemplateUtils extends TemplateUtils {
+public class KustomizeTemplateUtils {
   private final KustomizationFileReader kustomizationFileReader;
+  private final ArtifactDownloader artifactDownloader;
 
   public KustomizeTemplateUtils(
-      KustomizationFileReader kustomizationFileReader, ClouddriverService clouddriverService) {
-    super(clouddriverService);
+      KustomizationFileReader kustomizationFileReader, ArtifactDownloader artifactDownloader) {
     this.kustomizationFileReader = kustomizationFileReader;
+    this.artifactDownloader = artifactDownloader;
   }
 
   public BakeRecipe buildBakeRecipe(
@@ -93,7 +93,7 @@ public class KustomizeTemplateUtils extends TemplateUtils {
     Path artifactFilePath = env.resolvePath(artifactFileName);
     Path artifactParentDirectory = artifactFilePath.getParent();
     Files.createDirectories(artifactParentDirectory);
-    downloadArtifact(artifact, artifactFilePath);
+    artifactDownloader.downloadArtifact(artifact, artifactFilePath);
   }
 
   private List<Artifact> getArtifacts(Artifact artifact) {

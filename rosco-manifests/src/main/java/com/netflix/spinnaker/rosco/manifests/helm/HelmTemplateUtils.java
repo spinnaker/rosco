@@ -2,9 +2,8 @@ package com.netflix.spinnaker.rosco.manifests.helm;
 
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
+import com.netflix.spinnaker.rosco.manifests.ArtifactDownloader;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestEnvironment;
-import com.netflix.spinnaker.rosco.manifests.TemplateUtils;
-import com.netflix.spinnaker.rosco.services.ClouddriverService;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -17,14 +16,15 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 @Component
-public class HelmTemplateUtils extends TemplateUtils {
-
+public class HelmTemplateUtils {
   private static final String MANIFEST_SEPARATOR = "---\n";
   private static final Pattern REGEX_TESTS_MANIFESTS =
       Pattern.compile("# Source: .*/templates/tests/.*");
 
-  public HelmTemplateUtils(ClouddriverService clouddriverService) {
-    super(clouddriverService);
+  private final ArtifactDownloader artifactDownloader;
+
+  public HelmTemplateUtils(ArtifactDownloader artifactDownloader) {
+    this.artifactDownloader = artifactDownloader;
   }
 
   public BakeRecipe buildBakeRecipe(BakeManifestEnvironment env, HelmBakeManifestRequest request) {
@@ -93,7 +93,7 @@ public class HelmTemplateUtils extends TemplateUtils {
       throws IOException {
     String fileName = UUID.randomUUID().toString();
     Path targetPath = env.resolvePath(fileName);
-    downloadArtifact(artifact, targetPath);
+    artifactDownloader.downloadArtifact(artifact, targetPath);
     return targetPath;
   }
 }

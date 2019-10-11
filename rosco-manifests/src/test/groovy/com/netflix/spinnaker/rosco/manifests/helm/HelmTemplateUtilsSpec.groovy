@@ -16,7 +16,7 @@
 
 package com.netflix.spinnaker.rosco.manifests.helm
 
-import com.netflix.spinnaker.rosco.services.ClouddriverService
+import com.netflix.spinnaker.rosco.manifests.ArtifactDownloader
 import spock.lang.Specification
 
 class HelmTemplateUtilsSpec extends Specification {
@@ -49,8 +49,8 @@ class HelmTemplateUtilsSpec extends Specification {
           run.sh: |-
         """
 
-        def cloudDriverService = Mock(ClouddriverService)
-        def helmTemplateUtils = new HelmTemplateUtils(cloudDriverService)
+        def artifactDownloader = Mock(ArtifactDownloader)
+        def helmTemplateUtils = new HelmTemplateUtils(artifactDownloader)
 
         when:
         def output = helmTemplateUtils.removeTestsDirectoryTemplates(inputManifests)
@@ -103,8 +103,8 @@ class HelmTemplateUtilsSpec extends Specification {
           run.sh: |-
         """
 
-        def cloudDriverService = Mock(ClouddriverService)
-        def helmTemplateUtils = new HelmTemplateUtils(cloudDriverService)
+        def artifactDownloader = Mock(ArtifactDownloader)
+        def helmTemplateUtils = new HelmTemplateUtils(artifactDownloader)
 
         when:
         def output = helmTemplateUtils.removeTestsDirectoryTemplates(inputManifests)
