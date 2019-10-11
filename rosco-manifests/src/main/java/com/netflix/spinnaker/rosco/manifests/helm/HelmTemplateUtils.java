@@ -9,19 +9,20 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
-import org.yaml.snakeyaml.util.ArrayUtils;
 
 @Component
 public class HelmTemplateUtils extends TemplateUtils {
 
   private static final String MANIFEST_SEPARATOR = "---\n";
-  private static final String REGEX_TESTS_MANIFESTS = "# Source: .*/templates/tests/.*";
+  private static final Pattern REGEX_TESTS_MANIFESTS =
+      Pattern.compile("# Source: .*/templates/tests/.*");
 
   public HelmTemplateUtils(ClouddriverService clouddriverService) {
     super(clouddriverService);
@@ -70,13 +71,12 @@ public class HelmTemplateUtils extends TemplateUtils {
       }
       String overrideOption = request.isRawOverrides() ? "--set" : "--set-string";
       command.add(overrideOption);
-      command.add(overrideList.stream().collect(Collectors.joining(",")));
+      command.add(String.join(",", overrideList));
     }
 
     if (!valuePaths.isEmpty()) {
       command.add("--values");
-      command.add(
-          String.join(",", valuePaths.stream().map(Path::toString).collect(Collectors.toList())));
+      command.add(valuePaths.stream().map(Path::toString).collect(Collectors.joining(",")));
     }
 
     result.setCommand(command);
@@ -85,26 +85,17 @@ public class HelmTemplateUtils extends TemplateUtils {
   }
 
   public byte[] removeTestsDirectoryTemplates(byte[] input) {
-
     final String inputString = new String(input);
-    final List<String> inputManifests =
-        ArrayUtils.toUnmodifiableList(inputString.split(MANIFEST_SEPARATOR));
 
-    final List<String> outputManifests =
-        inputManifests.stream()
-            .filter(
-                manifest ->
-                    !manifest.trim().isEmpty()
-                        && !Pattern.compile(REGEX_TESTS_MANIFESTS).matcher(manifest).find())
-            .collect(Collectors.toList());
+    final String outputManifests =
+        Arrays.stream(inputString.split(MANIFEST_SEPARATOR))
+            .filter(manifest -> !REGEX_TESTS_MANIFESTS.matcher(manifest).find())
+            .collect(Collectors.joining(MANIFEST_SEPARATOR));
 
-    final String manifestBody =
-        MANIFEST_SEPARATOR
-            + outputManifests.stream().collect(Collectors.joining(MANIFEST_SEPARATOR));
-    return manifestBody.getBytes();
+    return outputManifests.getBytes();
   }
 
-  protected Path downloadArtifactToTmpFile(BakeManifestEnvironment env, Artifact artifact)
+  private Path downloadArtifactToTmpFile(BakeManifestEnvironment env, Artifact artifact)
       throws IOException {
     String fileName = UUID.randomUUID().toString();
     File targetFile = env.resolvePath(fileName).toFile();

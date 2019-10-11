@@ -10,14 +10,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.springframework.stereotype.Component;
 import retrofit.client.Response;
 
-@Component
 @Slf4j
 public class TemplateUtils {
   private final ClouddriverService clouddriverService;
-  private RetrySupport retrySupport = new RetrySupport();
+  private final RetrySupport retrySupport = new RetrySupport();
 
   public TemplateUtils(ClouddriverService clouddriverService) {
     this.clouddriverService = clouddriverService;

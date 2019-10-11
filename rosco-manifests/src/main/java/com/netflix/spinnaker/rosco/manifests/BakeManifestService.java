@@ -40,7 +40,6 @@ public abstract class BakeManifestService<T extends BakeManifestRequest> {
   public abstract boolean handles(String type);
 
   protected byte[] doBake(BakeRecipe recipe) {
-    BakeStatus bakeStatus = null;
     JobRequest jobRequest =
         new JobRequest(
             recipe.getCommand(),
@@ -50,7 +49,7 @@ public abstract class BakeManifestService<T extends BakeManifestRequest> {
             false);
 
     String jobId = jobExecutor.startJob(jobRequest);
-    bakeStatus = jobExecutor.updateJob(jobId);
+    BakeStatus bakeStatus = jobExecutor.updateJob(jobId);
     while (bakeStatus == null || bakeStatus.getState() == BakeStatus.State.RUNNING) {
       try {
         Thread.sleep(1000);
