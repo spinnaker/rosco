@@ -30,32 +30,34 @@ import org.junit.runner.RunWith;
 final class BakeManifestEnvironmentTest {
   @Test
   void rejectsInvalidPaths() throws IOException {
-    BakeManifestEnvironment bakeManifestEnvironment = BakeManifestEnvironment.create();
+    try (BakeManifestEnvironment bakeManifestEnvironment = BakeManifestEnvironment.create()) {
 
-    Path result = bakeManifestEnvironment.resolvePath(Paths.get("abc"));
-    assertThat(result.endsWith("abc")).isTrue();
+      Path result = bakeManifestEnvironment.resolvePath(Paths.get("abc"));
+      assertThat(result.endsWith("abc")).isTrue();
 
-    Throwable thrown;
-    thrown = catchThrowable(() -> bakeManifestEnvironment.resolvePath(Paths.get("..")));
-    assertThat(thrown).isInstanceOf(Exception.class);
+      Throwable thrown;
+      thrown = catchThrowable(() -> bakeManifestEnvironment.resolvePath(Paths.get("..")));
+      assertThat(thrown).isInstanceOf(Exception.class);
 
-    thrown =
-        catchThrowable(() -> bakeManifestEnvironment.resolvePath(Paths.get("../../etc/passwd")));
-    assertThat(thrown).isInstanceOf(Exception.class);
+      thrown =
+          catchThrowable(() -> bakeManifestEnvironment.resolvePath(Paths.get("../../etc/passwd")));
+      assertThat(thrown).isInstanceOf(Exception.class);
+    }
   }
 
   @Test
   void rejectsInvalidStringPaths() throws IOException {
-    BakeManifestEnvironment bakeManifestEnvironment = BakeManifestEnvironment.create();
+    try (BakeManifestEnvironment bakeManifestEnvironment = BakeManifestEnvironment.create()) {
 
-    Path result = bakeManifestEnvironment.resolvePath("abc");
-    assertThat(result.endsWith("abc")).isTrue();
+      Path result = bakeManifestEnvironment.resolvePath("abc");
+      assertThat(result.endsWith("abc")).isTrue();
 
-    Throwable thrown;
-    thrown = catchThrowable(() -> bakeManifestEnvironment.resolvePath(".."));
-    assertThat(thrown).isInstanceOf(Exception.class);
+      Throwable thrown;
+      thrown = catchThrowable(() -> bakeManifestEnvironment.resolvePath(".."));
+      assertThat(thrown).isInstanceOf(Exception.class);
 
-    thrown = catchThrowable(() -> bakeManifestEnvironment.resolvePath("../../etc/passwd"));
-    assertThat(thrown).isInstanceOf(Exception.class);
+      thrown = catchThrowable(() -> bakeManifestEnvironment.resolvePath("../../etc/passwd"));
+      assertThat(thrown).isInstanceOf(Exception.class);
+    }
   }
 }
