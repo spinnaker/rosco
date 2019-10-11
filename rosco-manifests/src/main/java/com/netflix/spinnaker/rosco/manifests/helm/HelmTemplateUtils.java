@@ -1,7 +1,6 @@
 package com.netflix.spinnaker.rosco.manifests.helm;
 
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
-import com.netflix.spinnaker.kork.web.exceptions.InvalidRequestException;
 import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestEnvironment;
 import com.netflix.spinnaker.rosco.manifests.TemplateUtils;
@@ -9,16 +8,12 @@ import com.netflix.spinnaker.rosco.services.ClouddriverService;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.xml.bind.DatatypeConverter;
 import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.util.ArrayUtils;
 
@@ -109,31 +104,10 @@ public class HelmTemplateUtils extends TemplateUtils {
     return manifestBody.getBytes();
   }
 
-  private String nameFromReference(String reference) {
-    try {
-      MessageDigest md = MessageDigest.getInstance("MD5");
-      return DatatypeConverter.printHexBinary(md.digest(reference.getBytes()));
-    } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException("Failed to save bake manifest: " + e.getMessage(), e);
-    }
-  }
-
-  @Nonnull
-  private String uniqueKey(Artifact artifact) {
-    if (artifact.getReference() != null) {
-      return artifact.getReference();
-    }
-    if (artifact.getName() != null) {
-      return String.format(
-          "%s-%s", artifact.getName(), Optional.ofNullable(artifact.getVersion()).orElse(""));
-    }
-    throw new InvalidRequestException("Input artifact has empty 'name' and 'reference' fields.");
-  }
-
   protected Path downloadArtifactToTmpFile(BakeManifestEnvironment env, Artifact artifact)
       throws IOException {
-    String uniqueKey = uniqueKey(artifact);
-    File targetFile = env.resolvePath(nameFromReference(uniqueKey)).toFile();
+    String fileName = UUID.randomUUID().toString();
+    File targetFile = env.resolvePath(fileName).toFile();
     downloadArtifact(artifact, targetFile);
     return targetFile.toPath();
   }
