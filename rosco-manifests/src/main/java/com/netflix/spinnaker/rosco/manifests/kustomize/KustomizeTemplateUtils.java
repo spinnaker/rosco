@@ -93,8 +93,7 @@ public class KustomizeTemplateUtils extends TemplateUtils {
     Path artifactFilePath = env.resolvePath(artifactFileName);
     Path artifactParentDirectory = artifactFilePath.getParent();
     Files.createDirectories(artifactParentDirectory);
-    File newFile = artifactFilePath.toFile();
-    downloadArtifact(artifact, newFile);
+    downloadArtifact(artifact, artifactFilePath);
   }
 
   private List<Artifact> getArtifacts(Artifact artifact) {

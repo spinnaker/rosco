@@ -5,7 +5,6 @@ import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestEnvironment;
 import com.netflix.spinnaker.rosco.manifests.TemplateUtils;
 import com.netflix.spinnaker.rosco.services.ClouddriverService;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -98,8 +97,8 @@ public class HelmTemplateUtils extends TemplateUtils {
   private Path downloadArtifactToTmpFile(BakeManifestEnvironment env, Artifact artifact)
       throws IOException {
     String fileName = UUID.randomUUID().toString();
-    File targetFile = env.resolvePath(fileName).toFile();
-    downloadArtifact(artifact, targetFile);
-    return targetFile.toPath();
+    Path targetPath = env.resolvePath(fileName);
+    downloadArtifact(artifact, targetPath);
+    return targetPath;
   }
 }
