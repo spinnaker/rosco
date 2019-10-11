@@ -83,15 +83,10 @@ public class HelmTemplateUtils extends TemplateUtils {
     return result;
   }
 
-  public byte[] removeTestsDirectoryTemplates(byte[] input) {
-    final String inputString = new String(input);
-
-    final String outputManifests =
-        Arrays.stream(inputString.split(MANIFEST_SEPARATOR))
-            .filter(manifest -> !REGEX_TESTS_MANIFESTS.matcher(manifest).find())
-            .collect(Collectors.joining(MANIFEST_SEPARATOR));
-
-    return outputManifests.getBytes();
+  public String removeTestsDirectoryTemplates(String inputString) {
+    return Arrays.stream(inputString.split(MANIFEST_SEPARATOR))
+        .filter(manifest -> !REGEX_TESTS_MANIFESTS.matcher(manifest).find())
+        .collect(Collectors.joining(MANIFEST_SEPARATOR));
   }
 
   private Path downloadArtifactToTmpFile(BakeManifestEnvironment env, Artifact artifact)

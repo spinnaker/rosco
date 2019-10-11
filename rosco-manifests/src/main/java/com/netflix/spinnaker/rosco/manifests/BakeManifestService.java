@@ -39,7 +39,7 @@ public abstract class BakeManifestService<T extends BakeManifestRequest> {
 
   public abstract boolean handles(String type);
 
-  protected byte[] doBake(BakeRecipe recipe) {
+  protected String doBake(BakeRecipe recipe) {
     JobRequest jobRequest =
         new JobRequest(
             recipe.getCommand(),
@@ -62,6 +62,6 @@ public abstract class BakeManifestService<T extends BakeManifestRequest> {
     if (bakeStatus.getResult() != BakeStatus.Result.SUCCESS) {
       throw new IllegalStateException("Bake failed: " + bakeStatus.getLogsContent());
     }
-    return bakeStatus.getOutputContent().getBytes();
+    return bakeStatus.getOutputContent();
   }
 }

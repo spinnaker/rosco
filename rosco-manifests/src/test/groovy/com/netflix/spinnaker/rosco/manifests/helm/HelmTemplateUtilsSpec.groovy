@@ -53,7 +53,7 @@ class HelmTemplateUtilsSpec extends Specification {
         def helmTemplateUtils = new HelmTemplateUtils(cloudDriverService)
 
         when:
-        def output = new String(helmTemplateUtils.removeTestsDirectoryTemplates(inputManifests.getBytes()))
+        def output = helmTemplateUtils.removeTestsDirectoryTemplates(inputManifests)
 
         then:
         def expected = """
@@ -107,7 +107,7 @@ class HelmTemplateUtilsSpec extends Specification {
         def helmTemplateUtils = new HelmTemplateUtils(cloudDriverService)
 
         when:
-        def output = new String(helmTemplateUtils.removeTestsDirectoryTemplates(inputManifests.getBytes()))
+        def output = helmTemplateUtils.removeTestsDirectoryTemplates(inputManifests)
 
         then:
         def expected = """
