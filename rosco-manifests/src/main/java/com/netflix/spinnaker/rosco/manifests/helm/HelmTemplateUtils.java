@@ -1,33 +1,30 @@
 package com.netflix.spinnaker.rosco.manifests.helm;
 
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
-import com.netflix.spinnaker.kork.web.exceptions.InvalidRequestException;
 import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
+import com.netflix.spinnaker.rosco.manifests.ArtifactDownloader;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestEnvironment;
-import com.netflix.spinnaker.rosco.manifests.TemplateUtils;
-import com.netflix.spinnaker.rosco.services.ClouddriverService;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.xml.bind.DatatypeConverter;
 import org.springframework.stereotype.Component;
-import org.yaml.snakeyaml.util.ArrayUtils;
 
 @Component
-public class HelmTemplateUtils extends TemplateUtils {
-
+public class HelmTemplateUtils {
   private static final String MANIFEST_SEPARATOR = "---\n";
-  private static final String REGEX_TESTS_MANIFESTS = "# Source: .*/templates/tests/.*";
+  private static final Pattern REGEX_TESTS_MANIFESTS =
+      Pattern.compile("# Source: .*/templates/tests/.*");
 
-  public HelmTemplateUtils(ClouddriverService clouddriverService) {
-    super(clouddriverService);
+  private final ArtifactDownloader artifactDownloader;
+
+  public HelmTemplateUtils(ArtifactDownloader artifactDownloader) {
+    this.artifactDownloader = artifactDownloader;
   }
 
   public BakeRecipe buildBakeRecipe(BakeManifestEnvironment env, HelmBakeManifestRequest request) {
@@ -71,14 +68,14 @@ public class HelmTemplateUtils extends TemplateUtils {
       for (Map.Entry<String, Object> entry : overrides.entrySet()) {
         overrideList.add(entry.getKey() + "=" + entry.getValue().toString());
       }
-      command.add("--set-string");
-      command.add(overrideList.stream().collect(Collectors.joining(",")));
+      String overrideOption = request.isRawOverrides() ? "--set" : "--set-string";
+      command.add(overrideOption);
+      command.add(String.join(",", overrideList));
     }
 
     if (!valuePaths.isEmpty()) {
       command.add("--values");
-      command.add(
-          String.join(",", valuePaths.stream().map(Path::toString).collect(Collectors.toList())));
+      command.add(valuePaths.stream().map(Path::toString).collect(Collectors.joining(",")));
     }
 
     result.setCommand(command);
@@ -86,43 +83,17 @@ public class HelmTemplateUtils extends TemplateUtils {
     return result;
   }
 
-  public byte[] removeTestsDirectoryTemplates(byte[] input) {
-
-    final String inputString = new String(input);
-    final List<String> inputManifests =
-        ArrayUtils.toUnmodifiableList(inputString.split(MANIFEST_SEPARATOR));
-
-    final List<String> outputManifests =
-        inputManifests.stream()
-            .filter(
-                manifest ->
-                    !manifest.trim().isEmpty()
-                        && !Pattern.compile(REGEX_TESTS_MANIFESTS).matcher(manifest).find())
-            .collect(Collectors.toList());
-
-    final String manifestBody =
-        MANIFEST_SEPARATOR
-            + outputManifests.stream().collect(Collectors.joining(MANIFEST_SEPARATOR));
-    return manifestBody.getBytes();
+  public String removeTestsDirectoryTemplates(String inputString) {
+    return Arrays.stream(inputString.split(MANIFEST_SEPARATOR))
+        .filter(manifest -> !REGEX_TESTS_MANIFESTS.matcher(manifest).find())
+        .collect(Collectors.joining(MANIFEST_SEPARATOR));
   }
 
-  private String nameFromReference(String reference) {
-    try {
-      MessageDigest md = MessageDigest.getInstance("MD5");
-      return DatatypeConverter.printHexBinary(md.digest(reference.getBytes()));
-    } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException("Failed to save bake manifest: " + e.getMessage(), e);
-    }
-  }
-
-  protected Path downloadArtifactToTmpFile(BakeManifestEnvironment env, Artifact artifact)
+  private Path downloadArtifactToTmpFile(BakeManifestEnvironment env, Artifact artifact)
       throws IOException {
-    if (artifact.getReference() == null) {
-      throw new InvalidRequestException("Input artifact has an empty 'reference' field.");
-    }
-    File targetFile =
-        env.getStagingPath().resolve(nameFromReference(artifact.getReference())).toFile();
-    downloadArtifact(artifact, targetFile);
-    return targetFile.toPath();
+    String fileName = UUID.randomUUID().toString();
+    Path targetPath = env.resolvePath(fileName);
+    artifactDownloader.downloadArtifact(artifact, targetPath);
+    return targetPath;
   }
 }
