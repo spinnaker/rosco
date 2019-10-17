@@ -22,6 +22,7 @@ import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
 import com.netflix.spinnaker.rosco.manifests.ArtifactDownloader;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestEnvironment;
 import com.netflix.spinnaker.rosco.manifests.kustomize.mapping.Kustomization;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -31,9 +32,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.stereotype.Component;
 
@@ -50,13 +55,28 @@ public class KustomizeTemplateUtils {
   }
 
   public BakeRecipe buildBakeRecipe(
-      BakeManifestEnvironment env, KustomizeBakeManifestRequest request) {
+      BakeManifestEnvironment env, KustomizeBakeManifestRequest request) throws IOException {
     BakeRecipe result = new BakeRecipe();
     result.setName(request.getOutputName());
     Artifact artifact = request.getInputArtifact();
     if (artifact == null) {
       throw new IllegalArgumentException("Exactly one input artifact must be provided to bake.");
     }
+
+    String artifactType = Optional.of(artifact.getType()).orElse("");
+    switch (artifactType) {
+      case "git/repo":
+        return buildBakeRecipeFromGitRepo(env, request, artifact);
+      default:
+        return oldBuildBakeRecipe(env, request, artifact);
+    }
+  }
+
+  // Keep the old logic for now. This will be removed as soon as the rest of the git/repo artifact
+  // PRs are merged
+  private BakeRecipe oldBuildBakeRecipe(
+      BakeManifestEnvironment env, KustomizeBakeManifestRequest request, Artifact artifact) {
+
     String kustomizationfilename = FilenameUtils.getName(artifact.getReference());
     if (kustomizationfilename == null
         || (kustomizationfilename != null
@@ -79,9 +99,69 @@ public class KustomizeTemplateUtils {
     command.add("kustomize");
     command.add("build");
     command.add(templatePath.getParent().toString());
-    result.setCommand(command);
 
+    BakeRecipe result = new BakeRecipe();
+    result.setCommand(command);
     return result;
+  }
+
+  private BakeRecipe buildBakeRecipeFromGitRepo(
+      BakeManifestEnvironment env, KustomizeBakeManifestRequest request, Artifact artifact)
+      throws IOException {
+    // This is a redundant check for now, but it's here for when we soon remove the old logic of
+    // building from
+    // a github/file artifact type and instead, only support the git/repo artifact type
+    if (!"git/repo".equals(artifact.getType())) {
+      throw new IllegalArgumentException("The inputArtifact should be of type \"git/repo\".");
+    }
+
+    String kustomizeFilePath = request.getKustomizeFilePath();
+    if (kustomizeFilePath == null) {
+      throw new IllegalArgumentException("The bake request should contain a kustomize file path.");
+    }
+
+    Path tarPath = env.resolvePath("repo.tar.gz");
+    try {
+      artifactDownloader.downloadArtifact(artifact, tarPath);
+    } catch (IOException e) {
+      throw new IOException("Failed to download git/repo artifact: " + e.getMessage(), e);
+    }
+
+    try {
+      extractArtifact(tarPath, env.resolvePath(""));
+    } catch (IOException e) {
+      throw new IOException("Failed to extract git/repo artifact: " + e.getMessage(), e);
+    }
+
+    List<String> command = new ArrayList<>();
+    command.add("kustomize");
+    command.add("build");
+    command.add(env.resolvePath(kustomizeFilePath).getParent().toString());
+
+    BakeRecipe result = new BakeRecipe();
+    result.setCommand(command);
+    return result;
+  }
+
+  // This being here is temporary until we find a better way to abstract it
+  public static void extractArtifact(Path inputTar, Path outputPath) throws IOException {
+    TarArchiveInputStream tarArchiveInputStream =
+        new TarArchiveInputStream(
+            new GzipCompressorInputStream(new BufferedInputStream(Files.newInputStream(inputTar))));
+
+    ArchiveEntry archiveEntry = null;
+    while ((archiveEntry = tarArchiveInputStream.getNextEntry()) != null) {
+      Path archiveEntryOutput = outputPath.resolve(archiveEntry.getName());
+      if (archiveEntry.isDirectory()) {
+        if (!Files.exists(archiveEntryOutput)) {
+          Files.createDirectory(archiveEntryOutput);
+        }
+      } else {
+        Files.copy(tarArchiveInputStream, archiveEntryOutput);
+      }
+    }
+
+    tarArchiveInputStream.close();
   }
 
   protected void downloadArtifactToTmpFileStructure(
