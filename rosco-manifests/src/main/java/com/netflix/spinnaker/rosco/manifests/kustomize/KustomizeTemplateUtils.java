@@ -25,6 +25,7 @@ import com.netflix.spinnaker.rosco.manifests.kustomize.mapping.Kustomization;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -64,11 +65,10 @@ public class KustomizeTemplateUtils {
     }
 
     String artifactType = Optional.of(artifact.getType()).orElse("");
-    switch (artifactType) {
-      case "git/repo":
-        return buildBakeRecipeFromGitRepo(env, request, artifact);
-      default:
-        return oldBuildBakeRecipe(env, request, artifact);
+    if ("git/repo".equals(artifactType)) {
+      return buildBakeRecipeFromGitRepo(env, request, artifact);
+    } else {
+      return oldBuildBakeRecipe(env, request, artifact);
     }
   }
 
@@ -120,15 +120,15 @@ public class KustomizeTemplateUtils {
       throw new IllegalArgumentException("The bake request should contain a kustomize file path.");
     }
 
-    Path tarPath = env.resolvePath("repo.tar.gz");
+    InputStream inputStream;
     try {
-      artifactDownloader.downloadArtifact(artifact, tarPath);
+      inputStream = artifactDownloader.downloadArtifact(artifact);
     } catch (IOException e) {
       throw new IOException("Failed to download git/repo artifact: " + e.getMessage(), e);
     }
 
     try {
-      extractArtifact(tarPath, env.resolvePath(""));
+      extractArtifact(inputStream, env.resolvePath(""));
     } catch (IOException e) {
       throw new IOException("Failed to extract git/repo artifact: " + e.getMessage(), e);
     }
@@ -144,24 +144,25 @@ public class KustomizeTemplateUtils {
   }
 
   // This being here is temporary until we find a better way to abstract it
-  public static void extractArtifact(Path inputTar, Path outputPath) throws IOException {
-    TarArchiveInputStream tarArchiveInputStream =
+  private static void extractArtifact(InputStream inputStream, Path outputPath) throws IOException {
+    try (TarArchiveInputStream tarArchiveInputStream =
         new TarArchiveInputStream(
-            new GzipCompressorInputStream(new BufferedInputStream(Files.newInputStream(inputTar))));
+            new GzipCompressorInputStream(new BufferedInputStream(inputStream)))) {
 
-    ArchiveEntry archiveEntry = null;
-    while ((archiveEntry = tarArchiveInputStream.getNextEntry()) != null) {
-      Path archiveEntryOutput = outputPath.resolve(archiveEntry.getName());
-      if (archiveEntry.isDirectory()) {
-        if (!Files.exists(archiveEntryOutput)) {
-          Files.createDirectory(archiveEntryOutput);
+      ArchiveEntry archiveEntry;
+      while ((archiveEntry = tarArchiveInputStream.getNextEntry()) != null) {
+        Path archiveEntryOutput = outputPath.resolve(archiveEntry.getName());
+        if (archiveEntry.isDirectory()) {
+          if (!Files.exists(archiveEntryOutput)) {
+            Files.createDirectory(archiveEntryOutput);
+          }
+        } else {
+          Files.copy(tarArchiveInputStream, archiveEntryOutput);
         }
-      } else {
-        Files.copy(tarArchiveInputStream, archiveEntryOutput);
       }
+    } catch (Exception e) {
+      System.out.println(e);
     }
-
-    tarArchiveInputStream.close();
   }
 
   protected void downloadArtifactToTmpFileStructure(
@@ -173,7 +174,7 @@ public class KustomizeTemplateUtils {
     Path artifactFilePath = env.resolvePath(artifactFileName);
     Path artifactParentDirectory = artifactFilePath.getParent();
     Files.createDirectories(artifactParentDirectory);
-    artifactDownloader.downloadArtifact(artifact, artifactFilePath);
+    artifactDownloader.downloadArtifactToFile(artifact, artifactFilePath);
   }
 
   private List<Artifact> getArtifacts(Artifact artifact) {

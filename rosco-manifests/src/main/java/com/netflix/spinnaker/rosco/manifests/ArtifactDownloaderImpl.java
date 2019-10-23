@@ -23,7 +23,18 @@ public final class ArtifactDownloaderImpl implements ArtifactDownloader {
     this.clouddriverService = clouddriverService;
   }
 
-  public void downloadArtifact(Artifact artifact, Path targetFile) throws IOException {
+  public InputStream downloadArtifact(Artifact artifact) throws IOException {
+    Response response =
+        retrySupport.retry(() -> clouddriverService.fetchArtifact(artifact), 5, 1000, true);
+    if (response.getBody() != null) {
+      return response.getBody().in();
+    } else {
+      log.error("Failure to fetch artifact: empty response");
+      return null;
+    }
+  }
+
+  public void downloadArtifactToFile(Artifact artifact, Path targetFile) throws IOException {
     try (OutputStream outputStream = Files.newOutputStream(targetFile)) {
       Response response =
           retrySupport.retry(() -> clouddriverService.fetchArtifact(artifact), 5, 1000, true);
