@@ -27,28 +27,24 @@ public final class ArtifactDownloaderImpl implements ArtifactDownloader {
   public InputStream downloadArtifact(Artifact artifact) throws IOException {
     Response response =
         retrySupport.retry(() -> clouddriverService.fetchArtifact(artifact), 5, 1000, true);
-    if (response.getBody() != null) {
-      return response.getBody().in();
+    if (response.getBody() == null) {
+      throw new IOException("Failure to fetch artifact: empty response");
     } else {
-      log.error("Failure to fetch artifact: empty response");
-      return null;
+      try (InputStream inputStream = response.getBody().in()) {
+        return inputStream;
+      } catch (IOException e) {
+        throw new IOException(
+            String.format(
+                "Failed to read input stream of downloaded artifact: %s. Error: %s",
+                artifact, e.getMessage()));
+      }
     }
   }
 
   public void downloadArtifactToFile(Artifact artifact, Path targetFile) throws IOException {
     try (OutputStream outputStream = Files.newOutputStream(targetFile)) {
-      Response response =
-          retrySupport.retry(() -> clouddriverService.fetchArtifact(artifact), 5, 1000, true);
-      if (response.getBody() != null) {
-        try (InputStream inputStream = response.getBody().in()) {
-          IOUtils.copy(inputStream, outputStream);
-        } catch (IOException e) {
-          throw new IOException(
-              String.format(
-                  "Failed to read input stream of downloaded artifact: %s. Error: %s",
-                  artifact, e.getMessage()));
-        }
-      }
+      InputStream inputStream = downloadArtifact(artifact);
+      IOUtils.copy(inputStream, outputStream);
     } catch (RetrofitError e) {
       throw new IOException(
           String.format("Failed to download artifact: %s. Error: %s", artifact, e.getMessage()));

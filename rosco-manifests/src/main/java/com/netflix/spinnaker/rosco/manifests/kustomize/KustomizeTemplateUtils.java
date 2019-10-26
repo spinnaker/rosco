@@ -109,8 +109,8 @@ public class KustomizeTemplateUtils {
       BakeManifestEnvironment env, KustomizeBakeManifestRequest request, Artifact artifact)
       throws IOException {
     // This is a redundant check for now, but it's here for when we soon remove the old logic of
-    // building from
-    // a github/file artifact type and instead, only support the git/repo artifact type
+    // building from a github/file artifact type and instead, only support the git/repo artifact
+    // type
     if (!"git/repo".equals(artifact.getType())) {
       throw new IllegalArgumentException("The inputArtifact should be of type \"git/repo\".");
     }
@@ -151,7 +151,7 @@ public class KustomizeTemplateUtils {
 
       ArchiveEntry archiveEntry;
       while ((archiveEntry = tarArchiveInputStream.getNextEntry()) != null) {
-        Path archiveEntryOutput = outputPath.resolve(archiveEntry.getName());
+        Path archiveEntryOutput = validateArchiveEntry(archiveEntry.getName(), outputPath);
         if (archiveEntry.isDirectory()) {
           if (!Files.exists(archiveEntryOutput)) {
             Files.createDirectory(archiveEntryOutput);
@@ -160,9 +160,15 @@ public class KustomizeTemplateUtils {
           Files.copy(tarArchiveInputStream, archiveEntryOutput);
         }
       }
-    } catch (Exception e) {
-      System.out.println(e);
     }
+  }
+
+  private static Path validateArchiveEntry(String archiveEntryName, Path outputPath) {
+    Path entryPath = outputPath.resolve(archiveEntryName);
+    if (!entryPath.normalize().startsWith(outputPath)) {
+      throw new IllegalStateException("Attempting to create a file outside of the staging path.");
+    }
+    return entryPath;
   }
 
   protected void downloadArtifactToTmpFileStructure(
