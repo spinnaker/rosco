@@ -395,12 +395,13 @@ google:
     #     sourceImage: ubuntu-1404-trusty-v20170517
     - baseImage:
         id: trusty
-        shortDescription: v14.04
-        detailedDescription: Ubuntu Trusty Tahr v14.04
+        shortDescription: v14.04 - Deprecated
+        detailedDescription: Ubuntu Trusty Tahr v14.04 - Deprecated.
         packageType: deb
-        isImageFamily: true
+        isImageFamily: false
       virtualizationSettings:
-        sourceImageFamily: ubuntu-1404-lts
+        # Last published release of Trusty. Has been removed for 1.18 and above.
+        sourceImage: ubuntu-1404-trusty-v20191107
     - baseImage:
         id: xenial
         shortDescription: v16.04
@@ -409,6 +410,14 @@ google:
         isImageFamily: true
       virtualizationSettings:
         sourceImageFamily: ubuntu-1604-lts
+    - baseImage:
+        id: bionic
+        shortDescription: v18.04
+        detailedDescription: Ubuntu Bionic Beaver v18.04
+        packageType: deb
+        isImageFamily: true
+      virtualizationSettings:
+        sourceImageFamily: ubuntu-1804-lts
 
 swagger:
   enabled: true
