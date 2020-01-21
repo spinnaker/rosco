@@ -29,7 +29,7 @@ public class RoscoTencentConfiguration {
   @Autowired private TencentBakeHandler tencentBakeHandler;
 
   @Bean
-  @ConfigurationProperties("tencent.bakeryDefaults")
+  @ConfigurationProperties("tencent.bakery-defaults")
   public TencentBakeryDefaults tencentBakeryDefaults(
       @Value("${tencent.bakeryDefaults.defaultVirtualizationType:hvm}")
           VmType defaultVirtualizationType) {
@@ -67,5 +67,10 @@ public class RoscoTencentConfiguration {
     private List<TencentVirtualizationSettings> virtualizationSettings = new ArrayList<>();
   }
 
-  public static class TencentVirtualizationSettings {}
+  @Data
+  public static class TencentVirtualizationSettings {
+    private String region;
+    private String virtualizationType;
+    private String instanceType;
+  }
 }

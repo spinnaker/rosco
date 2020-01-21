@@ -1,15 +1,15 @@
 {
   "variables": {
-    "secret_id": "{{env `TENCENTCLOUD_SECRET_ID`}}",
-    "secret_key": "{{env `TENCENTCLOUD_SECRET_KEY`}}"
+    "secret_id": "AKIDjJXaS8UjjUtRlqTdHl179wHQLCF6hESU",
+    "secret_key": "zmMo57HtKjy0AC2i9SbjfeUWMOCsNdfS"
   },
   "builders": [{
     "type": "tencentcloud-cvm",
-    "secret_id": "{{user `secret_id`}}",
-    "secret_key": "{{user `secret_key`}}",
+    "secret_id": "AKIDjJXaS8UjjUtRlqTdHl179wHQLCF6hESU",
+    "secret_key": "zmMo57HtKjy0AC2i9SbjfeUWMOCsNdfS",
     "region": "ap-guangzhou",
-    "zone": "ap-guangzhou-3",
-    "instance_type": "S4.SMALL1",
+    "zone": "ap-guangzhou-4",
+    "instance_type": "M5.SMALL8",
     "source_image_id": "img-pyqx34y1",
     "image_name": "SpinnakerPackerTest",
     "image_description": "Spinnaker Packer Test",
