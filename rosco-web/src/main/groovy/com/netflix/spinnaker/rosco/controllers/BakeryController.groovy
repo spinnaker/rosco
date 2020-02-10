@@ -122,6 +122,7 @@ class BakeryController {
         "${waitForJobStartTimeoutMillis}ms is the configured timeout for the job to start. If it is a persistent issue, " +
         "you could increase 'rosco.polling.waitForJobStartTimeoutMillis' to give the job more time to start.")
     }
+    
     if (newBakeStatus.result == BakeStatus.Result.FAILURE && newBakeStatus.logsContent) {
       throw new IllegalArgumentException(newBakeStatus.logsContent)
 
