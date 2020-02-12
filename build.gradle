@@ -29,6 +29,11 @@ allprojects {
       jvmArgs '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8187'
     }
   }
+  configurations.all {
+    resolutionStrategy {
+      force group: 'org.apache.commons', name: 'commons-compress', version: '1.+' // remove CVE-2019-12402, bump commons-compress dependency
+    }
+  }
 }
 
 subprojects {
