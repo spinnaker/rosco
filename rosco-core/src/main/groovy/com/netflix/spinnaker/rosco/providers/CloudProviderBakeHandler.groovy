@@ -17,6 +17,8 @@
 package com.netflix.spinnaker.rosco.providers
 
 import com.netflix.spinnaker.kork.artifacts.model.Artifact
+import com.netflix.spinnaker.kork.core.RetrySupport
+import com.netflix.spinnaker.kork.dynamicconfig.DynamicConfigService
 import com.netflix.spinnaker.rosco.api.Bake
 import com.netflix.spinnaker.rosco.api.BakeOptions
 import com.netflix.spinnaker.rosco.api.BakeOptions.BaseImage
@@ -25,9 +27,11 @@ import com.netflix.spinnaker.rosco.jobs.BakeRecipe
 import com.netflix.spinnaker.rosco.providers.util.ImageNameFactory
 import com.netflix.spinnaker.rosco.providers.util.PackageNameConverter
 import com.netflix.spinnaker.rosco.providers.util.PackerCommandFactory
+import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 
+@Slf4j
 abstract class CloudProviderBakeHandler {
 
   @Value('${rosco.config-dir}')
@@ -35,6 +39,9 @@ abstract class CloudProviderBakeHandler {
 
   @Autowired
   PackerCommandFactory packerCommandFactory
+
+  @Autowired
+  DynamicConfigService dynamicConfigService
 
   @Value('${debian-repository:}')
   String debianRepository
@@ -115,17 +122,16 @@ abstract class CloudProviderBakeHandler {
    * but it could be useful to override this method for specific providers.
    */
   def Artifact produceArtifactDecorationFrom(BakeRequest bakeRequest, BakeRecipe bakeRecipe, Bake bakeDetails, String cloudProvider, String region) {
-    Artifact bakedArtifact = new Artifact(
-      name: bakeRecipe?.name,
-      type: "${cloudProvider}/image",
-      location: region,
-      reference: getArtifactReference(bakeRequest, bakeDetails),
-      metadata: [
+    Artifact bakedArtifact = Artifact.builder()
+      .name(bakeRecipe?.name)
+      .type("${cloudProvider}/image")
+      .location(region)
+      .reference(getArtifactReference(bakeRequest, bakeDetails))
+      .metadata([
         build_info_url: bakeRequest?.build_info_url,
-        build_number: bakeRequest?.build_number
-      ],
-      uuid: bakeDetails.id
-    )
+        build_number: bakeRequest?.build_number])
+      .uuid(bakeDetails.id)
+      .build()
 
     return bakedArtifact
   }
@@ -197,7 +203,9 @@ abstract class CloudProviderBakeHandler {
 
     def parameterMap = buildParameterMap(region, virtualizationSettings, imageName, bakeRequest, appVersionStr)
 
-    if (debianRepository && selectedOptions.baseImage.packageType == BakeRequest.PackageType.DEB) {
+    if (selectedOptions.baseImage.customRepository) {
+      parameterMap.repository = selectedOptions.baseImage.customRepository
+    } else if (debianRepository && selectedOptions.baseImage.packageType == BakeRequest.PackageType.DEB) {
       parameterMap.repository = debianRepository
     } else if (yumRepository && selectedOptions.baseImage.packageType == BakeRequest.PackageType.RPM) {
       parameterMap.repository = yumRepository
@@ -238,6 +246,22 @@ abstract class CloudProviderBakeHandler {
                                                                 finaltemplateFilePath)
 
     return new BakeRecipe(name: imageName, version: appVersionStr, command: packerCommand)
+  }
+
+  /**
+   * Ability to lookup base image via dynamicConfigService when unset in bakeRequest or rosco.yml
+   * Property name:
+   *  "${bakeRequest.cloud_provider_type}.base.${bakeRequest.base_os}.${bakeRequest.vm_type}.${bakeRequest.base_label}.$region"
+   *  I.e.:
+   *  "aws.base.bionic.hvm.release.us-west-2"
+   */
+  protected String lookupBaseByDynamicProperty(String region, BakeRequest bakeRequest) {
+    String property = "${bakeRequest.cloud_provider_type}.base.${bakeRequest.base_os}.${bakeRequest.vm_type}.${bakeRequest.base_label}.$region"
+    String base = dynamicConfigService.getConfig(String, property, null)
+    if (base == null) {
+      log.warn("No base image found for property '$property'")
+    }
+    return base
   }
 
   protected Map unrollParameters(Map.Entry entry) {

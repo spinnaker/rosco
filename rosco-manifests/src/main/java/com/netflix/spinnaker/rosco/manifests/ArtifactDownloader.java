@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Armory, Inc.
+ * Copyright 2019 Google, LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package com.netflix.spinnaker.rosco.manifests.kustomize;
+package com.netflix.spinnaker.rosco.manifests;
 
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
-import com.netflix.spinnaker.rosco.manifests.BakeManifestRequest;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
 
-@Data
-@EqualsAndHashCode(callSuper = true)
-public class KustomizeBakeManifestRequest extends BakeManifestRequest {
-  private Artifact inputArtifact;
-  private String kustomizeFilePath;
+public interface ArtifactDownloader {
+  InputStream downloadArtifact(Artifact artifact) throws IOException;
+
+  void downloadArtifactToFile(Artifact artifact, Path targetFile) throws IOException;
 }

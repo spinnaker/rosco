@@ -23,6 +23,7 @@ import com.netflix.spinnaker.rosco.providers.aws.config.RoscoAWSConfiguration
 import com.netflix.spinnaker.rosco.providers.azure.config.RoscoAzureConfiguration
 import com.netflix.spinnaker.rosco.providers.docker.config.RoscoDockerConfiguration
 import com.netflix.spinnaker.rosco.providers.google.config.RoscoGoogleConfiguration
+import com.netflix.spinnaker.rosco.providers.huaweicloud.config.RoscoHuaweiCloudConfiguration
 import com.netflix.spinnaker.rosco.providers.oracle.config.RoscoOracleConfiguration
 import com.netflix.spinnaker.rosco.services.ServiceConfig
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
@@ -58,6 +59,7 @@ import javax.servlet.Filter
   RoscoAzureConfiguration,
   RoscoDockerConfiguration,
   RoscoGoogleConfiguration,
+  RoscoHuaweiCloudConfiguration,
   RoscoOracleConfiguration,
   RoscoPackerConfigurationProperties,
   LocalJobConfig
@@ -69,6 +71,7 @@ class Main extends SpringBootServletInitializer {
   static final Map<String, String> DEFAULT_PROPS = [
     'netflix.environment': 'test',
     'netflix.account': '${netflix.environment}',
+    'bakeAccount': '${netflix.account}',
     'netflix.stack': 'test',
     'spring.config.additional-location': '${user.home}/.spinnaker/',
     'spring.application.name': 'rosco',

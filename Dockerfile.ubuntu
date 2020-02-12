@@ -6,10 +6,10 @@ COPY --from=compile /compiled_sources/rosco-web/config/packer       /opt/rosco/c
 
 WORKDIR /packer
 
-RUN apt-get update && apt-get -y install openjdk-8-jre-headless wget unzip curl && \
-  wget https://releases.hashicorp.com/packer/1.4.2/packer_1.4.2_linux_amd64.zip && \
-  unzip packer_1.4.2_linux_amd64.zip && \
-  rm packer_1.4.2_linux_amd64.zip
+RUN apt-get update && apt-get -y install openjdk-11-jre-headless wget unzip curl && \
+  wget https://releases.hashicorp.com/packer/1.4.4/packer_1.4.4_linux_amd64.zip && \
+  unzip packer_1.4.4_linux_amd64.zip && \
+  rm packer_1.4.4_linux_amd64.zip
 
 ENV PATH "/packer:$PATH"
 
@@ -18,10 +18,11 @@ RUN wget https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get &&
   ./get && \
   rm get
 
-RUN curl -s -L -O https://github.com/kubernetes-sigs/kustomize/releases/download/v3.1.0/kustomize_3.1.0_linux_amd64 && \
-  mkdir kustomize && \
-  mv kustomize_*_linux_amd64 kustomize/kustomize && \
-  chmod +x kustomize/kustomize
+RUN mkdir kustomize && \
+  curl -s -L https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v3.3.0/kustomize_v3.3.0_linux_amd64.tar.gz |\
+  tar xvz -C kustomize/
+
+ENV PATH "kustomize:$PATH"
 
 RUN adduser --disabled-login --system spinnaker
 USER spinnaker
