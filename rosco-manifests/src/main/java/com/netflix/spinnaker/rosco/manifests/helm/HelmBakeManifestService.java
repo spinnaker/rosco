@@ -12,7 +12,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class HelmBakeManifestService extends BakeManifestService<HelmBakeManifestRequest> {
   private final HelmTemplateUtils helmTemplateUtils;
-  private static final String HELM_TYPE = "HELM2";
+  private static final String HELM2_TYPE = "HELM2";
+  private static final String HELM3_TYPE = "HELM3";
 
   public HelmBakeManifestService(HelmTemplateUtils helmTemplateUtils, JobExecutor jobExecutor) {
     super(jobExecutor);
@@ -26,7 +27,7 @@ public class HelmBakeManifestService extends BakeManifestService<HelmBakeManifes
 
   @Override
   public boolean handles(String type) {
-    return type.toUpperCase().equals(HELM_TYPE);
+    return HELM2_TYPE.equals(type.toUpperCase()) || HELM3_TYPE.equals(type.toUpperCase());
   }
 
   public Artifact bake(HelmBakeManifestRequest bakeManifestRequest) throws IOException {

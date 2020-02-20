@@ -4,6 +4,8 @@ import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
 import com.netflix.spinnaker.rosco.manifests.ArtifactDownloader;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestEnvironment;
+import com.netflix.spinnaker.rosco.manifests.BakeManifestRequest;
+import com.netflix.spinnaker.rosco.manifests.config.RoscoHelmConfigurationProperties;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -22,9 +24,13 @@ public class HelmTemplateUtils {
       Pattern.compile("# Source: .*/templates/tests/.*");
 
   private final ArtifactDownloader artifactDownloader;
+  private final RoscoHelmConfigurationProperties helmConfigurationProperties;
 
-  public HelmTemplateUtils(ArtifactDownloader artifactDownloader) {
+  public HelmTemplateUtils(
+      ArtifactDownloader artifactDownloader,
+      RoscoHelmConfigurationProperties helmConfigurationProperties) {
     this.artifactDownloader = artifactDownloader;
+    this.helmConfigurationProperties = helmConfigurationProperties;
   }
 
   public BakeRecipe buildBakeRecipe(BakeManifestEnvironment env, HelmBakeManifestRequest request) {
@@ -50,7 +56,8 @@ public class HelmTemplateUtils {
     }
 
     List<String> command = new ArrayList<>();
-    command.add("helm");
+    String executable = getHelmExecutableForRequest(request);
+    command.add(executable);
     command.add("template");
     command.add(templatePath.toString());
     command.add("--name");
@@ -95,5 +102,12 @@ public class HelmTemplateUtils {
     Path targetPath = env.resolvePath(fileName);
     artifactDownloader.downloadArtifactToFile(artifact, targetPath);
     return targetPath;
+  }
+
+  private String getHelmExecutableForRequest(HelmBakeManifestRequest request) {
+    if (BakeManifestRequest.TemplateRenderer.HELM2.equals(request.getTemplateRenderer())) {
+      return helmConfigurationProperties.getV2ExecutablePath();
+    }
+    return helmConfigurationProperties.getV3ExecutablePath();
   }
 }
