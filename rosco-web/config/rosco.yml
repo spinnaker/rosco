@@ -456,5 +456,6 @@ swagger:
   contact:
   patterns:
     - /api/v1.*
+    - /api/v2.*
     - /bakeOptions.*
     - /status.*
