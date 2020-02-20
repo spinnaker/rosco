@@ -57,11 +57,21 @@ public class HelmTemplateUtils {
 
     List<String> command = new ArrayList<>();
     String executable = getHelmExecutableForRequest(request);
+
+    // Helm `template` subcommands are slightly different
+    // helm 2: helm template <chart> --name <release name>
+    // helm 3: helm template <release name> <chart>
+    // Other parameters such as --namespace, --set, and --values are the same
     command.add(executable);
     command.add("template");
-    command.add(templatePath.toString());
-    command.add("--name");
-    command.add(request.getOutputName());
+    if (HelmBakeManifestRequest.TemplateRenderer.HELM2.equals(request.getTemplateRenderer())) {
+      command.add(templatePath.toString());
+      command.add("--name");
+      command.add(request.getOutputName());
+    } else {
+      command.add(request.getOutputName());
+      command.add(templatePath.toString());
+    }
 
     String namespace = request.getNamespace();
     if (namespace != null && !namespace.isEmpty()) {
