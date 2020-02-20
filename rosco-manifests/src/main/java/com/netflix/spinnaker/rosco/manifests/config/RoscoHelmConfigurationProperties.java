@@ -22,6 +22,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties("helm")
 @Data
 public class RoscoHelmConfigurationProperties {
-  String v3ExecutablePath = "helm3";
-  String v2ExecutablePath = "helm";
+  private String v3ExecutablePath = "helm3";
+  private String v2ExecutablePath = "helm";
 }

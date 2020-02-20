@@ -1,5 +1,8 @@
 package com.netflix.spinnaker.rosco.manifests.helm;
 
+import static com.netflix.spinnaker.rosco.manifests.BakeManifestRequest.TemplateRenderer;
+
+import com.google.common.collect.ImmutableSet;
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
 import com.netflix.spinnaker.rosco.jobs.JobExecutor;
@@ -12,8 +15,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class HelmBakeManifestService extends BakeManifestService<HelmBakeManifestRequest> {
   private final HelmTemplateUtils helmTemplateUtils;
-  private static final String HELM2_TYPE = "HELM2";
-  private static final String HELM3_TYPE = "HELM3";
+  private static final ImmutableSet<String> supportedTemplates =
+      ImmutableSet.of(TemplateRenderer.HELM2.toString(), TemplateRenderer.HELM3.toString());
 
   public HelmBakeManifestService(HelmTemplateUtils helmTemplateUtils, JobExecutor jobExecutor) {
     super(jobExecutor);
@@ -27,7 +30,7 @@ public class HelmBakeManifestService extends BakeManifestService<HelmBakeManifes
 
   @Override
   public boolean handles(String type) {
-    return HELM2_TYPE.equals(type.toUpperCase()) || HELM3_TYPE.equals(type.toUpperCase());
+    return supportedTemplates.contains(type);
   }
 
   public Artifact bake(HelmBakeManifestRequest bakeManifestRequest) throws IOException {
