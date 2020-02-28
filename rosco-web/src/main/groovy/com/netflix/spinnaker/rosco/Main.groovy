@@ -27,6 +27,7 @@ import com.netflix.spinnaker.rosco.providers.google.config.RoscoGoogleConfigurat
 import com.netflix.spinnaker.rosco.providers.huaweicloud.config.RoscoHuaweiCloudConfiguration
 import com.netflix.spinnaker.rosco.providers.oracle.config.RoscoOracleConfiguration
 import com.netflix.spinnaker.rosco.providers.tencentcloud.config.RoscoTencentCloudConfiguration
+import com.netflix.spinnaker.rosco.providers.yandex.config.RoscoYandexCloudConfiguration
 import com.netflix.spinnaker.rosco.services.ServiceConfig
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration
@@ -66,6 +67,7 @@ import javax.servlet.Filter
   RoscoTencentCloudConfiguration,
   RoscoPackerConfigurationProperties,
   RoscoHelmConfigurationProperties,
+  RoscoYandexCloudConfiguration,
   LocalJobConfig
 ])
 @EnableAutoConfiguration(exclude = [BatchAutoConfiguration, GroovyTemplateAutoConfiguration])
