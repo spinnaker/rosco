@@ -18,6 +18,7 @@ package com.netflix.spinnaker.rosco
 
 import com.netflix.spinnaker.rosco.config.RoscoPackerConfigurationProperties
 import com.netflix.spinnaker.rosco.jobs.config.LocalJobConfig
+import com.netflix.spinnaker.rosco.manifests.config.RoscoHelmConfigurationProperties
 import com.netflix.spinnaker.rosco.providers.alicloud.config.RoscoAliCloudConfiguration
 import com.netflix.spinnaker.rosco.providers.aws.config.RoscoAWSConfiguration
 import com.netflix.spinnaker.rosco.providers.azure.config.RoscoAzureConfiguration
@@ -25,6 +26,7 @@ import com.netflix.spinnaker.rosco.providers.docker.config.RoscoDockerConfigurat
 import com.netflix.spinnaker.rosco.providers.google.config.RoscoGoogleConfiguration
 import com.netflix.spinnaker.rosco.providers.huaweicloud.config.RoscoHuaweiCloudConfiguration
 import com.netflix.spinnaker.rosco.providers.oracle.config.RoscoOracleConfiguration
+import com.netflix.spinnaker.rosco.providers.tencentcloud.config.RoscoTencentCloudConfiguration
 import com.netflix.spinnaker.rosco.services.ServiceConfig
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.autoconfigure.batch.BatchAutoConfiguration
@@ -61,7 +63,9 @@ import javax.servlet.Filter
   RoscoGoogleConfiguration,
   RoscoHuaweiCloudConfiguration,
   RoscoOracleConfiguration,
+  RoscoTencentCloudConfiguration,
   RoscoPackerConfigurationProperties,
+  RoscoHelmConfigurationProperties,
   LocalJobConfig
 ])
 @EnableAutoConfiguration(exclude = [BatchAutoConfiguration, GroovyTemplateAutoConfiguration])
