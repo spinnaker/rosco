@@ -115,24 +115,33 @@ public class YandexBakeHandler extends CloudProviderBakeHandler {
     YandexConfigurationProperties.Account account = resolveAccount(bakeRequest);
 
     Map<String, Object> parameterMap = new HashMap<>(20);
-    YandexVirtualizationSettings settings =
-        objectMapper.convertValue(virtualizationSettings, YandexVirtualizationSettings.class);
     parameterMap.put("yandex_folder_id", account.getFolder());
-    parameterMap.put("yandex_service_account_key_file", account.getJsonPath()); // : null,
-    if (StringUtils.isNotEmpty(settings.getSourceImage())) {
-      parameterMap.put("yandex_source_image_name", settings.getSourceImage());
-    }
-    if (StringUtils.isNotEmpty(settings.getSourceImageFamily())) {
-      parameterMap.put("yandex_source_image_family", settings.getSourceImageFamily());
-    }
-    parameterMap.put("yandex_target_image_name", imageName);
-
     if (StringUtils.isNotEmpty(bakeRequest.getBuild_info_url())) {
       parameterMap.put("build_info_url", bakeRequest.getBuild_info_url());
     }
 
     if (StringUtils.isNotEmpty(appVersionStr)) {
       parameterMap.put("appversion", appVersionStr);
+    }
+    parameterMap.put("yandex_target_image_name", imageName);
+    parameterMap.put("yandex_service_account_key_file", account.getJsonPath()); // : null,
+
+    YandexVirtualizationSettings settings =
+        objectMapper.convertValue(virtualizationSettings, YandexVirtualizationSettings.class);
+
+    if (settings != null) {
+      if (StringUtils.isNotEmpty(settings.getSourceImageId())) {
+        parameterMap.put("yandex_source_image_id", settings.getSourceImageId());
+      }
+      if (StringUtils.isNotEmpty(settings.getSourceImageName())) {
+        parameterMap.put("yandex_source_image_name", settings.getSourceImageName());
+      }
+      if (StringUtils.isNotEmpty(settings.getSourceImageFamily())) {
+        parameterMap.put("yandex_source_image_family", settings.getSourceImageFamily());
+      }
+      if (StringUtils.isNotEmpty(settings.getSourceImageFolderId())) {
+        parameterMap.put("yandex_source_image_folder_id", settings.getSourceImageFolderId());
+      }
     }
 
     return parameterMap;

@@ -80,7 +80,9 @@ public class RoscoYandexCloudConfiguration {
 
   @Data
   public static class YandexVirtualizationSettings {
-    private String sourceImage;
+    private String sourceImageId;
     private String sourceImageFamily;
+    private String sourceImageName;
+    private String sourceImageFolderId;
   }
 }
