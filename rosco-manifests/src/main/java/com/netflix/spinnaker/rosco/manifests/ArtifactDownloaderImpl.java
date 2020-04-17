@@ -25,8 +25,13 @@ public final class ArtifactDownloaderImpl implements ArtifactDownloader {
   }
 
   public InputStream downloadArtifact(Artifact artifact) throws IOException {
+    return downloadArtifact(artifact, 5);
+  }
+
+  public InputStream downloadArtifact(Artifact artifact, int maxRetries) throws IOException {
     Response response =
-        retrySupport.retry(() -> clouddriverService.fetchArtifact(artifact), 5, 1000, true);
+        retrySupport.retry(
+            () -> clouddriverService.fetchArtifact(artifact), maxRetries, 1000, true);
     if (response.getBody() == null) {
       throw new IOException("Failure to fetch artifact: empty response");
     }

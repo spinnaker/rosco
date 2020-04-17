@@ -24,5 +24,7 @@ import java.nio.file.Path;
 public interface ArtifactDownloader {
   InputStream downloadArtifact(Artifact artifact) throws IOException;
 
+  InputStream downloadArtifact(Artifact artifact, int maxRetries) throws IOException;
+
   void downloadArtifactToFile(Artifact artifact, Path targetFile) throws IOException;
 }

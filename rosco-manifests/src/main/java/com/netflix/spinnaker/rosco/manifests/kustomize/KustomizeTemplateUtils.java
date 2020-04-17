@@ -122,7 +122,8 @@ public class KustomizeTemplateUtils {
 
     InputStream inputStream;
     try {
-      inputStream = artifactDownloader.downloadArtifact(artifact);
+      // maxRetries = 7 will give you abour 1 min to download artifacts
+      inputStream = artifactDownloader.downloadArtifact(artifact, 7);
     } catch (IOException e) {
       throw new IOException("Failed to download git/repo artifact: " + e.getMessage(), e);
     }
