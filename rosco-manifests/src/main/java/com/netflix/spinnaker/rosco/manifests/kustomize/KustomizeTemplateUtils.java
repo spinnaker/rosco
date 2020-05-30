@@ -259,8 +259,12 @@ public class KustomizeTemplateUtils {
       // look like a folder then we know it should be downloaded later.
       if (isFolder(evaluate)) {
         Path tmpBase = Paths.get(FilenameUtils.normalize(base.resolve(evaluate).toString()));
-        artifact.setName(tmpBase.toString());
-        filesToDownload.addAll(getFilesFromArtifact(artifact, referenceBaseURL, tmpBase, filename));
+        filesToDownload.addAll(
+            getFilesFromArtifact(
+                artifact.toBuilder().name(tmpBase.toString()).build(),
+                referenceBaseURL,
+                tmpBase,
+                filename));
       } else {
         filesToDownload.add(referenceBase.concat(File.separator).concat(evaluate));
       }
