@@ -186,24 +186,9 @@ public class KustomizeTemplateUtils {
   private List<Artifact> getArtifacts(Artifact artifact) {
     try {
       Set<String> files = getFilesFromArtifact(artifact);
-      List<Artifact> artifacts =
-          files.stream()
-              .map(
-                  f -> {
-                    return Artifact.builder()
-                        .reference(f)
-                        .artifactAccount(artifact.getArtifactAccount())
-                        .customKind(artifact.isCustomKind())
-                        .location(artifact.getLocation())
-                        .metadata(artifact.getMetadata())
-                        .name(artifact.getName())
-                        .provenance(artifact.getProvenance())
-                        .type(artifact.getType())
-                        .version(artifact.getVersion())
-                        .build();
-                  })
-              .collect(Collectors.toList());
-      return artifacts;
+      return files.stream()
+          .map(f -> artifact.toBuilder().reference(f).build())
+          .collect(Collectors.toList());
     } catch (IOException e) {
       throw new IllegalStateException("Error setting references in artifacts " + e.getMessage(), e);
     }
