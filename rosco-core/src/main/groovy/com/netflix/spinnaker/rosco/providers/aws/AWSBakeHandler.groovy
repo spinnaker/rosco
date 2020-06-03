@@ -40,7 +40,7 @@ import java.util.regex.Pattern
 public class AWSBakeHandler extends CloudProviderBakeHandler {
 
   private static final String IMAGE_NAME_TOKEN = "amazon-(chroot|ebs): Creating the AMI:"
-  private static final String UNENCRYPTED_IMAGE_NAME_TOKEN = "(==> |)amazon-(chroot|ebs): Creating unencrypted AMI"
+  private static final String UNENCRYPTED_IMAGE_NAME_TOKEN = "(==> |)amazon-(chroot|ebs): Creating( unencrypted)? AMI"
   // AMI_EXTRACTOR finds amis from the format produced by packer ie:
   // eu-north-1: ami-076cf277a86b6e5b4
   // us-east-1: ami-2c014644
