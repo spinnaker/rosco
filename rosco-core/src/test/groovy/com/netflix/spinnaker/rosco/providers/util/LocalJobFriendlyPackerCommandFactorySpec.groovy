@@ -29,9 +29,9 @@ class LocalJobFriendlyPackerCommandFactorySpec extends Specification implements 
 
     where:
       something | baseCommand | expectedPackerCommand
-      "sudo"    | "sudo"      | ["sudo", "packer", "build", "-color=false", "-var", "something=sudo"]
+      "sudo"    | ["sudo"]    | ["sudo", "packer", "build", "-color=false", "-var", "something=sudo"]
       "null"    | null        | ["packer", "build", "-color=false", "-var", "something=null"]
-      "empty"   | ""          | ["packer", "build", "-color=false", "-var", "something=empty"]
+      "empty"   | [""]        | ["packer", "build", "-color=false", "-var", "something=empty"]
   }
 
   @Unroll
@@ -42,7 +42,7 @@ class LocalJobFriendlyPackerCommandFactorySpec extends Specification implements 
       ]
 
     when:
-      def packerCommand = packerCommandFactory.buildPackerCommand("", parameterMap, varFile, "")
+      def packerCommand = packerCommandFactory.buildPackerCommand([""], parameterMap, varFile, "")
 
     then:
       packerCommand == expectedPackerCommand
@@ -58,7 +58,7 @@ class LocalJobFriendlyPackerCommandFactorySpec extends Specification implements 
   void "packerCommand includes parameter with non-quoted string"() {
 
     when:
-    def packerCommand = packerCommandFactory.buildPackerCommand("", parameterMap, null, "")
+    def packerCommand = packerCommandFactory.buildPackerCommand([""], parameterMap, null, "")
 
     then:
     packerCommand == expectedPackerCommand
@@ -73,7 +73,7 @@ class LocalJobFriendlyPackerCommandFactorySpec extends Specification implements 
     setup:
 
     when:
-      def packerCommand = packerCommandFactory.buildPackerCommand("", parameterMap, null, "")
+      def packerCommand = packerCommandFactory.buildPackerCommand([""], parameterMap, null, "")
       def jobRequest = new JobRequest(tokenizedCommand: packerCommand, maskedParameters: maskedPackerParameters, jobId: SOME_UUID)
       def commandLine = new CommandLine(jobRequest.tokenizedCommand[0])
       def arguments = (String []) Arrays.copyOfRange(jobRequest.tokenizedCommand.toArray(), 1, jobRequest.tokenizedCommand.size())

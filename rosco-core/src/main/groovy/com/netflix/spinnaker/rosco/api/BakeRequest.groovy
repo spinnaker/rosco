@@ -72,8 +72,14 @@ class BakeRequest {
   @ApiModelProperty("The image owner organization")
   String organization
 
-  @ApiModelProperty("The explicit packer template to use, instead of resolving one from rosco's configuration")
+  @ApiModelProperty("The explicit packer template file to use, instead of resolving one from rosco's configuration")
   String template_file_name
+  @ApiModelProperty("The packer template. When provided, `template_file_name` is ignored")
+  String template
+  @ApiModelProperty("Only provide this parameter if you provide the `template` parameter, and that template requires packer to run as root")
+  boolean template_requires_root
+  @ApiModelProperty("template variables to pass to packer command, only provide this in conjuction with the `template` parameter. Otherwise, either use `var_file_name` or let Rosco calculate the parameters automatically")
+  Map<String, String> template_vars
   @ApiModelProperty("A map of key/value pairs to add to the packer command")
   Map extended_attributes
   @ApiModelProperty("The name of a json file containing key/value pairs to add to the packer command (must be in the same location as the template file)")

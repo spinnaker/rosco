@@ -180,7 +180,7 @@ class TencentCloudBakeHandlerSpec extends Specification implements TestDefaults 
         1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
         1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
         1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-        1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$tencentCloudBakeryDefaults.templateFile")
+        1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$tencentCloudBakeryDefaults.templateFile")
     }
 
     void 'produces packer command with all required parameters for ubuntu, and overriding template filename'() {
@@ -221,7 +221,7 @@ class TencentCloudBakeHandlerSpec extends Specification implements TestDefaults 
         1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
         1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
         1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-        1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/somePackerTemplate.json")
+        1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/somePackerTemplate.json")
     }
 
     void 'produces packer command with all required parameters for ubuntu, and adding extended attributes'() {
@@ -264,7 +264,7 @@ class TencentCloudBakeHandlerSpec extends Specification implements TestDefaults 
         1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
         1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
         1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-        1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$tencentCloudBakeryDefaults.templateFile")
+        1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$tencentCloudBakeryDefaults.templateFile")
     }
 
     void 'throws exception when virtualization settings are not found for specified operating system'() {
@@ -402,7 +402,7 @@ class TencentCloudBakeHandlerSpec extends Specification implements TestDefaults 
         1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
         1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> appVersionStr
         1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> fullyQualifiedPackageName
-        1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$tencentCloudBakeryDefaults.templateFile")
+        1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$tencentCloudBakeryDefaults.templateFile")
     }
 
     void 'produces packer command with all required parameters including copy_to multiple regions as extended_attribute'() {
@@ -453,6 +453,6 @@ class TencentCloudBakeHandlerSpec extends Specification implements TestDefaults 
         1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
         1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> appVersionStr
         1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> fullyQualifiedPackageName
-        1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$tencentCloudBakeryDefaults.templateFile")
+        1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$tencentCloudBakeryDefaults.templateFile")
     }
 }

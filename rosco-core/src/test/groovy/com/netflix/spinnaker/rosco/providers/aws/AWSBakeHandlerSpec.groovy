@@ -491,7 +491,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters for amzn, using default vm type'() {
@@ -533,7 +533,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, RPM_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(RPM_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters for amzn, with sudo'() {
@@ -598,7 +598,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, RPM_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(RPM_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("sudo", parameterMap, null, "$configDir/aws-chroot.json")
+      1 * packerCommandFactoryMock.buildPackerCommand(["sudo"], parameterMap, null, "$configDir/aws-chroot.json")
   }
 
   void 'produces packer command with all required parameters for ubuntu, using default vm type, and overriding base ami'() {
@@ -641,7 +641,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters for ubuntu, using explicit vm type'() {
@@ -683,7 +683,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters for ubuntu, using explicit vm type, and overriding template filename'() {
@@ -726,7 +726,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/somePackerTemplate.json")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/somePackerTemplate.json")
   }
 
   void 'produces packer command with all required parameters for ubuntu, using explicit vm type, and adding extended attributes'() {
@@ -771,7 +771,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
 
   void 'sends spot_price_auto_product iff spot_price is set to auto'() {
@@ -850,7 +850,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
     1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
     1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
     1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-    1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
+    1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters for trusty, using explicit vm type'() {
@@ -892,7 +892,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters including appversion, build_host and build_info_url for trusty'() {
@@ -943,7 +943,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> appVersionStr
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> fullyQualifiedPackageName
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters including upgrade'() {
@@ -987,7 +987,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
 
   void 'produces packer (Windows) command with all required parameters'() {
@@ -1030,7 +1030,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
     1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
     1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, NUPKG_PACKAGE_TYPE) >> null
     1 * imageNameFactoryMock.buildPackagesParameter(NUPKG_PACKAGE_TYPE, osPackages) >> NUPKG_PACKAGES_NAME
-    1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$operatingSystemVirtualizationSettings.baseImage.templateFile")
+    1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$operatingSystemVirtualizationSettings.baseImage.templateFile")
   }
 
   void 'throws exception when virtualization settings are not found for specified operating system'() {
@@ -1256,7 +1256,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> appVersionStr
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> fullyQualifiedPackageName
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters including copy_to multiple regions as extended_attribute'() {
@@ -1312,7 +1312,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> appVersionStr
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> fullyQualifiedPackageName
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$awsBakeryDefaults.templateFile")
   }
 
   static class NoSleepRetry extends RetrySupport {

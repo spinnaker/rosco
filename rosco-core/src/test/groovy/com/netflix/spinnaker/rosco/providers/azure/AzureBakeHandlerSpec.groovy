@@ -278,7 +278,7 @@ class AzureBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/azure-linux.json")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/azure-linux.json")
   }
 
   void 'produces packer command with all required parameters for windows'() {
@@ -326,7 +326,7 @@ class AzureBakeHandlerSpec extends Specification implements TestDefaults{
     1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
     1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, NUPKG_PACKAGE_TYPE) >> null
     1 * imageNameFactoryMock.buildPackagesParameter(NUPKG_PACKAGE_TYPE, osPackages) >> NUPKG_PACKAGES_NAME
-    1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/azure-windows-2012-r2.json")
+    1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/azure-windows-2012-r2.json")
   }
 
   void 'Create proper azure_image_name'() {

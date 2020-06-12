@@ -24,11 +24,11 @@ class LocalJobFriendlyPackerCommandFactory implements PackerCommandFactory {
   @Autowired RoscoPackerConfigurationProperties roscoPackerConfigurationProperties
 
   @Override
-  List<String> buildPackerCommand(String baseCommand,
+  List<String> buildPackerCommand(List<String> baseCommand,
                                   Map<String, String> parameterMap,
                                   String absoluteVarFilePath,
                                   String absoluteTemplateFilePath) {
-    def packerCommand = [baseCommand, "packer", "build", "-color=false"]
+    def packerCommand = [*baseCommand, "packer", "build", "-color=false"]
     if (roscoPackerConfigurationProperties.timestamp) {
       packerCommand.add("-timestamp-ui")
     }

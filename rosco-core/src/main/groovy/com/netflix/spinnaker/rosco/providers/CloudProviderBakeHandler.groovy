@@ -91,6 +91,9 @@ abstract class CloudProviderBakeHandler {
         base_ami,
         ami_name,
         template_file_name,
+        template,
+        template_requires_root,
+        template_vars,
         var_file_name,
       ].findAll { it }
 
@@ -161,13 +164,22 @@ abstract class CloudProviderBakeHandler {
 
   /**
    * Returns the command that should be prepended to the shell command passed to the container.
+   * Used when a static template file name is provided
    */
-  String getBaseCommand(String templateName) {
+  List<String> getBaseCommand(String templateFileName) {
     if (templatesNeedingRoot) {
-      return templatesNeedingRoot.contains(templateName) ? "sudo" : ""
+      return templatesNeedingRoot.contains(templateFileName) ? ["sudo"] : [""]
     } else {
-      return ""
+      return [""]
     }
+  }
+
+  /**
+   * Returns the command that should be prepended to the shell command passed to the container.
+   * Used when a dynamic template is provided
+   */
+  List<String> getBaseCommand(String template, boolean template_requires_root) {
+    return ["echo", "'$template'", "|", template_requires_root ? "sudo" : ""]
   }
 
   /**
@@ -201,7 +213,7 @@ abstract class CloudProviderBakeHandler {
     // separately
     def packagesParameter = imageNameFactory.buildPackagesParameter(packageType, osPackageNames)
 
-    def parameterMap = buildParameterMap(region, virtualizationSettings, imageName, bakeRequest, appVersionStr)
+    def parameterMap = bakeRequest.template_vars ?: buildParameterMap(region, virtualizationSettings, imageName, bakeRequest, appVersionStr)
 
     if (selectedOptions.baseImage.customRepository) {
       parameterMap.repository = selectedOptions.baseImage.customRepository
@@ -236,14 +248,22 @@ abstract class CloudProviderBakeHandler {
       }
     }
 
-    def finalTemplateFileName = bakeRequest.template_file_name ?: getTemplateFileName(selectedOptions.baseImage)
-    def finaltemplateFilePath = "$configDir/$finalTemplateFileName"
+    def finalTemplateFilePath
+    def baseCommand
+    if (!bakeRequest.template) {
+      def finalTemplateFileName = bakeRequest.template_file_name ?: getTemplateFileName(selectedOptions.baseImage)
+      finalTemplateFilePath = "$configDir/$finalTemplateFileName"
+      baseCommand = getBaseCommand(finalTemplateFileName)
+    } else {
+      // read the template from stdin
+      finalTemplateFilePath = "-"
+      baseCommand = getBaseCommand(bakeRequest.template, bakeRequest.template_requires_root)
+    }
     def finalVarFileName = bakeRequest.var_file_name ? "$configDir/$bakeRequest.var_file_name" : null
-    def baseCommand = getBaseCommand(finalTemplateFileName)
     def packerCommand = packerCommandFactory.buildPackerCommand(baseCommand,
                                                                 parameterMap,
                                                                 finalVarFileName,
-                                                                finaltemplateFilePath)
+                                                                finalTemplateFilePath)
 
     return new BakeRecipe(name: imageName, version: appVersionStr, command: packerCommand)
   }

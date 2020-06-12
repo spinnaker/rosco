@@ -21,6 +21,6 @@ interface PackerCommandFactory {
   /**
    * Serialize passed parameters into a tokenized command string suitable for launching packer.
    */
-  List<String> buildPackerCommand(String baseCommand, Map<String, String> parameterMap, String absoluteVarFilePath, String absoluteTemplateFilePath)
+  List<String> buildPackerCommand(List<String> baseCommand, Map<String, String> parameterMap, String absoluteVarFilePath, String absoluteTemplateFilePath)
 
 }

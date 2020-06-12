@@ -291,7 +291,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters for centos'() {
@@ -339,7 +339,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildPackagesParameter(RPM_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters for precise, and overriding base image'() {
@@ -388,7 +388,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters for precise, and overriding template filename'() {
@@ -437,7 +437,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/somePackerTemplate.json")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/somePackerTemplate.json")
   }
 
   void 'produces packer command with all required parameters for precise, and adding extended attributes'() {
@@ -488,7 +488,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters for precise, and overrides native attributes via extended attributes'() {
@@ -542,7 +542,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters for precise, and respects optional subnetwork config default'() {
@@ -593,7 +593,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters for trusty'() {
@@ -641,7 +641,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters for trusty, including network project id'() {
@@ -692,7 +692,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters including appversion, build_host and build_info_url for trusty'() {
@@ -749,7 +749,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, [osPackage]) >> fullyQualifiedPackageName
       1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters for trusty and reflects specified account_name'() {
@@ -799,7 +799,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters for xenial, when source image family is configured'() {
@@ -847,7 +847,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters for xenial, and overriding base image even though source image family is configured'() {
@@ -896,7 +896,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
   void 'produces packer command with all required parameters for yakkety, preferring source image when both source image and source image family are configured'() {
@@ -944,7 +944,7 @@ class GCEBakeHandlerSpec extends Specification implements TestDefaults{
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME
       1 * packerArtifactServiceMock.writeArtifactsToFile(bakeRequest.request_id, _) >> Paths.get(ARTIFACT_FILE_NAME)
       1 * packerManifestServiceMock.getManifestFileName(bakeRequest.request_id) >> MANIFEST_FILE_NAME
-      1 * packerCommandFactoryMock.buildPackerCommand("", parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
+      1 * packerCommandFactoryMock.buildPackerCommand([""], parameterMap, null, "$configDir/$gceBakeryDefaults.templateFile")
   }
 
   void 'throws exception when virtualization settings are not found for specified operating system'() {
