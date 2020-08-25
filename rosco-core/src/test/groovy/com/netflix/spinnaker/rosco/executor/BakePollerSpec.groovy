@@ -213,9 +213,7 @@ class BakePollerSpec extends Specification implements TestDefaults {
     bakePoller.completeBake(JOB_ID, LOGS_CONTENT)
 
     then:
-    // TODO(ezimanyi): Fix this exception so that instead updateBakeDetails is called
-    thrown(ReadOnlyPropertyException.class)
-    0 * bakeStoreMock.updateBakeDetails(_ as Bake) >> { Bake bake ->
+    1 * bakeStoreMock.updateBakeDetails(_ as Bake) >> { Bake bake ->
       assert bake.getArtifacts().size() == 1
       Artifact artifact = bake.getArtifacts().get(0)
       assert artifact.getName() == SOME_BAKE_RECIPE_NAME
