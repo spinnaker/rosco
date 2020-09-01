@@ -42,7 +42,7 @@ public class CloudFoundryBakeManifestService
   private static final ImmutableSet<String> supportedTemplates =
       ImmutableSet.of(BakeManifestRequest.TemplateRenderer.CF.toString());
   private final ArtifactDownloader artifactDownloader;
-  private final Yaml yaml = new Yaml();;
+  private final Yaml yaml = new Yaml();
 
   @Autowired
   public CloudFoundryBakeManifestService(
@@ -75,7 +75,7 @@ public class CloudFoundryBakeManifestService
 
     for (Map.Entry<String, Object> s : vars.entrySet()) {
       manifestTemplate =
-              manifestTemplate.replace("((" + s.getKey() + "))", s.getValue().toString());
+          manifestTemplate.replace("((" + s.getKey() + "))", s.getValue().toString());
     }
 
     return Artifact.builder()

@@ -16,30 +16,30 @@
 
 package com.netflix.spinnaker.rosco.manifests.cloudfoundry;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Base64;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 import com.netflix.spinnaker.rosco.jobs.JobExecutor;
 import com.netflix.spinnaker.rosco.manifests.ArtifactDownloader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Base64;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(JUnitPlatform.class)
 public class CloudFoundryBakeManifestServiceTest {
 
   private ArtifactDownloader artifactDownloader = mock(ArtifactDownloader.class);
   private JobExecutor jobExecutor = mock(JobExecutor.class);
-  private CloudFoundryBakeManifestService cloudFoundryBakeManifestService = new CloudFoundryBakeManifestService(jobExecutor, artifactDownloader);
-
+  private CloudFoundryBakeManifestService cloudFoundryBakeManifestService =
+      new CloudFoundryBakeManifestService(jobExecutor, artifactDownloader);
 
   @Test
   public void shouldResolveManifestWithSimpleVars() throws IOException {
@@ -49,18 +49,19 @@ public class CloudFoundryBakeManifestServiceTest {
     InputStream vars = new ByteArrayInputStream(varsString.getBytes());
 
     CloudFoundryBakeManifestRequest request = new CloudFoundryBakeManifestRequest();
-    request.setManifestTemplate(Artifact.builder().reference(Base64.getEncoder().encodeToString(manifestString.getBytes())).build());
+    request.setManifestTemplate(
+        Artifact.builder()
+            .reference(Base64.getEncoder().encodeToString(manifestString.getBytes()))
+            .build());
     request.setVarsArtifacts(ImmutableList.of(Artifact.builder().build()));
 
-    when(artifactDownloader.downloadArtifact(any()))
-            .thenReturn(manifestTemplate)
-            .thenReturn(vars);
+    when(artifactDownloader.downloadArtifact(any())).thenReturn(manifestTemplate).thenReturn(vars);
 
     Artifact artifact = cloudFoundryBakeManifestService.bake(request);
-    String resolvedManifest = new String(Base64.getDecoder().decode(artifact.getReference()), "UTF-8");
+    String resolvedManifest =
+        new String(Base64.getDecoder().decode(artifact.getReference()), "UTF-8");
     String expectedManifest = "{\"app\":\"bobservice1\",\"version\":\"v999\"}";
     assertThat(resolvedManifest).asString().isEqualTo(expectedManifest);
-
   }
 
   @Test
@@ -71,18 +72,19 @@ public class CloudFoundryBakeManifestServiceTest {
     InputStream vars = new ByteArrayInputStream(varsString.getBytes());
 
     CloudFoundryBakeManifestRequest request = new CloudFoundryBakeManifestRequest();
-    request.setManifestTemplate(Artifact.builder().reference(Base64.getEncoder().encodeToString(manifestString.getBytes())).build());
+    request.setManifestTemplate(
+        Artifact.builder()
+            .reference(Base64.getEncoder().encodeToString(manifestString.getBytes()))
+            .build());
     request.setVarsArtifacts(ImmutableList.of(Artifact.builder().build()));
 
-    when(artifactDownloader.downloadArtifact(any()))
-            .thenReturn(manifestTemplate)
-            .thenReturn(vars);
+    when(artifactDownloader.downloadArtifact(any())).thenReturn(manifestTemplate).thenReturn(vars);
 
     Artifact artifact = cloudFoundryBakeManifestService.bake(request);
-    String resolvedManifest = new String(Base64.getDecoder().decode(artifact.getReference()), "UTF-8");
+    String resolvedManifest =
+        new String(Base64.getDecoder().decode(artifact.getReference()), "UTF-8");
     String expectedManifest = "{\"app\":\"bobservice1\",\"version\":\"v999\"}";
     assertThat(resolvedManifest).asString().isEqualTo(expectedManifest);
-
   }
 
   @Test
@@ -93,39 +95,42 @@ public class CloudFoundryBakeManifestServiceTest {
     InputStream vars = new ByteArrayInputStream(varsString.getBytes());
 
     CloudFoundryBakeManifestRequest request = new CloudFoundryBakeManifestRequest();
-    request.setManifestTemplate(Artifact.builder().reference(Base64.getEncoder().encodeToString(manifestString.getBytes())).build());
+    request.setManifestTemplate(
+        Artifact.builder()
+            .reference(Base64.getEncoder().encodeToString(manifestString.getBytes()))
+            .build());
     request.setVarsArtifacts(ImmutableList.of(Artifact.builder().build()));
 
-    when(artifactDownloader.downloadArtifact(any()))
-            .thenReturn(manifestTemplate)
-            .thenReturn(vars);
+    when(artifactDownloader.downloadArtifact(any())).thenReturn(manifestTemplate).thenReturn(vars);
 
     Artifact artifact = cloudFoundryBakeManifestService.bake(request);
-    String resolvedManifest = new String(Base64.getDecoder().decode(artifact.getReference()), "UTF-8");
+    String resolvedManifest =
+        new String(Base64.getDecoder().decode(artifact.getReference()), "UTF-8");
     String expectedManifest = "{\"app\":\"bobservice1\",\"version\":\"v999\"}";
     assertThat(resolvedManifest).asString().isEqualTo(expectedManifest);
-
   }
 
   @Test
   public void shouldResolveManifestWithComplexVars() throws IOException {
     String manifestString = "{\"app\":\"((app[0].name))\",\"version\":\"((someversion))\"}";
-    String varsString = "{\"app\":[{\"name\":\"bobservice1\",\"secondary\":\"tester\"}],\"someversion\":\"v999\"}";
+    String varsString =
+        "{\"app\":[{\"name\":\"bobservice1\",\"secondary\":\"tester\"}],\"someversion\":\"v999\"}";
     InputStream manifestTemplate = new ByteArrayInputStream(manifestString.getBytes());
     InputStream vars = new ByteArrayInputStream(varsString.getBytes());
 
     CloudFoundryBakeManifestRequest request = new CloudFoundryBakeManifestRequest();
-    request.setManifestTemplate(Artifact.builder().reference(Base64.getEncoder().encodeToString(manifestString.getBytes())).build());
+    request.setManifestTemplate(
+        Artifact.builder()
+            .reference(Base64.getEncoder().encodeToString(manifestString.getBytes()))
+            .build());
     request.setVarsArtifacts(ImmutableList.of(Artifact.builder().build()));
 
-    when(artifactDownloader.downloadArtifact(any()))
-            .thenReturn(manifestTemplate)
-            .thenReturn(vars);
+    when(artifactDownloader.downloadArtifact(any())).thenReturn(manifestTemplate).thenReturn(vars);
 
     Artifact artifact = cloudFoundryBakeManifestService.bake(request);
-    String resolvedManifest = new String(Base64.getDecoder().decode(artifact.getReference()), "UTF-8");
+    String resolvedManifest =
+        new String(Base64.getDecoder().decode(artifact.getReference()), "UTF-8");
     String expectedManifest = "{\"app\":\"bobservice1\",\"version\":\"v999\"}";
     assertThat(resolvedManifest).asString().isEqualTo(expectedManifest);
-
   }
 }
