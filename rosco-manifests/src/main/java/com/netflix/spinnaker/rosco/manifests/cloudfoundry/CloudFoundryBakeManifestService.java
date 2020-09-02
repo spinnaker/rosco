@@ -42,7 +42,6 @@ public class CloudFoundryBakeManifestService
   private static final ImmutableSet<String> supportedTemplates =
       ImmutableSet.of(BakeManifestRequest.TemplateRenderer.CF.toString());
   private final ArtifactDownloader artifactDownloader;
-  private final Yaml yaml = new Yaml();
 
   @Autowired
   public CloudFoundryBakeManifestService(
@@ -58,6 +57,7 @@ public class CloudFoundryBakeManifestService
 
   @Override
   public Artifact bake(CloudFoundryBakeManifestRequest bakeManifestRequest) throws IOException {
+    Yaml yaml = new Yaml();
 
     String manifestTemplate =
         CharStreams.toString(
