@@ -17,6 +17,7 @@
 package com.netflix.spinnaker.rosco.manifests.cloudfoundry;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -132,5 +133,30 @@ public class CloudFoundryBakeManifestServiceTest {
         new String(Base64.getDecoder().decode(artifact.getReference()), "UTF-8");
     String expectedManifest = "{\"app\":\"bobservice1\",\"version\":\"v999\"}";
     assertThat(resolvedManifest).asString().isEqualTo(expectedManifest);
+  }
+
+  @Test
+  public void shouldThrowWithUnknownKeys() throws IOException {
+    String manifestString = "{\"app\":\"((appname1))\",\"version\":\"((someversion))\"}";
+    String varsString = "{\"appname\":\"bobservice1\",\"someversion\":\"v999\"}";
+    InputStream manifestTemplate = new ByteArrayInputStream(manifestString.getBytes());
+    InputStream vars = new ByteArrayInputStream(varsString.getBytes());
+
+    CloudFoundryBakeManifestRequest request = new CloudFoundryBakeManifestRequest();
+    request.setManifestTemplate(
+        Artifact.builder()
+            .reference(Base64.getEncoder().encodeToString(manifestString.getBytes()))
+            .build());
+    request.setVarsArtifacts(ImmutableList.of(Artifact.builder().build()));
+
+    when(artifactDownloader.downloadArtifact(any())).thenReturn(manifestTemplate).thenReturn(vars);
+
+    Exception exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> cloudFoundryBakeManifestService.bake(request),
+            "Expected it to throw an error but it didn't");
+    assertThat(exception.getMessage())
+        .isEqualTo("Unable to resolve values for the following keys: \n((appname1))");
   }
 }

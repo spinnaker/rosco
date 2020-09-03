@@ -29,10 +29,18 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
-import org.springframework.vault.support.JsonMapFlattener;
+import org.springframework.util.StringUtils;
 import org.yaml.snakeyaml.Yaml;
 
 @Component
@@ -57,6 +65,8 @@ public class CloudFoundryBakeManifestService
 
   @Override
   public Artifact bake(CloudFoundryBakeManifestRequest bakeManifestRequest) throws IOException {
+    String pattern = "\\(\\((!?[-/\\.\\w\\pL\\]\\[]+)\\)\\)";
+
     Yaml yaml = new Yaml();
 
     String manifestTemplate =
@@ -71,11 +81,23 @@ public class CloudFoundryBakeManifestService
       vars.putAll(yaml.load(inputStream));
       inputStream.close();
     }
-    vars = JsonMapFlattener.flatten(vars);
+    vars = flatten(vars);
 
-    for (Map.Entry<String, Object> s : vars.entrySet()) {
-      manifestTemplate =
-          manifestTemplate.replace("((" + s.getKey() + "))", s.getValue().toString());
+    Set<String> matches = new HashSet<>();
+    Matcher m = Pattern.compile(pattern).matcher(manifestTemplate);
+
+    while (m.find()) {
+      String key = m.group().substring(2, m.group().length() - 2);
+      if (vars.get(key) != null) {
+        manifestTemplate = manifestTemplate.replace(m.group(), (String) vars.get(key));
+      } else {
+        matches.add(m.group());
+      }
+    }
+
+    if (matches.size() > 0) {
+      throw new IllegalArgumentException(
+          "Unable to resolve values for the following keys: \n" + String.join("\n ", matches));
     }
 
     return Artifact.builder()
@@ -88,5 +110,74 @@ public class CloudFoundryBakeManifestService
   @Override
   public Class<CloudFoundryBakeManifestRequest> requestType() {
     return CloudFoundryBakeManifestRequest.class;
+  }
+
+  /*
+   * The following four methods are influenced by @author Mark Paluch
+   * The full class is here:
+   * https://github.com/spring-projects/spring-vault/blob/master/spring-vault-core/src/main/java/org/springframework/vault/support/JsonMapFlattener.java
+   */
+  private Map<String, Object> flatten(Map<String, ? extends Object> inputMap) {
+
+    Map<String, Object> resultMap = new HashMap<>();
+
+    doFlatten("", inputMap.entrySet().iterator(), resultMap, UnaryOperator.identity());
+
+    return resultMap;
+  }
+
+  private void doFlatten(
+      String propertyPrefix,
+      Iterator<? extends Map.Entry<String, ?>> inputMap,
+      Map<String, ? extends Object> resultMap,
+      Function<Object, Object> valueTransformer) {
+
+    if (StringUtils.hasText(propertyPrefix)) {
+      propertyPrefix = propertyPrefix + ".";
+    }
+
+    while (inputMap.hasNext()) {
+
+      Map.Entry<String, ? extends Object> entry = inputMap.next();
+      flattenElement(
+          propertyPrefix.concat(entry.getKey()), entry.getValue(), resultMap, valueTransformer);
+    }
+  }
+
+  private void flattenElement(
+      String propertyPrefix,
+      @Nullable Object source,
+      Map<String, ?> resultMap,
+      Function<Object, Object> valueTransformer) {
+
+    if (source instanceof Iterable) {
+      flattenCollection(propertyPrefix, (Iterable<Object>) source, resultMap, valueTransformer);
+      return;
+    }
+
+    if (source instanceof Map) {
+      doFlatten(
+          propertyPrefix,
+          ((Map<String, ?>) source).entrySet().iterator(),
+          resultMap,
+          valueTransformer);
+      return;
+    }
+
+    ((Map) resultMap).put(propertyPrefix, valueTransformer.apply(source));
+  }
+
+  private void flattenCollection(
+      String propertyPrefix,
+      Iterable<Object> iterable,
+      Map<String, ?> resultMap,
+      Function<Object, Object> valueTransformer) {
+
+    int counter = 0;
+
+    for (Object element : iterable) {
+      flattenElement(propertyPrefix + "[" + counter + "]", element, resultMap, valueTransformer);
+      counter++;
+    }
   }
 }
