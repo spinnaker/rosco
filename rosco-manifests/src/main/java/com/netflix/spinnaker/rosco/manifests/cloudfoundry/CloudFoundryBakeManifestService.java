@@ -97,7 +97,8 @@ public class CloudFoundryBakeManifestService
 
     if (unresolvedKeys.size() > 0) {
       throw new IllegalArgumentException(
-          "Unable to resolve values for the following keys: \n" + String.join("\n ", unresolvedKeys));
+          "Unable to resolve values for the following keys: \n"
+              + String.join("\n ", unresolvedKeys));
     }
 
     return Artifact.builder()
