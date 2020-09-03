@@ -83,7 +83,7 @@ public class CloudFoundryBakeManifestService
     }
     vars = flatten(vars);
 
-    Set<String> matches = new HashSet<>();
+    Set<String> unresolvedKeys = new HashSet<>();
     Matcher m = Pattern.compile(pattern).matcher(manifestTemplate);
 
     while (m.find()) {
@@ -91,13 +91,13 @@ public class CloudFoundryBakeManifestService
       if (vars.get(key) != null) {
         manifestTemplate = manifestTemplate.replace(m.group(), (String) vars.get(key));
       } else {
-        matches.add(m.group());
+        unresolvedKeys.add(m.group());
       }
     }
 
-    if (matches.size() > 0) {
+    if (unresolvedKeys.size() > 0) {
       throw new IllegalArgumentException(
-          "Unable to resolve values for the following keys: \n" + String.join("\n ", matches));
+          "Unable to resolve values for the following keys: \n" + String.join("\n ", unresolvedKeys));
     }
 
     return Artifact.builder()
