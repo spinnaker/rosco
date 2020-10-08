@@ -17,6 +17,7 @@
 package com.netflix.spinnaker.rosco.manifests.helm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -31,10 +32,23 @@ import com.netflix.spinnaker.rosco.manifests.ArtifactDownloader;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestEnvironment;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestRequest;
 import com.netflix.spinnaker.rosco.manifests.config.RoscoHelmConfigurationProperties;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+import org.apache.commons.compress.utils.IOUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -189,5 +203,178 @@ final class HelmTemplateUtilsTest {
     return Stream.of(
         Arguments.of("helm2", BakeManifestRequest.TemplateRenderer.HELM2),
         Arguments.of("helm3", BakeManifestRequest.TemplateRenderer.HELM3));
+  }
+
+  @Test
+  public void buildBakeRecipeWithGitRepoArtifact(@TempDir Path tempDir) throws IOException {
+    // git/repo artifacts appear as a tarball, so create one that contains a helm chart.
+    addTestHelmChart(tempDir);
+
+    ArtifactDownloader artifactDownloader = mock(ArtifactDownloader.class);
+    RoscoHelmConfigurationProperties helmConfigurationProperties =
+        mock(RoscoHelmConfigurationProperties.class);
+    HelmTemplateUtils helmTemplateUtils =
+        new HelmTemplateUtils(artifactDownloader, helmConfigurationProperties);
+
+    HelmBakeManifestRequest request = new HelmBakeManifestRequest();
+
+    Artifact artifact =
+        Artifact.builder().type("git/repo").reference("https://github.com/some/repo.git").build();
+
+    // Set up the mock artifactDownloader to supply the tarball that represents
+    // the git/repo artifact
+    when(artifactDownloader.downloadArtifact(artifact)).thenReturn(makeTarball(tempDir));
+
+    request.setInputArtifacts(Collections.singletonList(artifact));
+    request.setNamespace("default");
+    request.setOverrides(Collections.emptyMap());
+
+    try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
+      BakeRecipe recipe = helmTemplateUtils.buildBakeRecipe(env, request);
+
+      // Make sure we're really testing the git/repo logic
+      verify(artifactDownloader).downloadArtifact(artifact);
+
+      // Make sure the BakeManifestEnvironment has the files in our git/repo artifact.
+      assertTrue(env.resolvePath("Chart.yaml").toFile().exists());
+      assertTrue(env.resolvePath("values.yaml").toFile().exists());
+      assertTrue(env.resolvePath("templates/foo.yaml").toFile().exists());
+    }
+  }
+
+  @Test
+  public void buildBakeRecipeWithGitRepoArtifactUsingHelmChartFilePath(@TempDir Path tempDir)
+      throws IOException {
+    // Create a tarball with a helm chart in a sub directory
+    String subDirName = "subdir";
+    Path subDir = tempDir.resolve(subDirName);
+    addTestHelmChart(subDir);
+
+    ArtifactDownloader artifactDownloader = mock(ArtifactDownloader.class);
+    RoscoHelmConfigurationProperties helmConfigurationProperties =
+        mock(RoscoHelmConfigurationProperties.class);
+    HelmTemplateUtils helmTemplateUtils =
+        new HelmTemplateUtils(artifactDownloader, helmConfigurationProperties);
+
+    HelmBakeManifestRequest request = new HelmBakeManifestRequest();
+
+    // So we know where to look for the path to the chart in the resulting helm
+    // template command, specify the renderer.  Use HELM2 since the path appears
+    // earlier in the argument list.
+    request.setTemplateRenderer(BakeManifestRequest.TemplateRenderer.HELM2);
+
+    // Note that supplying a location for a git/repo artifact doesn't change the
+    // path in the resulting tarball.  It's here because it's likely that it's
+    // used together with helmChartFilePath.  Removing it wouldn't change the
+    // test.
+    Artifact artifact =
+        Artifact.builder()
+            .type("git/repo")
+            .reference("https://github.com/some/repo.git")
+            .location(subDirName)
+            .build();
+
+    // Set up the mock artifactDownloader to supply the tarball that represents
+    // the git/repo artifact
+    when(artifactDownloader.downloadArtifact(artifact)).thenReturn(makeTarball(tempDir));
+
+    request.setInputArtifacts(Collections.singletonList(artifact));
+    request.setOverrides(Collections.emptyMap());
+
+    // This is the key part of this test.
+    request.setHelmChartFilePath(subDirName);
+
+    try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
+      BakeRecipe recipe = helmTemplateUtils.buildBakeRecipe(env, request);
+
+      // Make sure we're really testing the git/repo logic
+      verify(artifactDownloader).downloadArtifact(artifact);
+
+      // Make sure the BakeManifestEnvironment has the files in our git/repo
+      // artifact in the expected location.
+      assertTrue(env.resolvePath(Path.of(subDirName, "Chart.yaml")).toFile().exists());
+      assertTrue(env.resolvePath(Path.of(subDirName, "values.yaml")).toFile().exists());
+      assertTrue(env.resolvePath(Path.of(subDirName, "templates/foo.yaml")).toFile().exists());
+
+      // And that the helm template command includes the path to the subdirectory
+      //
+      // Given that we're using the HELM2 renderer, the expected elements in the
+      // command list are:
+      //
+      // 0 - the helm executable
+      // 1 - template
+      // 2 - the path to Chart.yaml
+      assertEquals(env.resolvePath(subDirName).toString(), recipe.getCommand().get(2));
+    }
+  }
+
+  /**
+   * Add a helm chart for testing
+   *
+   * @param path the location of the helm chart (e.g. Chart.yaml)
+   */
+  void addTestHelmChart(Path path) throws IOException {
+    addFile(
+        path,
+        "Chart.yaml",
+        "apiVersion: v1\n"
+            + "name: example\n"
+            + "description: chart for testing\n"
+            + "version: 0.1\n"
+            + "engine: gotpl\n");
+
+    addFile(path, "values.yaml", "foo: bar\n");
+
+    addFile(
+        path,
+        "templates/foo.yaml",
+        "labels:\n" + "helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}\n");
+  }
+
+  /**
+   * Create a new file in the temp directory
+   *
+   * @param path the path of the file to create (relative to the temp directory's root)
+   * @param content the content of the file, or null for an empty file
+   */
+  void addFile(Path tempDir, String path, String content) throws IOException {
+    Path pathToCreate = tempDir.resolve(path);
+    pathToCreate.toFile().getParentFile().mkdirs();
+    Files.write(pathToCreate, content.getBytes());
+  }
+
+  /**
+   * Make a gzipped tarball of all files in a path
+   *
+   * @param rootPath the root path of the tarball
+   * @return an InputStream containing the gzipped tarball
+   */
+  InputStream makeTarball(Path rootPath) throws IOException {
+    ArrayList<Path> filePathsToAdd =
+        Files.walk(rootPath, FileVisitOption.FOLLOW_LINKS)
+            .filter(path -> !path.equals(rootPath))
+            .collect(Collectors.toCollection(ArrayList::new));
+
+    // See
+    // https://commons.apache.org/proper/commons-compress/examples.html#Common_Archival_Logic
+    // for background
+    try (ByteArrayOutputStream os = new ByteArrayOutputStream();
+        GzipCompressorOutputStream gzo = new GzipCompressorOutputStream(os);
+        TarArchiveOutputStream tarArchive = new TarArchiveOutputStream(gzo)) {
+      for (Path path : filePathsToAdd) {
+        TarArchiveEntry tarEntry =
+            new TarArchiveEntry(path.toFile(), rootPath.relativize(path).toString());
+        tarArchive.putArchiveEntry(tarEntry);
+        if (path.toFile().isFile()) {
+          IOUtils.copy(Files.newInputStream(path), tarArchive);
+        }
+        tarArchive.closeArchiveEntry();
+      }
+
+      tarArchive.finish();
+      gzo.finish();
+
+      return new ByteArrayInputStream(os.toByteArray());
+    }
   }
 }
