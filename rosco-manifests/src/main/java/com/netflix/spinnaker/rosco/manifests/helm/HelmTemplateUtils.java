@@ -52,7 +52,7 @@ public class HelmTemplateUtils {
         valuePaths.add(downloadArtifactToTmpFile(env, valueArtifact));
       }
     } catch (IOException e) {
-      throw new IllegalStateException("Failed to fetch helm template: " + e.getMessage(), e);
+      throw new IllegalStateException("Failed to fetch helm values file: " + e.getMessage(), e);
     }
 
     List<String> command = new ArrayList<>();

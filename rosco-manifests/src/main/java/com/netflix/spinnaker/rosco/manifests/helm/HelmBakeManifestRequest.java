@@ -10,6 +10,12 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class HelmBakeManifestRequest extends BakeManifestRequest {
   String namespace;
+
+  /**
+   * The 0th element is (or contains) the template/helm chart. The rest (possibly none) are values
+   * files.
+   */
   List<Artifact> inputArtifacts;
+
   boolean rawOverrides;
 }
