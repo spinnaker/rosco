@@ -59,7 +59,7 @@ final class HelmTemplateUtilsTest {
   public void nullReferenceTest() throws IOException {
     ArtifactDownloader artifactDownloader = mock(ArtifactDownloader.class);
     RoscoHelmConfigurationProperties helmConfigurationProperties =
-        mock(RoscoHelmConfigurationProperties.class);
+        new RoscoHelmConfigurationProperties();
     HelmTemplateUtils helmTemplateUtils =
         new HelmTemplateUtils(artifactDownloader, helmConfigurationProperties);
     Artifact chartArtifact = Artifact.builder().name("test-artifact").version("3").build();
@@ -102,7 +102,7 @@ final class HelmTemplateUtilsTest {
 
     ArtifactDownloader artifactDownloader = mock(ArtifactDownloader.class);
     RoscoHelmConfigurationProperties helmConfigurationProperties =
-        mock(RoscoHelmConfigurationProperties.class);
+        new RoscoHelmConfigurationProperties();
     HelmTemplateUtils helmTemplateUtils =
         new HelmTemplateUtils(artifactDownloader, helmConfigurationProperties);
 
@@ -156,7 +156,7 @@ final class HelmTemplateUtilsTest {
 
     ArtifactDownloader artifactDownloader = mock(ArtifactDownloader.class);
     RoscoHelmConfigurationProperties helmConfigurationProperties =
-        mock(RoscoHelmConfigurationProperties.class);
+        new RoscoHelmConfigurationProperties();
     HelmTemplateUtils helmTemplateUtils =
         new HelmTemplateUtils(artifactDownloader, helmConfigurationProperties);
 
@@ -171,7 +171,7 @@ final class HelmTemplateUtilsTest {
       String command, BakeManifestRequest.TemplateRenderer templateRenderer) throws IOException {
     ArtifactDownloader artifactDownloader = mock(ArtifactDownloader.class);
     RoscoHelmConfigurationProperties helmConfigurationProperties =
-        mock(RoscoHelmConfigurationProperties.class);
+        new RoscoHelmConfigurationProperties();
     HelmTemplateUtils helmTemplateUtils =
         new HelmTemplateUtils(artifactDownloader, helmConfigurationProperties);
 
@@ -180,10 +180,6 @@ final class HelmTemplateUtilsTest {
     request.setInputArtifacts(Collections.singletonList(artifact));
     request.setNamespace("default");
     request.setOverrides(Collections.emptyMap());
-
-    // The mock return values must equal command for the assert below to work
-    when(helmConfigurationProperties.getV2ExecutablePath()).thenReturn("helm2");
-    when(helmConfigurationProperties.getV3ExecutablePath()).thenReturn("helm3");
 
     request.setTemplateRenderer(templateRenderer);
     try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
@@ -194,8 +190,10 @@ final class HelmTemplateUtilsTest {
   }
 
   private static Stream<Arguments> helmRendererArgs() {
+    // The command here (e.g. helm, helm3) must match the defaults in
+    // RoscoHelmConfigurationProperties
     return Stream.of(
-        Arguments.of("helm2", BakeManifestRequest.TemplateRenderer.HELM2),
+        Arguments.of("helm", BakeManifestRequest.TemplateRenderer.HELM2),
         Arguments.of("helm3", BakeManifestRequest.TemplateRenderer.HELM3));
   }
 
@@ -206,7 +204,7 @@ final class HelmTemplateUtilsTest {
 
     ArtifactDownloader artifactDownloader = mock(ArtifactDownloader.class);
     RoscoHelmConfigurationProperties helmConfigurationProperties =
-        mock(RoscoHelmConfigurationProperties.class);
+        new RoscoHelmConfigurationProperties();
     HelmTemplateUtils helmTemplateUtils =
         new HelmTemplateUtils(artifactDownloader, helmConfigurationProperties);
 
@@ -246,7 +244,7 @@ final class HelmTemplateUtilsTest {
 
     ArtifactDownloader artifactDownloader = mock(ArtifactDownloader.class);
     RoscoHelmConfigurationProperties helmConfigurationProperties =
-        mock(RoscoHelmConfigurationProperties.class);
+        new RoscoHelmConfigurationProperties();
     HelmTemplateUtils helmTemplateUtils =
         new HelmTemplateUtils(artifactDownloader, helmConfigurationProperties);
 
