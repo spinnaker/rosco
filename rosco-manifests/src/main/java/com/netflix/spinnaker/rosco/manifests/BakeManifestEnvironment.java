@@ -26,7 +26,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import javax.annotation.ParametersAreNonnullByDefault;
-import javax.validation.constraints.NotNull;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
@@ -69,8 +68,7 @@ public final class BakeManifestEnvironment implements AutoCloseable {
    * this environment
    */
   public void downloadArtifactTarballAndExtract(
-      @NotNull ArtifactDownloader artifactDownloader, @NotNull Artifact artifact)
-      throws IOException {
+      ArtifactDownloader artifactDownloader, Artifact artifact) throws IOException {
     InputStream inputStream;
     try {
       inputStream = artifactDownloader.downloadArtifact(artifact);
