@@ -28,7 +28,7 @@ public class HelmBakeManifestRequest extends BakeManifestRequest {
    * is foo/bar/Chart.yaml, helmChartFilePath needs to be foo/bar/Chart.yaml, just as if the
    * git/repo didn't specify a location.
    *
-   * <p>Because the same artifact might contains multiple charts (e.g. foo/bar/chart_one/Chart.yaml
+   * <p>Because the same artifact might contain multiple charts (e.g. foo/bar/chart_one/Chart.yaml
    * and foo/bar/chart_two/Chart.yaml), the artifact's location isn't always sufficient to find the
    * chart.
    */
