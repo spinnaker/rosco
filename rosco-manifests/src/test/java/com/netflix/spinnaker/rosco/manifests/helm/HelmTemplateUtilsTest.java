@@ -18,10 +18,8 @@ package com.netflix.spinnaker.rosco.manifests.helm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
@@ -190,10 +188,6 @@ final class HelmTemplateUtilsTest {
     request.setTemplateRenderer(templateRenderer);
     try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
       BakeRecipe recipe = helmTemplateUtils.buildBakeRecipe(env, request);
-
-      verify(helmConfigurationProperties, atMost(1)).getV2ExecutablePath();
-      verify(helmConfigurationProperties, atMost(1)).getV3ExecutablePath();
-      verifyNoMoreInteractions(helmConfigurationProperties);
 
       assertEquals(command, recipe.getCommand().get(0));
     }
