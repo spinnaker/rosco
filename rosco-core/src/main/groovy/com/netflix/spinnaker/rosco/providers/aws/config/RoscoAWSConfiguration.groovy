@@ -75,6 +75,8 @@ class RoscoAWSConfiguration {
     String winRmUserName
     String spotPrice
     String spotPriceAutoProduct
+    String awsVpcId
+    String awsSubnetId
   }
 
   static class AWSNamedImage {
