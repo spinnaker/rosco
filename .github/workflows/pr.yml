@@ -21,3 +21,8 @@ jobs:
           ${{ runner.os }}-gradle-
     - name: Build
       run: ./gradlew build
+    - name: Send Coverage
+      if: github.ref != 'refs/heads/master' && !startsWith(github.ref, 'refs/heads/release-')
+      env:
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+      run: ./gradlew coveralls
