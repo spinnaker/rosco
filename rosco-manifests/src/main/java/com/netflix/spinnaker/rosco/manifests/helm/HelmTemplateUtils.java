@@ -12,12 +12,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class HelmTemplateUtils {
   private static final String MANIFEST_SEPARATOR = "---\n";
   private static final Pattern REGEX_TESTS_MANIFESTS =
@@ -33,7 +36,8 @@ public class HelmTemplateUtils {
     this.helmConfigurationProperties = helmConfigurationProperties;
   }
 
-  public BakeRecipe buildBakeRecipe(BakeManifestEnvironment env, HelmBakeManifestRequest request) {
+  public BakeRecipe buildBakeRecipe(BakeManifestEnvironment env, HelmBakeManifestRequest request)
+      throws IOException {
     BakeRecipe result = new BakeRecipe();
     result.setName(request.getOutputName());
 
@@ -44,15 +48,34 @@ public class HelmTemplateUtils {
       throw new IllegalArgumentException("At least one input artifact must be provided to bake");
     }
 
-    try {
-      templatePath = downloadArtifactToTmpFile(env, inputArtifacts.get(0));
+    Artifact helmTemplateArtifact = inputArtifacts.get(0);
+    String artifactType = Optional.ofNullable(helmTemplateArtifact.getType()).orElse("");
+    if ("git/repo".equals(artifactType)) {
+      env.downloadArtifactTarballAndExtract(artifactDownloader, helmTemplateArtifact);
 
+      log.info("helmChartFilePath: '{}'", request.getHelmChartFilePath());
+
+      // If there's no helm chart path specified, assume it lives in the root of
+      // the git/repo artifact.
+      templatePath =
+          env.resolvePath(Optional.ofNullable(request.getHelmChartFilePath()).orElse(""));
+    } else {
+      try {
+        templatePath = downloadArtifactToTmpFile(env, helmTemplateArtifact);
+      } catch (IOException e) {
+        throw new IllegalStateException("Failed to fetch helm template: " + e.getMessage(), e);
+      }
+    }
+
+    log.info("path to Chart.yaml: {}", templatePath);
+
+    try {
       // not a stream to keep exception handling cleaner
       for (Artifact valueArtifact : inputArtifacts.subList(1, inputArtifacts.size())) {
         valuePaths.add(downloadArtifactToTmpFile(env, valueArtifact));
       }
     } catch (IOException e) {
-      throw new IllegalStateException("Failed to fetch helm template: " + e.getMessage(), e);
+      throw new IllegalStateException("Failed to fetch helm values file: " + e.getMessage(), e);
     }
 
     List<String> command = new ArrayList<>();
