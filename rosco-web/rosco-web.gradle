@@ -43,6 +43,7 @@ ospackage {
   configurationFile('/opt/rosco/config/packer/azure-linux.json')
   configurationFile('/opt/rosco/config/packer/gce.json')
   configurationFile('/opt/rosco/config/packer/huaweicloud.json')
+  configurationFile('/opt/rosco/config/packer/yandexcloud.json')
   configurationFile('/opt/rosco/config/packer/oci.json')
   configurationFile('/opt/rosco/config/packer/tencentcloud.json')
   configurationFile('/opt/rosco/config/packer/install_packages.sh')

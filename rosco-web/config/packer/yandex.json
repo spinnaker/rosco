@@ -1,0 +1,65 @@
+{
+  "variables": {
+    "yandex_folder_id": null,
+    "yandex_service_account_key_file": null,
+    "yandex_zone": "ru-central1-a",
+    "yandex_subnet_id": "",
+    "yandex_use_internal_ip": "false",
+    "yandex_use_ipv4_nat": "true",
+    "yandex_use_ipv6": "false",
+    "yandex_preemptible": "false",
+    "yandex_disk_type": "network-hdd",
+    "yandex_disk_size_gb": "10",
+    "yandex_ssh_username": "ubuntu",
+    "yandex_source_image_folder_id": "",
+    "yandex_source_image_id": "",
+    "yandex_source_image_name": "",
+    "yandex_source_image_family": "",
+    "yandex_target_image_name": null,
+    "yandex_target_image_family": "",
+    "appversion": "",
+    "build_host": "",
+    "repository": "",
+    "package_type": "",
+    "packages": "",
+    "upgrade": "",
+    "configDir": null
+  },
+  "builders": [
+    {
+      "type": "yandex",
+      "folder_id": "{{user `yandex_folder_id`}}",
+      "service_account_key_file": "{{user `yandex_service_account_key_file`}}",
+      "zone": "{{user `yandex_zone`}}",
+      "subnet_id": "{{user `yandex_subnet_id`}}",
+      "use_internal_ip": "{{user `yandex_use_internal_ip`}}",
+      "use_ipv4_nat": "{{user `yandex_use_ipv4_nat`}}",
+      "use_ipv6": "{{user `yandex_use_ipv6`}}",
+      "preemptible": "{{user `yandex_preemptible`}}",
+      "disk_type": "{{user `yandex_disk_type`}}",
+      "disk_size_gb": "{{user `yandex_disk_size_gb`}}",
+      "ssh_username": "{{user `yandex_ssh_username`}}",
+      "source_image_folder_id": "{{user `yandex_source_image_folder_id`}}",
+      "source_image_id": "{{user `yandex_source_image_id`}}",
+      "source_image_name": "{{user `yandex_source_image_name`}}",
+      "source_image_family": "{{user `yandex_source_image_family`}}",
+      "image_family": "{{user `yandex_target_image_family`}}",
+      "image_name": "{{user `yandex_target_image_name`}}",
+      "image_description": "appversion: {{user `appversion`}}, build_host: {{user `build_host`}}, build_info_url: {{user `build_info_url`}}",
+      "state_timeout": "15m"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "script": "{{user `configDir`}}/install_packages.sh",
+      "environment_vars": [
+        "repository={{user `repository`}}",
+        "package_type={{user `package_type`}}",
+        "packages={{user `packages`}}",
+        "upgrade={{user `upgrade`}}"
+      ],
+      "pause_before": "2m"
+    }
+  ]
+}
