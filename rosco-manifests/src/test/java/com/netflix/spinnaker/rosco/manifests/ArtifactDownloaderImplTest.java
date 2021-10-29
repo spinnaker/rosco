@@ -83,11 +83,10 @@ final class ArtifactDownloaderImplTest {
               SpinnakerException.class,
               () -> artifactDownloader.downloadArtifactToFile(testArtifact, file.path));
 
-      // FIXME: this is the current behavior, but it's unfortunate that we're
-      // not currently wrapping the exception from clouddriver with our own info
-      // (e.g. the artifact)
-      assertThat(thrown.getMessage()).contains("error from clouddriver");
-      assertThat(thrown.getCause()).isNull();
+      // Make sure we have the message we expect, and that we wrapped the
+      // underlying exception to not lose any info.
+      assertThat(thrown.getMessage()).contains("Failed to download artifact");
+      assertThat(thrown.getCause()).isEqualTo(spinnakerException);
     }
   }
 

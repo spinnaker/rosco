@@ -98,16 +98,13 @@ final class HelmTemplateUtilsTest {
     bakeManifestRequest.setInputArtifacts(ImmutableList.of(chartArtifact));
 
     try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
-      // FIXME: unfortunately we're not wrapping the exception from
-      // ArtifactDownloader, so we lose our chance to add a helm-specific
-      // message.
-      SpinnakerException thrown =
+      IllegalStateException thrown =
           assertThrows(
-              SpinnakerException.class,
+              IllegalStateException.class,
               () -> helmTemplateUtils.buildBakeRecipe(env, bakeManifestRequest));
 
-      assertThat(thrown).isEqualTo(spinnakerException);
-      assertThat(thrown.getCause()).isNull();
+      assertThat(thrown.getMessage()).contains("Failed to fetch helm template");
+      assertThat(thrown.getCause()).isEqualTo(spinnakerException);
     }
   }
 
