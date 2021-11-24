@@ -56,6 +56,11 @@ public class AzureBakeHandler extends CloudProviderBakeHandler{
   }
 
   @Override
+  String produceProviderSpecificBakeKeyComponent(String region, BakeRequest bakeRequest) {
+    return resolveAccount(bakeRequest).name
+  }
+
+  @Override
   Bake scrapeCompletedBakeResults(String region, String bakeId, String logsContent) {
     String imageName
     String ami
@@ -110,7 +115,7 @@ public class AzureBakeHandler extends CloudProviderBakeHandler{
     } else if (imageName) {
       parameterMap.azure_managed_image_name = imageName
     } else {
-      parameterMap.azure_managed_image_name = Clock.systemUTC.millis().toString()
+      parameterMap.azure_managed_image_name = System.currentTimeMillis().toString()
     }
 
     // Ensure 'azure_managed_image_name' conforms to CaptureNamePrefix regex in packer.
