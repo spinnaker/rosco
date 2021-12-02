@@ -99,8 +99,7 @@ class V2BakeryControllerTest {
                 .characterEncoding(StandardCharsets.UTF_8.toString())
                 .content(objectMapper.writeValueAsString(bakeManifestRequest)))
         .andDo(print())
-        .andExpect(
-            status().isInternalServerError()); // FIXME: ideally rosco responds with isNotFound here
+        .andExpect(status().isNotFound());
   }
 
   private static SpinnakerHttpException makeSpinnakerHttpException(int status) {
