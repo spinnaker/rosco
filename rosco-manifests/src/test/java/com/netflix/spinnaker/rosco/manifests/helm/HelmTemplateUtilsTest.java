@@ -52,7 +52,9 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.compress.utils.IOUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -63,17 +65,29 @@ import org.springframework.http.HttpStatus;
 
 @RunWith(JUnitPlatform.class)
 final class HelmTemplateUtilsTest {
-  @Test
-  public void nullReferenceTest() throws IOException {
-    ArtifactDownloader artifactDownloader = mock(ArtifactDownloader.class);
+
+  private ArtifactDownloader artifactDownloader;
+
+  private HelmTemplateUtils helmTemplateUtils;
+
+  private HelmBakeManifestRequest bakeManifestRequest;
+
+  @BeforeEach
+  private void init(TestInfo testInfo) {
+    System.out.println("--------------- Test " + testInfo.getDisplayName());
+
+    artifactDownloader = mock(ArtifactDownloader.class);
     RoscoHelmConfigurationProperties helmConfigurationProperties =
         new RoscoHelmConfigurationProperties();
-    HelmTemplateUtils helmTemplateUtils =
-        new HelmTemplateUtils(artifactDownloader, helmConfigurationProperties);
+    helmTemplateUtils = new HelmTemplateUtils(artifactDownloader, helmConfigurationProperties);
     Artifact chartArtifact = Artifact.builder().name("test-artifact").version("3").build();
 
-    HelmBakeManifestRequest bakeManifestRequest = new HelmBakeManifestRequest();
+    bakeManifestRequest = new HelmBakeManifestRequest();
     bakeManifestRequest.setInputArtifacts(ImmutableList.of(chartArtifact));
+  }
+
+  @Test
+  public void nullReferenceTest() throws IOException {
     bakeManifestRequest.setOverrides(ImmutableMap.of());
 
     try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
@@ -86,19 +100,9 @@ final class HelmTemplateUtilsTest {
     // a chance to include our own message, so the exception that goes up the
     // chain includes something about helm charts.
     SpinnakerException spinnakerException = new SpinnakerException("error from ArtifactDownloader");
-    ArtifactDownloader artifactDownloader = mock(ArtifactDownloader.class);
     doThrow(spinnakerException)
         .when(artifactDownloader)
         .downloadArtifactToFile(any(Artifact.class), any(Path.class));
-
-    RoscoHelmConfigurationProperties helmConfigurationProperties =
-        mock(RoscoHelmConfigurationProperties.class);
-    HelmTemplateUtils helmTemplateUtils =
-        new HelmTemplateUtils(artifactDownloader, helmConfigurationProperties);
-    Artifact chartArtifact = Artifact.builder().name("test-artifact").version("3").build();
-
-    HelmBakeManifestRequest bakeManifestRequest = new HelmBakeManifestRequest();
-    bakeManifestRequest.setInputArtifacts(ImmutableList.of(chartArtifact));
 
     try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
       IllegalStateException thrown =
@@ -351,19 +355,9 @@ final class HelmTemplateUtilsTest {
 
     SpinnakerHttpException spinnakerHttpException =
         makeSpinnakerHttpException(HttpStatus.NOT_FOUND.value());
-    ArtifactDownloader artifactDownloader = mock(ArtifactDownloader.class);
     doThrow(spinnakerHttpException)
         .when(artifactDownloader)
         .downloadArtifactToFile(any(Artifact.class), any(Path.class));
-
-    RoscoHelmConfigurationProperties helmConfigurationProperties =
-        mock(RoscoHelmConfigurationProperties.class);
-    HelmTemplateUtils helmTemplateUtils =
-        new HelmTemplateUtils(artifactDownloader, helmConfigurationProperties);
-    Artifact chartArtifact = Artifact.builder().name("test-artifact").version("3").build();
-
-    HelmBakeManifestRequest bakeManifestRequest = new HelmBakeManifestRequest();
-    bakeManifestRequest.setInputArtifacts(ImmutableList.of(chartArtifact));
 
     try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
       SpinnakerHttpException thrown =
