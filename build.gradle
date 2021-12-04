@@ -1,37 +1,35 @@
-buildscript {
-  repositories {
-    jcenter()
-    maven { url "https://spinnaker.bintray.com/gradle" }
-    maven { url "https://plugins.gradle.org/m2/" }
-    if (spinnakerGradleVersion.endsWith("-SNAPSHOT")) {
-      mavenLocal()
-    }
-  }
-  dependencies {
-    classpath "com.netflix.spinnaker.gradle:spinnaker-dev-plugin:$spinnakerGradleVersion"
-    if (Boolean.valueOf(enablePublishing)) {
-      classpath "com.netflix.spinnaker.gradle:spinnaker-gradle-project:$spinnakerGradleVersion"
-    }
-  }
+plugins {
+  id 'io.spinnaker.project' version "$spinnakerGradleVersion" apply false
 }
 
 allprojects {
-  apply plugin: 'spinnaker.base-project'
-  if (Boolean.valueOf(enablePublishing)) {
-    apply plugin: 'spinnaker.project'
-  }
-  apply plugin: "groovy"
-
-  group = "com.netflix.spinnaker.rosco"
-
-  tasks.withType(JavaExec) {
-    if (System.getProperty('DEBUG', 'false') == 'true') {
-      jvmArgs '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8187'
-    }
-  }
+  apply plugin: 'io.spinnaker.project'
 }
 
 subprojects {
+  group = "io.spinnaker.rosco"
+
+  if (name != "rosco-bom") {
+    apply plugin: 'java-library'
+    apply plugin: "groovy"
+
+    dependencies {
+      implementation platform("io.spinnaker.kork:kork-bom:$korkVersion")
+
+      annotationProcessor platform("io.spinnaker.kork:kork-bom:$korkVersion")
+      annotationProcessor "org.projectlombok:lombok"
+      annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+      testAnnotationProcessor platform("io.spinnaker.kork:kork-bom:$korkVersion")
+      testAnnotationProcessor "org.projectlombok:lombok"
+    }
+
+    test {
+      testLogging {
+        exceptionFormat = 'full'
+      }
+    }
+  }
+
   if (korkVersion.endsWith("-SNAPSHOT")) {
     logger.info("Enabling mavenLocal")
     repositories {
@@ -39,19 +37,9 @@ subprojects {
     }
   }
 
-  dependencies {
-    implementation platform("com.netflix.spinnaker.kork:kork-bom:$korkVersion")
-
-    annotationProcessor platform("com.netflix.spinnaker.kork:kork-bom:$korkVersion")
-    annotationProcessor "org.projectlombok:lombok"
-    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
-    testAnnotationProcessor platform("com.netflix.spinnaker.kork:kork-bom:$korkVersion")
-    testAnnotationProcessor "org.projectlombok:lombok"
-  }
-
-  test {
-    testLogging {
-      exceptionFormat = 'full'
+  tasks.withType(JavaExec) {
+    if (System.getProperty('DEBUG', 'false') == 'true') {
+      jvmArgs '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8187'
     }
   }
 }

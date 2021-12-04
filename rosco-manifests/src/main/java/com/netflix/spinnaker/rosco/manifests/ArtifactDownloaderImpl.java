@@ -2,7 +2,9 @@ package com.netflix.spinnaker.rosco.manifests;
 
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 import com.netflix.spinnaker.kork.core.RetrySupport;
+import com.netflix.spinnaker.kork.exceptions.SpinnakerException;
 import com.netflix.spinnaker.rosco.services.ClouddriverService;
+import com.netflix.spinnaker.security.AuthenticatedRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -11,7 +13,6 @@ import java.nio.file.Path;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.springframework.stereotype.Component;
-import retrofit.RetrofitError;
 import retrofit.client.Response;
 
 @Component
@@ -26,7 +27,13 @@ public final class ArtifactDownloaderImpl implements ArtifactDownloader {
 
   public InputStream downloadArtifact(Artifact artifact) throws IOException {
     Response response =
-        retrySupport.retry(() -> clouddriverService.fetchArtifact(artifact), 5, 1000, true);
+        retrySupport.retry(
+            () ->
+                AuthenticatedRequest.allowAnonymous(
+                    () -> clouddriverService.fetchArtifact(artifact)),
+            5,
+            1000,
+            true);
     if (response.getBody() == null) {
       throw new IOException("Failure to fetch artifact: empty response");
     }
@@ -41,11 +48,12 @@ public final class ArtifactDownloaderImpl implements ArtifactDownloader {
         throw new IOException(
             String.format(
                 "Failed to read input stream of downloaded artifact: %s. Error: %s",
-                artifact, e.getMessage()));
+                artifact, e.getMessage()),
+            e);
       }
-    } catch (RetrofitError e) {
-      throw new IOException(
-          String.format("Failed to download artifact: %s. Error: %s", artifact, e.getMessage()));
+    } catch (SpinnakerException e) {
+      throw new SpinnakerException(
+          String.format("Failed to download artifact: %s. Error: %s", artifact, e.getMessage()), e);
     }
   }
 }
