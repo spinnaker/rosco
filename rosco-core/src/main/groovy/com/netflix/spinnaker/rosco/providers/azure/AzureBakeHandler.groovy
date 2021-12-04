@@ -32,6 +32,7 @@ public class AzureBakeHandler extends CloudProviderBakeHandler{
 
   private static final String IMAGE_NAME_TOKEN = "ManagedImageName: "
   private static final String IMAGE_ID_TOKEN = "ManagedImageId: "
+  private static final String SIG_IMAGE_ID_TOKEN = "ManagedImageSharedImageGalleryId: "
 
   ImageNameFactory imageNameFactory = new ImageNameFactory()
 
@@ -55,6 +56,11 @@ public class AzureBakeHandler extends CloudProviderBakeHandler{
   }
 
   @Override
+  String produceProviderSpecificBakeKeyComponent(String region, BakeRequest bakeRequest) {
+    return resolveAccount(bakeRequest).name
+  }
+
+  @Override
   Bake scrapeCompletedBakeResults(String region, String bakeId, String logsContent) {
     String imageName
     String ami
@@ -65,10 +71,14 @@ public class AzureBakeHandler extends CloudProviderBakeHandler{
       // Sample for the image name and image id in logs
       // ManagedImageName: hello-karyon-rxnetty-all-20190128114007-ubuntu-1604
       // ManagedImageId: /subscriptions/faab228d-df7a-4086-991e-e81c4659d41a/resourceGroups/zhqqi-sntest/providers/Microsoft.Compute/images/hello-karyon-rxnetty-all-20190128114007-ubuntu-1604
+      // ManagedImageSharedImageGalleryId: /subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/test-rg/providers/Microsoft.Compute/galleries/test-gallery/images/test-image/versions/1.0.9
+
       if (line.startsWith(IMAGE_NAME_TOKEN)) {
         imageName = line.substring(IMAGE_NAME_TOKEN.size())
       } else if (line.startsWith(IMAGE_ID_TOKEN)) {
         ami = line.substring(IMAGE_ID_TOKEN.size())
+      } else if (line.startsWith(SIG_IMAGE_ID_TOKEN)) {
+        ami = line.substring(SIG_IMAGE_ID_TOKEN.size())
       }
     }
 
@@ -85,8 +95,7 @@ public class AzureBakeHandler extends CloudProviderBakeHandler{
 
     def selectedImage = azureBakeryDefaults?.baseImages?.find { it.baseImage.id == bakeRequest.base_os }
 
-    // TODO(larrygug): Presently rosco is only supporting a single account. Need to update to support a named account
-    def selectedAccount = azureConfigurationProperties?.accounts?.get(0)
+    RoscoAzureConfiguration.ManagedAzureAccount selectedAccount = resolveAccount(bakeRequest)
 
     def parameterMap = [
       azure_client_id: selectedAccount?.clientId,
@@ -106,7 +115,7 @@ public class AzureBakeHandler extends CloudProviderBakeHandler{
     } else if (imageName) {
       parameterMap.azure_managed_image_name = imageName
     } else {
-      parameterMap.azure_managed_image_name = Clock.systemUTC.millis().toString()
+      parameterMap.azure_managed_image_name = System.currentTimeMillis().toString()
     }
 
     // Ensure 'azure_managed_image_name' conforms to CaptureNamePrefix regex in packer.
@@ -134,5 +143,18 @@ public class AzureBakeHandler extends CloudProviderBakeHandler{
   @Override
   String getTemplateFileName(BakeOptions.BaseImage baseImage) {
     return baseImage.templateFile ?: azureBakeryDefaults.templateFile
+  }
+
+  private RoscoAzureConfiguration.ManagedAzureAccount resolveAccount(BakeRequest bakeRequest) {
+    RoscoAzureConfiguration.ManagedAzureAccount managedAzureAccount =
+      bakeRequest.account_name
+      ? azureConfigurationProperties?.accounts?.find { it.name == bakeRequest.account_name }
+      : azureConfigurationProperties?.accounts?.getAt(0)
+
+    if (!managedAzureAccount) {
+      throw new IllegalArgumentException("Could not resolve Azure account: (account_name=$bakeRequest.account_name).")
+    }
+
+    return managedAzureAccount
   }
 }
