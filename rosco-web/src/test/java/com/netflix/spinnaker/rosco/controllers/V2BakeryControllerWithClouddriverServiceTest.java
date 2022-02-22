@@ -141,7 +141,6 @@ class V2BakeryControllerWithClouddriverServiceTest {
     ArgumentCaptor<Request> requestCaptor = ArgumentCaptor.forClass(Request.class);
     verify(ok3Client).execute(requestCaptor.capture());
     List<Header> headers = requestCaptor.getValue().getHeaders();
-    // Note: this currently fails as there aren't any headers in the request to clouddriver.
     Header header = Iterables.getOnlyElement(headers);
     assertEquals(USER.getHeader(), header.getName());
     assertEquals(userValue, header.getValue());
