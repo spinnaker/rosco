@@ -40,7 +40,7 @@ jobs:
           ORG_GRADLE_PROJECT_nexusPgpSigningPassword: ${{ secrets.NEXUS_PGP_SIGNING_PASSWORD }}
         run: |
           ./gradlew --info publishToNexus closeAndReleaseNexusStagingRepository
-      - name: Publish apt and rpm packages to Google Artifact Registry
+      - name: Publish apt packages to Google Artifact Registry
         env:
           ORG_GRADLE_PROJECT_version: ${{ steps.release_info.outputs.RELEASE_VERSION }}
           ORG_GRADLE_PROJECT_artifactRegistryPublishEnabled: true
