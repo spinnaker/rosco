@@ -51,6 +51,9 @@ jobs:
           GAR_JSON_KEY: ${{ secrets.GAR_JSON_KEY }}
         run: |
           ./gradlew --info publish
+      - name: Get date
+        id: get_date
+        run: echo ::set-output name=DATETIME::$(date --utc +'%Y%m%d%H%M')
       - name: Login to GAR
         # Only run this on repositories in the 'spinnaker' org, not on forks.
         if: startsWith(github.repository, 'spinnaker/')
@@ -70,6 +73,7 @@ jobs:
           tags: |
             "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ steps.release_info.outputs.RELEASE_VERSION }}"
             "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ steps.release_info.outputs.RELEASE_VERSION }}-slim"
+            "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ steps.release_info.outputs.RELEASE_VERSION }}-$${{ github.sha }}-{{ steps.get_date.outputs.DATETIME }}-slim"
       - name: Build and publish ubuntu container image
         # Only run this on repositories in the 'spinnaker' org, not on forks.
         if: startsWith(github.repository, 'spinnaker/')
@@ -80,6 +84,7 @@ jobs:
           push: true
           tags: |
             "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ steps.release_info.outputs.RELEASE_VERSION }}-ubuntu"
+            "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ steps.release_info.outputs.RELEASE_VERSION }}-$${{ github.sha }}-{{ steps.get_date.outputs.DATETIME }}-ubuntu"
       - name: Create release
         if: steps.release_info.outputs.SKIP_RELEASE == 'false'
         uses: actions/create-release@v1

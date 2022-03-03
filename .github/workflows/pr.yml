@@ -21,6 +21,9 @@ jobs:
       run: echo ::set-output name=REPO::${GITHUB_REPOSITORY##*/}
     - name: Build
       run: "./gradlew build ${{ steps.extract_repo_name.outputs.REPO }}-web:installDist"
+    - name: Get date
+      id: get_date
+      run: echo ::set-output name=DATETIME::$(date --utc +'%Y%m%d%H%M')
     - name: Build slim container image
       uses: docker/build-push-action@v2
       with:
@@ -28,8 +31,9 @@ jobs:
         file: Dockerfile.slim
         tags: |
           "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:latest"
+          "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ github.sha }}-${{ steps.get_date.outputs.DATETIME }}-latest"
           "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:latest-slim"
-          "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ github.sha }}-slim"
+          "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ github.sha }}-${{ steps.get_date.outputs.DATETIME }}-latest-slim"
     - name: Build ubuntu container image
       uses: docker/build-push-action@v2
       with:
@@ -37,4 +41,4 @@ jobs:
         file: Dockerfile.ubuntu
         tags: |
           "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:latest-ubuntu"
-          "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ github.sha }}-ubuntu"
+          "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ github.sha }}-${{ steps.get_date.outputs.DATETIME }}-latest-ubuntu"
