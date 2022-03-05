@@ -6,7 +6,7 @@ ENV PACKER_VERSION=1.6.6
 
 WORKDIR /packer
 
-RUN apk --no-cache add --update bash wget curl openssl openjdk11-jre git openssh-client && \
+RUN apk --no-cache add --update bash wget curl openssl openjdk11-jre git openssh-client tzdata && \
   wget https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_amd64.zip && \
   unzip packer_${PACKER_VERSION}_linux_amd64.zip && \
   rm packer_${PACKER_VERSION}_linux_amd64.zip
