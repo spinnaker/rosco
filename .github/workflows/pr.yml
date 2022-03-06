@@ -31,9 +31,9 @@ jobs:
         file: Dockerfile.slim
         tags: |
           "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:latest"
-          "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ github.sha }}-${{ steps.get_date.outputs.DATETIME }}-latest"
+          "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ github.sha }}-${{ steps.get_date.outputs.DATETIME }}"
           "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:latest-slim"
-          "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ github.sha }}-${{ steps.get_date.outputs.DATETIME }}-latest-slim"
+          "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ github.sha }}-${{ steps.get_date.outputs.DATETIME }}-slim"
     - name: Build ubuntu container image
       uses: docker/build-push-action@v2
       with:
@@ -41,4 +41,4 @@ jobs:
         file: Dockerfile.ubuntu
         tags: |
           "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:latest-ubuntu"
-          "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ github.sha }}-${{ steps.get_date.outputs.DATETIME }}-latest-ubuntu"
+          "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ github.sha }}-${{ steps.get_date.outputs.DATETIME }}-ubuntu"
