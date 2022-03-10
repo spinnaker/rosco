@@ -71,9 +71,9 @@ jobs:
           file: Dockerfile.slim
           push: true
           tags: |
-            "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ steps.release_info.outputs.RELEASE_VERSION }}"
-            "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ steps.release_info.outputs.RELEASE_VERSION }}-slim"
-            "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ steps.release_info.outputs.RELEASE_VERSION }}-$${{ github.sha }}-{{ steps.get_date.outputs.DATETIME }}-slim"
+            "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ steps.release_info.outputs.RELEASE_VERSION }}-unvalidated"
+            "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ steps.release_info.outputs.RELEASE_VERSION }}-unvalidated-slim"
+            "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ steps.release_info.outputs.RELEASE_VERSION }}-$${{ github.sha }}-{{ steps.get_date.outputs.DATETIME }}-unvalidated-slim"
       - name: Build and publish ubuntu container image
         # Only run this on repositories in the 'spinnaker' org, not on forks.
         if: startsWith(github.repository, 'spinnaker/')
@@ -83,8 +83,8 @@ jobs:
           file: Dockerfile.ubuntu
           push: true
           tags: |
-            "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ steps.release_info.outputs.RELEASE_VERSION }}-ubuntu"
-            "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ steps.release_info.outputs.RELEASE_VERSION }}-$${{ github.sha }}-{{ steps.get_date.outputs.DATETIME }}-ubuntu"
+            "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ steps.release_info.outputs.RELEASE_VERSION }}-unvalidated-ubuntu"
+            "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ steps.release_info.outputs.RELEASE_VERSION }}-$${{ github.sha }}-{{ steps.get_date.outputs.DATETIME }}-unvalidated-ubuntu"
       - name: Create release
         if: steps.release_info.outputs.SKIP_RELEASE == 'false'
         uses: actions/create-release@v1
