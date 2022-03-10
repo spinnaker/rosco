@@ -30,7 +30,7 @@ jobs:
         context: .
         file: Dockerfile.slim
         tags: |
-          "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:latest"
+          "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ github.ref_name }}-latest"
           "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ github.sha }}-${{ steps.get_date.outputs.DATETIME }}"
           "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:latest-slim"
           "${{ env.CONTAINER_REGISTRY }}/${{ steps.extract_repo_name.outputs.REPO }}:${{ github.sha }}-${{ steps.get_date.outputs.DATETIME }}-slim"
