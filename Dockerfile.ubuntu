@@ -2,7 +2,7 @@ FROM ubuntu:bionic
 LABEL maintainer="sig-platform@spinnaker.io"
 
 ENV KUSTOMIZE_VERSION=3.8.6
-ENV PACKER_VERSION=1.6.6
+ENV PACKER_VERSION=1.8.1
 
 ARG TARGETARCH
 
