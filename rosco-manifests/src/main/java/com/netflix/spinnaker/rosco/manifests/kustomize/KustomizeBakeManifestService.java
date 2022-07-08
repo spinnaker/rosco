@@ -50,7 +50,7 @@ public class KustomizeBakeManifestService
 
   @Override
   public boolean handles(String type) {
-    return supportedTemplates.contains(type);
+    return supportedTemplates.contains(type.toUpperCase());
   }
 
   public Artifact bake(KustomizeBakeManifestRequest kustomizeBakeManifestRequest)
