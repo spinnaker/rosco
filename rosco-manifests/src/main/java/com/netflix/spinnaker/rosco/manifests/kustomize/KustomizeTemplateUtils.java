@@ -67,7 +67,7 @@ public class KustomizeTemplateUtils {
       throw new IllegalArgumentException("Exactly one input artifact must be provided to bake.");
     }
 
-    String artifactType = Optional.of(artifact.getType()).orElse("");
+    String artifactType = Optional.ofNullable(artifact.getType()).orElse("");
     if ("git/repo".equals(artifactType)) {
       return buildBakeRecipeFromGitRepo(env, request, artifact);
     } else {

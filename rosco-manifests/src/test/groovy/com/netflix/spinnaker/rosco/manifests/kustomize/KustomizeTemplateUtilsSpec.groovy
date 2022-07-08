@@ -210,16 +210,23 @@ class KustomizeTemplateUtilsSpec extends Specification {
 
     def "buildBakeRecipe selects kustomize executable based on specified version"() {
         given:
-        def referenceBase = "https://api.github.com/repos/kubernetes-sigs/kustomize/contents"
-        def artifactDownloader = Mock(ArtifactDownloader)
+        def referenceBase = "https://api.github.com/repos/org/repo/contents/base"
+
         def kustomizationFileReader = Mock(KustomizationFileReader)
+        kustomizationFileReader.getKustomization(_, "kustomization.yml") >> {
+            return new Kustomization(resources: ["deployment.yml", "service.yml"], selfReference: referenceBase + "/kustomization.yml")
+        }
+
+        def artifactDownloader = Mock(ArtifactDownloader)
         def kustomizeProperties = Mock(RoscoKustomizeConfigurationProperties)
         def kustomizationTemplateUtils = new KustomizeTemplateUtils(kustomizationFileReader, artifactDownloader, kustomizeProperties)
         def baseArtifact = Artifact.builder()
-                .name("examples/multibases/kustomization.yaml")
-                .reference(referenceBase + "/examples/multibases/kustomization.yaml")
+                .name("base/kustomization.yml")
+                .reference(referenceBase + "/kustomization.yml")
                 .artifactAccount("github")
+                .type("github/file")
                 .build()
+
         def request = new KustomizeBakeManifestRequest()
         request.inputArtifact = baseArtifact
         request.overrides = [:]
