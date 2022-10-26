@@ -190,7 +190,7 @@ public class AzureBakeHandler extends CloudProviderBakeHandler{
     }
 
     return new BakeOptions.BaseImage(
-            packageType: bakeRequest.packageType ?: packageType,
+            packageType: bakeRequest.package_type ?: packageType,
             templateFile: bakeRequest.template_file_name ?: templateFile,
             osType: bakeRequest.os_type
     )

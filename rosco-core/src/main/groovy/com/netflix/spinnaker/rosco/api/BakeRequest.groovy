@@ -89,7 +89,7 @@ class BakeRequest {
   String sku
 
   OsType os_type
-  PackageType packageType
+  PackageType package_type
 
   String custom_managed_image_name
 
