@@ -21,7 +21,7 @@ public class HelmBakeManifestRequest extends BakeManifestRequest {
 
   /**
    * Helm v3 adds a new flag to include custom resource definition manifests in the templated
-   * output. In the previous versions crds were usually included as part templates, so the `helm
+   * output. In the previous versions crds were usually included as part of templates, so the `helm
    * template` command always included them in the rendered output.
    */
   boolean includeCRDs;
