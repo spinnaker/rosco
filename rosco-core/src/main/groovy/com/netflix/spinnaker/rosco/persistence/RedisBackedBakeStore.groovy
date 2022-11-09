@@ -290,7 +290,7 @@ class RedisBackedBakeStore implements BakeStore {
         // Expected key list: pipeline execution key
         // Expected arg list:
         deleteBakeByPipelineExecutionKeySHA = jedis.scriptLoad("""
-          -- Get all bike entities' keys by pipeline execution key.
+          -- Get all bake entities' keys by pipeline execution key.
           local bake_keys = redis.call('SMEMBERS', KEYS[1])
 
           for _,key in ipairs(bake_keys)
@@ -326,7 +326,7 @@ class RedisBackedBakeStore implements BakeStore {
   public BakeStatus storeNewBakeStatus(String bakeKey, String region, BakeRecipe bakeRecipe, BakeRequest bakeRequest, BakeStatus bakeStatus, String command) {
     def lockKey = "lock:$bakeKey"
     def pipelineExecutionId = getPipelineExecutionId(bakeRequest.spinnaker_execution_id)
-    def pipelineExecutionKey = getBikePipelineExecutionKey(pipelineExecutionId)
+    def pipelineExecutionKey = getBakePipelineExecutionKey(pipelineExecutionId)
     def bakeRecipeJson = mapper.writeValueAsString(bakeRecipe)
     def bakeRequestJson = mapper.writeValueAsString(bakeRequest)
     def bakeStatusJson = mapper.writeValueAsString(bakeStatus)
@@ -494,7 +494,7 @@ class RedisBackedBakeStore implements BakeStore {
 
   @Override
   public void deleteBakeByPipelineExecutionId(String pipelineExecutionId) {
-    def keyList = [getBikePipelineExecutionKey(pipelineExecutionId)]
+    def keyList = [getBakePipelineExecutionKey(pipelineExecutionId)]
 
     evalSHA("deleteBakeByPipelineExecutionKeySHA", keyList, [])
   }
@@ -619,7 +619,7 @@ class RedisBackedBakeStore implements BakeStore {
     }
   }
 
-  private static String getBikePipelineExecutionKey(String pipelineExecutionId) {
+  private static String getBakePipelineExecutionKey(String pipelineExecutionId) {
     return "bake:pipeline_execution:$pipelineExecutionId"
   }
 
