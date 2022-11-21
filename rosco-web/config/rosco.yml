@@ -319,7 +319,7 @@ azure:
     - baseImage:
         id: centos
         shortDescription: 7
-        detailedDescription: OpenLogic CentOS latest
+        detailedDescription: OpenLogic CentOS 7.5
         publisher: OpenLogic
         offer: CentOS
         sku: 7.5
