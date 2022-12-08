@@ -231,6 +231,10 @@ public class AWSBakeHandler extends CloudProviderBakeHandler {
     return new Bake(id: bakeId, ami: amiId, image_name: imageName, artifacts: artifacts)
   }
 
+  @Override
+  List<String> getMaskedPackerParameters() {
+    return awsBakeryDefaults.maskedPackerParameters
+  }
   private String lookupAmiByName(String name, String region, String account, VmType vmType) {
     def images = AuthenticatedRequest.allowAnonymous(
       {
