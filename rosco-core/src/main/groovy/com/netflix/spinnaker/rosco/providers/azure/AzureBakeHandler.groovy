@@ -21,11 +21,10 @@ import com.netflix.spinnaker.rosco.api.BakeOptions
 import com.netflix.spinnaker.rosco.api.BakeRequest
 import com.netflix.spinnaker.rosco.providers.CloudProviderBakeHandler
 import com.netflix.spinnaker.rosco.providers.azure.config.RoscoAzureConfiguration
+import com.netflix.spinnaker.rosco.providers.azure.util.AzureImageNameFactory
 import com.netflix.spinnaker.rosco.providers.util.ImageNameFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-
-import java.time.Clock
 
 @Component
 public class AzureBakeHandler extends CloudProviderBakeHandler{
@@ -34,7 +33,7 @@ public class AzureBakeHandler extends CloudProviderBakeHandler{
   private static final String IMAGE_ID_TOKEN = "ManagedImageId: "
   private static final String SIG_IMAGE_ID_TOKEN = "ManagedImageSharedImageGalleryId: "
 
-  ImageNameFactory imageNameFactory = new ImageNameFactory()
+  ImageNameFactory imageNameFactory = new AzureImageNameFactory()
 
   @Autowired
   RoscoAzureConfiguration.AzureBakeryDefaults azureBakeryDefaults
@@ -53,6 +52,26 @@ public class AzureBakeHandler extends CloudProviderBakeHandler{
       cloudProvider: BakeRequest.CloudProviderType.azure,
       baseImages: azureBakeryDefaults?.baseImages?.collect { it.baseImage }
     )
+  }
+
+  @Override
+  String produceProviderSpecificBakeKeyComponent(String region, BakeRequest bakeRequest) {
+    String accountName = resolveAccount(bakeRequest).name
+
+    String selectedImage = null
+    if (bakeRequest.publisher) {
+      selectedImage = bakeRequest.publisher + ":" + bakeRequest.offer + ":" + bakeRequest.sku
+    }
+    if (bakeRequest.custom_managed_image_name) {
+      selectedImage = bakeRequest.custom_managed_image_name
+    }
+
+    String base_label = bakeRequest.base_label
+    String base_name = bakeRequest.base_name
+
+    def keys = [accountName, selectedImage, base_label, base_name].stream().findAll()
+
+    return keys.join(":")
   }
 
   @Override
@@ -88,30 +107,39 @@ public class AzureBakeHandler extends CloudProviderBakeHandler{
   @Override
   Map buildParameterMap(String region, def virtualizationSettings, String imageName, BakeRequest bakeRequest, String appVersionStr) {
 
-    def selectedImage = azureBakeryDefaults?.baseImages?.find { it.baseImage.id == bakeRequest.base_os }
+    def parameterMap = [azure_location: region]
+    if (bakeRequest.base_os) {
+      def selectedImage = azureBakeryDefaults?.baseImages?.find { it.baseImage.id == bakeRequest.base_os }
+      parameterMap.azure_image_publisher = selectedImage?.baseImage?.publisher
+      parameterMap.azure_image_offer = selectedImage?.baseImage?.offer
+      parameterMap.azure_image_sku = selectedImage?.baseImage?.sku
+    }
 
-    // TODO(larrygug): Presently rosco is only supporting a single account. Need to update to support a named account
-    def selectedAccount = azureConfigurationProperties?.accounts?.get(0)
+    if (bakeRequest.publisher) {
+      parameterMap.azure_image_publisher = bakeRequest.publisher
+      parameterMap.azure_image_offer = bakeRequest.offer
+      parameterMap.azure_image_sku = bakeRequest.sku
+    }
 
-    def parameterMap = [
-      azure_client_id: selectedAccount?.clientId,
-      azure_client_secret: selectedAccount?.appKey,
-      azure_resource_group: selectedAccount?.packerResourceGroup,
-      azure_subscription_id: selectedAccount?.subscriptionId,
-      azure_tenant_id: selectedAccount?.tenantId,
-      azure_object_id: selectedAccount?.objectId,
-      azure_location: region,
-      azure_image_publisher: selectedImage?.baseImage?.publisher,
-      azure_image_offer: selectedImage?.baseImage?.offer,
-      azure_image_sku: selectedImage?.baseImage?.sku
-    ]
+    if (bakeRequest.custom_managed_image_name) {
+      parameterMap.azure_custom_managed_image_name = bakeRequest.custom_managed_image_name
+    }
+
+    RoscoAzureConfiguration.ManagedAzureAccount selectedAccount = resolveAccount(bakeRequest)
+
+    parameterMap.azure_client_id = selectedAccount?.clientId
+    parameterMap.azure_client_secret = selectedAccount?.appKey
+    parameterMap.azure_resource_group = selectedAccount?.packerResourceGroup
+    parameterMap.azure_subscription_id = selectedAccount?.subscriptionId
+    parameterMap.azure_tenant_id = selectedAccount?.tenantId
+    parameterMap.azure_object_id = selectedAccount?.objectId
 
     if (bakeRequest.build_number && bakeRequest.base_name) {
       parameterMap.azure_managed_image_name = "$bakeRequest.build_number-$bakeRequest.base_name"
     } else if (imageName) {
       parameterMap.azure_managed_image_name = imageName
     } else {
-      parameterMap.azure_managed_image_name = Clock.systemUTC.millis().toString()
+      parameterMap.azure_managed_image_name = System.currentTimeMillis().toString()
     }
 
     // Ensure 'azure_managed_image_name' conforms to CaptureNamePrefix regex in packer.
@@ -139,5 +167,52 @@ public class AzureBakeHandler extends CloudProviderBakeHandler{
   @Override
   String getTemplateFileName(BakeOptions.BaseImage baseImage) {
     return baseImage.templateFile ?: azureBakeryDefaults.templateFile
+  }
+
+  private RoscoAzureConfiguration.ManagedAzureAccount resolveAccount(BakeRequest bakeRequest) {
+    RoscoAzureConfiguration.ManagedAzureAccount managedAzureAccount =
+      bakeRequest.account_name
+      ? azureConfigurationProperties?.accounts?.find { it.name == bakeRequest.account_name }
+      : azureConfigurationProperties?.accounts?.getAt(0)
+
+    if (!managedAzureAccount) {
+      throw new IllegalArgumentException("Could not resolve Azure account: (account_name=$bakeRequest.account_name).")
+    }
+
+    return managedAzureAccount
+  }
+
+  @Override
+  BakeOptions.BaseImage findBaseImage(BakeRequest bakeRequest) {
+
+    if (bakeRequest.base_os) {
+      return super.findBaseImage(bakeRequest)
+    }
+
+    def templateFile = "azure-windows.pkr.hcl"
+    def packageType = BakeRequest.PackageType.NUPKG
+
+    if (bakeRequest.os_type == BakeRequest.OsType.linux) {
+      packageType = BakeRequest.PackageType.DEB
+      templateFile = "azure-linux.pkr.hcl"
+    }
+
+    if (bakeRequest.custom_managed_image_name) {
+      templateFile = "azure-windows-managed-image.pkr.hcl"
+      if (bakeRequest.os_type == BakeRequest.OsType.linux) {
+        templateFile = "azure-linux-managed-image.pkr.hcl"
+      }
+    }
+
+    return new BakeOptions.BaseImage(
+            packageType: bakeRequest.package_type ?: packageType,
+            templateFile: bakeRequest.template_file_name ?: templateFile,
+            osType: bakeRequest.os_type
+    )
+  }
+
+  @Override
+  List<String> getMaskedPackerParameters() {
+    return ["azure_client_id", "azure_client_secret"] // to do not log this sensitive info in plain text
   }
 }

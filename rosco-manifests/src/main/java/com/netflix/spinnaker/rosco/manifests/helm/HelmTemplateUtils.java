@@ -2,6 +2,7 @@ package com.netflix.spinnaker.rosco.manifests.helm;
 
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 import com.netflix.spinnaker.kork.exceptions.SpinnakerException;
+import com.netflix.spinnaker.kork.retrofit.exceptions.SpinnakerHttpException;
 import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
 import com.netflix.spinnaker.rosco.manifests.ArtifactDownloader;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestEnvironment;
@@ -63,8 +64,10 @@ public class HelmTemplateUtils {
     } else {
       try {
         templatePath = downloadArtifactToTmpFile(env, helmTemplateArtifact);
+      } catch (SpinnakerHttpException e) {
+        throw new SpinnakerHttpException(fetchFailureMessage("template", e), e);
       } catch (IOException | SpinnakerException e) {
-        throw new IllegalStateException("Failed to fetch helm template: " + e.getMessage(), e);
+        throw new IllegalStateException(fetchFailureMessage("template", e), e);
       }
     }
 
@@ -75,8 +78,10 @@ public class HelmTemplateUtils {
       for (Artifact valueArtifact : inputArtifacts.subList(1, inputArtifacts.size())) {
         valuePaths.add(downloadArtifactToTmpFile(env, valueArtifact));
       }
+    } catch (SpinnakerHttpException e) {
+      throw new SpinnakerHttpException(fetchFailureMessage("values file", e), e);
     } catch (IOException | SpinnakerException e) {
-      throw new IllegalStateException("Failed to fetch helm values file: " + e.getMessage(), e);
+      throw new IllegalStateException(fetchFailureMessage("values file", e), e);
     }
 
     List<String> command = new ArrayList<>();
@@ -103,6 +108,11 @@ public class HelmTemplateUtils {
       command.add(namespace);
     }
 
+    if (request.isIncludeCRDs()
+        && request.getTemplateRenderer() == BakeManifestRequest.TemplateRenderer.HELM3) {
+      command.add("--include-crds");
+    }
+
     Map<String, Object> overrides = request.getOverrides();
     if (!overrides.isEmpty()) {
       List<String> overrideList = new ArrayList<>();
@@ -122,6 +132,10 @@ public class HelmTemplateUtils {
     result.setCommand(command);
 
     return result;
+  }
+
+  private String fetchFailureMessage(String description, Exception e) {
+    return "Failed to fetch helm " + description + ": " + e.getMessage();
   }
 
   public String removeTestsDirectoryTemplates(String inputString) {
