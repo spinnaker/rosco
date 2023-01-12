@@ -21,13 +21,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jakewharton.retrofit.Ok3Client;
 import com.netflix.spinnaker.config.OkHttp3ClientConfiguration;
 import com.netflix.spinnaker.kork.core.RetrySupport;
-import com.netflix.spinnaker.kork.retrofit.exceptions.SpinnakerRetrofitErrorHandler;
+import com.netflix.spinnaker.kork.retrofit.ErrorHandlingExecutorCallAdapterFactory;
+import okhttp3.Interceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import retrofit.RequestInterceptor;
-import retrofit.RestAdapter;
-import retrofit.converter.JacksonConverter;
+import retrofit2.Retrofit;
+import retrofit2.converter.jackson.JacksonConverterFactory;
 
 @Configuration
 public class ServiceConfig {
@@ -50,20 +50,30 @@ public class ServiceConfig {
   // This should be service-agnostic if more integrations than clouddriver are used
   @Bean
   ClouddriverService clouddriverService(
-      Ok3Client ok3Client, RequestInterceptor spinnakerRequestInterceptor) {
+      OkHttp3ClientConfiguration okHttpClientConfig, Interceptor spinnakerRequestInterceptor) {
     ObjectMapper objectMapper =
         new ObjectMapper()
             .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
-    return new RestAdapter.Builder()
-        .setEndpoint(clouddriverBaseUrl)
-        .setRequestInterceptor(spinnakerRequestInterceptor)
-        .setClient(ok3Client)
-        .setConverter(new JacksonConverter(objectMapper))
-        .setLogLevel(RestAdapter.LogLevel.valueOf(retrofitLogLevel))
-        .setErrorHandler(SpinnakerRetrofitErrorHandler.getInstance())
+    return new Retrofit.Builder()
+        .baseUrl(clouddriverBaseUrl)
+        .client(okHttpClientConfig.create().addInterceptor(spinnakerRequestInterceptor).build())
+        .addCallAdapterFactory(
+            ErrorHandlingExecutorCallAdapterFactory.getInstance(
+                new ErrorHandlingExecutorCallAdapterFactory.MainThreadExecutor()))
+        .addConverterFactory(JacksonConverterFactory.create(objectMapper))
         .build()
         .create(ClouddriverService.class);
+
+    //    return new RestAdapter.Builder()
+    //        .setEndpoint(clouddriverBaseUrl)
+    //        .setRequestInterceptor(spinnakerRequestInterceptor)
+    //        .setClient(ok3Client)
+    //        .setConverter(new JacksonConverter(objectMapper))
+    //        .setLogLevel(RestAdapter.LogLevel.valueOf(retrofitLogLevel))
+    //        .setErrorHandler(SpinnakerRetrofitErrorHandler.getInstance())
+    //        .build()
+    //        .create(ClouddriverService.class);
   }
 }

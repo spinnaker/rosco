@@ -79,7 +79,7 @@ class Main extends SpringBootServletInitializer {
     'netflix.account': '${netflix.environment}',
     'bakeAccount': '${netflix.account}',
     'netflix.stack': 'test',
-    'spring.config.additional-location': '${user.home}/.spinnaker/',
+    'spring.config.additional-location': 'optional:${user.home}/.spinnaker/',
     'spring.application.name': 'rosco',
     'spring.config.name': 'spinnaker,${spring.application.name}',
     'spring.profiles.active': '${netflix.environment},local'

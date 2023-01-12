@@ -240,7 +240,7 @@ public class AWSBakeHandler extends CloudProviderBakeHandler {
     def images = AuthenticatedRequest.allowAnonymous(
       {
         retrySupport.retry({
-          clouddriverService.findAmazonImageByName(name, account, region)
+          clouddriverService.findAmazonImageByName(name, account, region).execute().body()
         }, 3, Duration.ofSeconds(3), false)
       }
     )

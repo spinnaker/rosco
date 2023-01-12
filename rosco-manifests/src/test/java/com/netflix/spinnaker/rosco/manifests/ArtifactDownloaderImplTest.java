@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.collect.ImmutableList;
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 import com.netflix.spinnaker.kork.exceptions.SpinnakerException;
 import com.netflix.spinnaker.kork.retrofit.exceptions.SpinnakerHttpException;
@@ -30,13 +29,14 @@ import com.netflix.spinnaker.rosco.services.ClouddriverService;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
 import org.springframework.http.HttpStatus;
 import retrofit.RetrofitError;
-import retrofit.client.Response;
-import retrofit.mime.TypedByteArray;
+// import retrofit.client.Response;
 
 @RunWith(JUnitPlatform.class)
 final class ArtifactDownloaderImplTest {
@@ -50,7 +50,7 @@ final class ArtifactDownloaderImplTest {
     String testContent = "abcdefg";
 
     try (ArtifactDownloaderImplTest.AutoDeletingFile file = new AutoDeletingFile()) {
-      when(clouddriverService.fetchArtifact(testArtifact))
+      when(clouddriverService.fetchArtifact(testArtifact).execute().body())
           .thenReturn(successfulResponse(testContent));
       artifactDownloader.downloadArtifactToFile(testArtifact, file.path);
 
@@ -64,7 +64,7 @@ final class ArtifactDownloaderImplTest {
     String testContent = "abcdefg";
 
     try (ArtifactDownloaderImplTest.AutoDeletingFile file = new AutoDeletingFile()) {
-      when(clouddriverService.fetchArtifact(testArtifact))
+      when(clouddriverService.fetchArtifact(testArtifact).execute().body())
           .thenThrow(RetrofitError.networkError("", new IOException("timeout")))
           .thenReturn(successfulResponse(testContent));
       artifactDownloader.downloadArtifactToFile(testArtifact, file.path);
@@ -116,18 +116,22 @@ final class ArtifactDownloaderImplTest {
       // Make sure we have the message we expect, and that we wrapped the
       // underlying exception to not lose any info.
       assertThat(thrown.getMessage()).contains("Failed to download artifact");
-      assertThat(thrown.getResponse().getStatus()).isEqualTo(404);
+      assertThat(((retrofit2.Response) thrown.getResponse()).code()).isEqualTo(404);
       assertThat(thrown.getCause()).isEqualTo(spinnakerHttpException);
     }
   }
 
   private Response successfulResponse(String content) {
-    return new Response(
-        "",
-        HttpStatus.OK.value(),
-        "",
-        ImmutableList.of(),
-        new TypedByteArray(null, content.getBytes()));
+    return new Response.Builder()
+        .code(HttpStatus.OK.value())
+        .body(ResponseBody.create(null, content.getBytes()))
+        .build();
+    //    return new retrofit.client.Response(
+    //        "",
+    //        HttpStatus.OK.value(),
+    //        "",
+    //        ImmutableList.of(),
+    //        new TypedByteArray(null, content.getBytes()));
   }
 
   private static class AutoDeletingFile implements AutoCloseable {

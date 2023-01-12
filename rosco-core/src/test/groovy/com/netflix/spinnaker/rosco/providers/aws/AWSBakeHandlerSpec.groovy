@@ -18,6 +18,7 @@ package com.netflix.spinnaker.rosco.providers.aws
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.netflix.spinnaker.kork.core.RetrySupport
+import com.netflix.spinnaker.kork.retrofit.ErrorHandlingExecutorCallAdapterFactory
 import com.netflix.spinnaker.rosco.api.Bake
 import com.netflix.spinnaker.rosco.api.BakeRequest
 import com.netflix.spinnaker.rosco.config.RoscoConfiguration
@@ -27,6 +28,8 @@ import com.netflix.spinnaker.rosco.providers.util.PackageNameConverter
 import com.netflix.spinnaker.rosco.providers.util.PackerCommandFactory
 import com.netflix.spinnaker.rosco.providers.util.TestDefaults
 import com.netflix.spinnaker.rosco.services.ClouddriverService
+import retrofit2.Call
+import retrofit2.Response
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Subject
@@ -511,7 +514,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
     def vmSettings = awsBakeHandler.findVirtualizationSettings(REGION, bakeRequest)
 
     then:
-    1 * clouddriverService.findAmazonImageByName(_, _, _) >> [
+    1 * clouddriverService.findAmazonImageByName(_, _, _).execute() >> Response.success([
       new RoscoAWSConfiguration.AWSNamedImage(
         imageName: SOURCE_BIONIC_HVM_IMAGE_NAME,
         attributes: new RoscoAWSConfiguration.AWSImageAttributes(virtualizationType: BakeRequest.VmType.hvm),
@@ -519,7 +522,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
           (REGION): [ SOURCE_BIONIC_HVM_IMAGE_ID ]
         ]
       )
-    ]
+    ])
 
     vmSettings.sourceAmi == SOURCE_BIONIC_HVM_IMAGE_ID
   }
@@ -568,9 +571,12 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
 
   void 'produces packer command with all required parameters for ubuntu, using ami lookup by name'() {
     setup:
+      def mockCall = Mock(Call) {
+          on { execute() } doReturn Response.success(searchByNameResults)
+      }
       def clouddriverService = Stub(ClouddriverService) {
         findAmazonImageByName(_, _, _) >> {
-          return searchByNameResults
+           return mockCall
         }
       }
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
