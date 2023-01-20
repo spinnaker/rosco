@@ -21,6 +21,8 @@ import static org.mockito.Mockito.when;
 
 import com.netflix.spinnaker.kork.retrofit.exceptions.SpinnakerHttpException;
 import java.util.List;
+import okhttp3.MediaType;
+import okhttp3.ResponseBody;
 import retrofit.client.Response;
 import retrofit.mime.TypedString;
 
@@ -40,7 +42,15 @@ public class ManifestTestUtils {
             List.of(),
             new TypedString("{ message: \"unused message due to above mock\" }"));
 
+    retrofit2.Response responseCode =
+        retrofit2.Response.error(
+            status,
+            ResponseBody.create(
+                MediaType.parse("application/json"),
+                "{ message: \"unused message due to above mock\" }"));
+
     when(spinnakerHttpException.getResponse()).thenReturn(response);
+    when(spinnakerHttpException.getResponseCode()).thenReturn(responseCode);
     return spinnakerHttpException;
   }
 }

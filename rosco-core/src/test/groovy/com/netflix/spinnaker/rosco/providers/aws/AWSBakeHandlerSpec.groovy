@@ -18,7 +18,7 @@ package com.netflix.spinnaker.rosco.providers.aws
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.netflix.spinnaker.kork.core.RetrySupport
-import com.netflix.spinnaker.kork.retrofit.ErrorHandlingExecutorCallAdapterFactory
+import com.netflix.spinnaker.kork.retrofit.Retrofit2SyncCall
 import com.netflix.spinnaker.rosco.api.Bake
 import com.netflix.spinnaker.rosco.api.BakeRequest
 import com.netflix.spinnaker.rosco.config.RoscoConfiguration
@@ -28,8 +28,6 @@ import com.netflix.spinnaker.rosco.providers.util.PackageNameConverter
 import com.netflix.spinnaker.rosco.providers.util.PackerCommandFactory
 import com.netflix.spinnaker.rosco.providers.util.TestDefaults
 import com.netflix.spinnaker.rosco.services.ClouddriverService
-import retrofit2.Call
-import retrofit2.Response
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Subject
@@ -500,6 +498,9 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       vm_type: BakeRequest.VmType.hvm,
       cloud_provider_type: BakeRequest.CloudProviderType.aws)
 
+   setup:
+    GroovyMock(Retrofit2SyncCall, global: true)
+
     @Subject
     AWSBakeHandler awsBakeHandler = new AWSBakeHandler(configDir: configDir,
       awsBakeryDefaults: awsBakeryDefaults,
@@ -514,7 +515,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
     def vmSettings = awsBakeHandler.findVirtualizationSettings(REGION, bakeRequest)
 
     then:
-    1 * clouddriverService.findAmazonImageByName(_, _, _).execute() >> Response.success([
+    1 * Retrofit2SyncCall.execute(clouddriverService.findAmazonImageByName(_ as String,_ as String,_ as String)) >> [
       new RoscoAWSConfiguration.AWSNamedImage(
         imageName: SOURCE_BIONIC_HVM_IMAGE_NAME,
         attributes: new RoscoAWSConfiguration.AWSImageAttributes(virtualizationType: BakeRequest.VmType.hvm),
@@ -522,7 +523,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
           (REGION): [ SOURCE_BIONIC_HVM_IMAGE_ID ]
         ]
       )
-    ])
+    ]
 
     vmSettings.sourceAmi == SOURCE_BIONIC_HVM_IMAGE_ID
   }
@@ -571,14 +572,8 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
 
   void 'produces packer command with all required parameters for ubuntu, using ami lookup by name'() {
     setup:
-      def mockCall = Mock(Call) {
-          on { execute() } doReturn Response.success(searchByNameResults)
-      }
-      def clouddriverService = Stub(ClouddriverService) {
-        findAmazonImageByName(_, _, _) >> {
-           return mockCall
-        }
-      }
+      GroovyMock(Retrofit2SyncCall, global: true)
+      def clouddriverService = Mock(ClouddriverService)
       def packerCommandFactoryMock = Mock(PackerCommandFactory)
       def imageNameFactoryMock = Mock(ImageNameFactory)
       def bakeRequest = new BakeRequest(user: "someuser@gmail.com",
@@ -615,6 +610,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       awsBakeHandler.produceBakeRecipe(REGION, bakeRequest)
 
     then:
+      1 * Retrofit2SyncCall.execute(clouddriverService.findAmazonImageByName(_ as String,_ as String,_ as String)) >> searchByNameResults
       1 * imageNameFactoryMock.buildImageName(bakeRequest, osPackages) >> targetImageName
       1 * imageNameFactoryMock.buildAppVersionStr(bakeRequest, osPackages, DEB_PACKAGE_TYPE) >> null
       1 * imageNameFactoryMock.buildPackagesParameter(DEB_PACKAGE_TYPE, osPackages) >> PACKAGES_NAME

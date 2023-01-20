@@ -50,7 +50,8 @@ public class ServiceConfig {
   // This should be service-agnostic if more integrations than clouddriver are used
   @Bean
   ClouddriverService clouddriverService(
-      OkHttp3ClientConfiguration okHttpClientConfig, Interceptor spinnakerRequestInterceptor) {
+      OkHttp3ClientConfiguration okHttpClientConfig,
+      Interceptor spinnakerRequestHeaderInterceptor) {
     ObjectMapper objectMapper =
         new ObjectMapper()
             .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
@@ -58,22 +59,13 @@ public class ServiceConfig {
 
     return new Retrofit.Builder()
         .baseUrl(clouddriverBaseUrl)
-        .client(okHttpClientConfig.create().addInterceptor(spinnakerRequestInterceptor).build())
+        .client(
+            okHttpClientConfig.create().addInterceptor(spinnakerRequestHeaderInterceptor).build())
         .addCallAdapterFactory(
             ErrorHandlingExecutorCallAdapterFactory.getInstance(
                 new ErrorHandlingExecutorCallAdapterFactory.MainThreadExecutor()))
         .addConverterFactory(JacksonConverterFactory.create(objectMapper))
         .build()
         .create(ClouddriverService.class);
-
-    //    return new RestAdapter.Builder()
-    //        .setEndpoint(clouddriverBaseUrl)
-    //        .setRequestInterceptor(spinnakerRequestInterceptor)
-    //        .setClient(ok3Client)
-    //        .setConverter(new JacksonConverter(objectMapper))
-    //        .setLogLevel(RestAdapter.LogLevel.valueOf(retrofitLogLevel))
-    //        .setErrorHandler(SpinnakerRetrofitErrorHandler.getInstance())
-    //        .build()
-    //        .create(ClouddriverService.class);
   }
 }

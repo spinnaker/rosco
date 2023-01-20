@@ -19,8 +19,7 @@ package com.netflix.spinnaker.rosco.manifests.kustomize;
 import com.google.common.collect.ImmutableList;
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 import com.netflix.spinnaker.kork.core.RetrySupport;
-import com.netflix.spinnaker.kork.retrofit.exceptions.RetrofitException;
-import com.netflix.spinnaker.kork.retrofit.exceptions.SpinnakerNetworkException;
+import com.netflix.spinnaker.kork.retrofit.Retrofit2SyncCall;
 import com.netflix.spinnaker.rosco.manifests.kustomize.mapping.Kustomization;
 import com.netflix.spinnaker.rosco.services.ClouddriverService;
 import java.io.IOException;
@@ -99,13 +98,7 @@ public class KustomizationFileReader {
     log.info("downloading kustomization file {}", artifact.getReference());
     ResponseBody response =
         retrySupport.retry(
-            () -> {
-              try {
-                return clouddriverService.fetchArtifact(artifact).execute().body();
-              } catch (IOException e) {
-                throw new SpinnakerNetworkException(RetrofitException.networkError(e));
-              }
-            },
+            () -> Retrofit2SyncCall.execute(clouddriverService.fetchArtifact(artifact)),
             5,
             1000,
             true);
