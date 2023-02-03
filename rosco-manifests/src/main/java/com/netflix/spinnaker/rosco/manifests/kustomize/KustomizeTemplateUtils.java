@@ -132,6 +132,11 @@ public class KustomizeTemplateUtils {
     List<String> command = new ArrayList<>();
     command.add(executable);
     command.add("build");
+
+    if (request.isEnableHelm()) {
+      command.add("--enable-helm");
+    }
+
     command.add(env.resolvePath(kustomizeFilePath).getParent().toString());
 
     BakeRecipe result = new BakeRecipe();
