@@ -24,6 +24,7 @@ dependencies {
   testImplementation "org.mockito:mockito-core"
   testImplementation "org.mockito:mockito-inline"
   testImplementation "org.spockframework:spock-core"
+  testImplementation "com.squareup.retrofit2:converter-jackson"
 }
 
 test {

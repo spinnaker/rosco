@@ -16,41 +16,39 @@
 
 package com.netflix.spinnaker.rosco.manifests;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
+import com.netflix.spinnaker.kork.retrofit.exceptions.RetrofitException;
 import com.netflix.spinnaker.kork.retrofit.exceptions.SpinnakerHttpException;
-import java.util.List;
 import okhttp3.MediaType;
 import okhttp3.ResponseBody;
-import retrofit.client.Response;
-import retrofit.mime.TypedString;
+import retrofit2.Retrofit;
+import retrofit2.converter.jackson.JacksonConverterFactory;
 
 public class ManifestTestUtils {
 
   public static SpinnakerHttpException makeSpinnakerHttpException(int status) {
-    SpinnakerHttpException spinnakerHttpException = mock(SpinnakerHttpException.class);
-    when(spinnakerHttpException.getMessage()).thenReturn("message");
-
-    // Response is a final class, so straightforward mocking fails.
+    // SpinnakerHttpException spinnakerHttpException = mock(SpinnakerHttpException.class);
+    // when(spinnakerHttpException.getMessage()).thenReturn("message");
+    // when(spinnakerHttpException.getResponseCode()).thenReturn(status);
+    // return spinnakerHttpException;
+    //
+    // would be sufficient, except in the chained case, where the return value
+    // of this method is the cause of a real SpinnakerHttpException object.
+    // There, getResponseCode needs a real underlying response, at least real
+    // enough for response.getStatus() to work.  So, go ahead and build one.
     String url = "https://some-url";
-    Response response =
-        new Response(
-            url,
-            status,
-            "arbitrary reason",
-            List.of(),
-            new TypedString("{ message: \"unused message due to above mock\" }"));
-
-    retrofit2.Response responseCode =
+    retrofit2.Response retrofit2Response =
         retrofit2.Response.error(
             status,
             ResponseBody.create(
-                MediaType.parse("application/json"),
-                "{ message: \"unused message due to above mock\" }"));
+                MediaType.parse("application/json"), "{ \"message\": \"arbitrary message\" }"));
 
-    when(spinnakerHttpException.getResponse()).thenReturn(response);
-    when(spinnakerHttpException.getResponseCode()).thenReturn(responseCode);
-    return spinnakerHttpException;
+    Retrofit retrofit =
+        new Retrofit.Builder()
+            .baseUrl(url)
+            .addConverterFactory(JacksonConverterFactory.create())
+            .build();
+
+    return new SpinnakerHttpException(
+        RetrofitException.httpError(url, retrofit2Response, retrofit));
   }
 }

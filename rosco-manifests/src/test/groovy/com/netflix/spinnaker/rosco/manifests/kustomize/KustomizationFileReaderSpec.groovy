@@ -22,6 +22,7 @@ import com.netflix.spinnaker.rosco.manifests.kustomize.mapping.Kustomization
 import com.netflix.spinnaker.rosco.services.ClouddriverService
 import okhttp3.MediaType
 import okhttp3.ResponseBody
+import org.mockito.Mockito
 import spock.lang.Specification
 
 class KustomizationFileReaderSpec extends Specification {
@@ -35,7 +36,7 @@ class KustomizationFileReaderSpec extends Specification {
         
         namePrefix: demo-
         """
-        GroovyMock(Retrofit2SyncCall, global: true)
+        def mockRetrofit = Mockito.mockStatic(Retrofit2SyncCall.class)
         def clouddriverService = Mock(ClouddriverService)
         def kustomizationFileReader = new KustomizationFileReader(clouddriverService)
         def baseArtifact = Artifact.builder()
@@ -44,30 +45,23 @@ class KustomizationFileReaderSpec extends Specification {
             .artifactAccount("test1")
             .type("github/file")
             .build()
+        mockRetrofit.when(Retrofit2SyncCall.execute(clouddriverService.fetchArtifact(baseArtifact)))
+                .thenReturn(ResponseBody.create(MediaType.parse("text/plain"), kustomizationYaml.stripMargin()))
 
         when:
         Kustomization k = kustomizationFileReader.getKustomization(baseArtifact,"kustomization.yml")
 
         then:
-        /*1 * Retrofit2SyncCall.execute(clouddriverService.fetchArtifact(_ as Artifact)) >> { Artifact a ->
-            return ResponseBody.create(MediaType.parse(), kustomizationYaml.stripMargin())
-        }*/
-        1 * Retrofit2SyncCall.execute(clouddriverService.fetchArtifact(_ as Artifact)) >> { Artifact a ->
-            return ResponseBody.create(MediaType.parse(), kustomizationYaml.stripMargin())
-        }
         k.getResources().sort() == ["deployment.yml", "service.yml"].sort()
         k.getSelfReference() == "https://api.github.com/repos/org/repo/contents/base/kustomization.yml"
+
+        cleanup:
+        mockRetrofit?.close()
     }
 
     def "getKustomization throws an exception if it can't find a valid kustomization file"() {
         given:
-        GroovyMock(Retrofit2SyncCall, global: true)
         def clouddriverService = Mock(ClouddriverService)
-//                {
-//            fetchArtifact(_) >> {
-//                return new Response("test", 500, "", [], null)
-//            }
-//        }
         def kustomizationFileReader = new KustomizationFileReader(clouddriverService)
         def invalidArtifact = Artifact.builder()
             .reference("https://api.github.com/repos/org/repo/contents/production")
