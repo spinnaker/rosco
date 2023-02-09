@@ -16,13 +16,12 @@
 
 package com.netflix.spinnaker.rosco.manifests;
 
-import com.google.gson.Gson;
+import com.netflix.spinnaker.kork.retrofit.exceptions.RetrofitException;
 import com.netflix.spinnaker.kork.retrofit.exceptions.SpinnakerHttpException;
-import java.util.List;
-import retrofit.RetrofitError;
-import retrofit.client.Response;
-import retrofit.converter.GsonConverter;
-import retrofit.mime.TypedString;
+import okhttp3.MediaType;
+import okhttp3.ResponseBody;
+import retrofit2.Retrofit;
+import retrofit2.converter.jackson.JacksonConverterFactory;
 
 public class ManifestTestUtils {
 
@@ -37,15 +36,19 @@ public class ManifestTestUtils {
     // There, getResponseCode needs a real underlying response, at least real
     // enough for response.getStatus() to work.  So, go ahead and build one.
     String url = "https://some-url";
-    Response response =
-        new Response(
-            url,
+    retrofit2.Response retrofit2Response =
+        retrofit2.Response.error(
             status,
-            "arbitrary reason",
-            List.of(),
-            new TypedString("{ message: \"arbitrary message\" }"));
+            ResponseBody.create(
+                MediaType.parse("application/json"), "{ \"message\": \"arbitrary message\" }"));
+
+    Retrofit retrofit =
+        new Retrofit.Builder()
+            .baseUrl(url)
+            .addConverterFactory(JacksonConverterFactory.create())
+            .build();
 
     return new SpinnakerHttpException(
-        RetrofitError.httpError(url, response, new GsonConverter(new Gson()), String.class));
+        RetrofitException.httpError(url, retrofit2Response, retrofit));
   }
 }

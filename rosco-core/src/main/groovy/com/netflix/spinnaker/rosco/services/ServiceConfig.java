@@ -21,13 +21,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jakewharton.retrofit.Ok3Client;
 import com.netflix.spinnaker.config.OkHttp3ClientConfiguration;
 import com.netflix.spinnaker.kork.core.RetrySupport;
+import com.netflix.spinnaker.kork.retrofit.ErrorHandlingExecutorCallAdapterFactory;
 import com.netflix.spinnaker.kork.retrofit.exceptions.SpinnakerRetrofitErrorHandler;
+import com.netflix.spinnaker.okhttp.SpinnakerRequestHeaderInterceptor;
+import java.util.ArrayList;
+import java.util.List;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import retrofit.RequestInterceptor;
 import retrofit.RestAdapter;
 import retrofit.converter.JacksonConverter;
+import retrofit2.Retrofit;
+import retrofit2.converter.jackson.JacksonConverterFactory;
 
 @Configuration
 public class ServiceConfig {
@@ -40,6 +50,25 @@ public class ServiceConfig {
   @Bean
   Ok3Client okClient(OkHttp3ClientConfiguration okHttpClientConfig) {
     return new Ok3Client(okHttpClientConfig.create().build());
+  }
+
+  /*OkHttpClient is creatig by calling {OkHttp3ClientConfiguration}.create() which has set all the properties.
+   * As part this OkHttpClient builder  OkHttp3MetricsInterceptor added as first interceptor, but this interceptor needs spinnaker
+   * headers but interceptor in okhttp are sequential, so altering the position of interceptor and resetting to client. */
+  @Bean
+  @Primary
+  OkHttpClient okHttpClient(
+      OkHttp3ClientConfiguration okHttpClientConfig,
+      SpinnakerRequestHeaderInterceptor spinnakerRequestHeaderInterceptor) {
+    OkHttpClient.Builder okHttpClientBuilder = okHttpClientConfig.create();
+    List<Interceptor> interceptors = new ArrayList<>(okHttpClientBuilder.interceptors());
+    interceptors.add(0, spinnakerRequestHeaderInterceptor);
+    interceptors.add(
+        new HttpLoggingInterceptor()
+            .setLevel(HttpLoggingInterceptor.Level.valueOf(retrofitLogLevel)));
+    okHttpClientBuilder.interceptors().removeAll(okHttpClientBuilder.interceptors());
+    okHttpClientBuilder.interceptors().addAll(interceptors);
+    return okHttpClientBuilder.build();
   }
 
   @Bean
@@ -65,5 +94,24 @@ public class ServiceConfig {
         .setErrorHandler(SpinnakerRetrofitErrorHandler.getInstance())
         .build()
         .create(ClouddriverService.class);
+  }
+
+  /*As part of retrofit2 changes, creating clouddriverservice with retrofit2 API changes */
+  @Bean
+  ClouddriverRetrofit2Service clouddriverRetrofit2Service(OkHttpClient okHttpClient) {
+    ObjectMapper objectMapper =
+        new ObjectMapper()
+            .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+
+    return new Retrofit.Builder()
+        .baseUrl(clouddriverBaseUrl)
+        .client(okHttpClient)
+        .addCallAdapterFactory(
+            ErrorHandlingExecutorCallAdapterFactory.getInstance(
+                new ErrorHandlingExecutorCallAdapterFactory.MainThreadExecutor()))
+        .addConverterFactory(JacksonConverterFactory.create(objectMapper))
+        .build()
+        .create(ClouddriverRetrofit2Service.class);
   }
 }

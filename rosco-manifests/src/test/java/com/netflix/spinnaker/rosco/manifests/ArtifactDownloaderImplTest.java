@@ -20,27 +20,28 @@ import static com.netflix.spinnaker.rosco.manifests.ManifestTestUtils.makeSpinna
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import com.google.common.collect.ImmutableList;
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 import com.netflix.spinnaker.kork.exceptions.SpinnakerException;
+import com.netflix.spinnaker.kork.retrofit.Retrofit2SyncCall;
+import com.netflix.spinnaker.kork.retrofit.exceptions.RetrofitException;
 import com.netflix.spinnaker.kork.retrofit.exceptions.SpinnakerHttpException;
-import com.netflix.spinnaker.rosco.services.ClouddriverService;
+import com.netflix.spinnaker.kork.retrofit.exceptions.SpinnakerNetworkException;
+import com.netflix.spinnaker.rosco.services.ClouddriverRetrofit2Service;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import okhttp3.ResponseBody;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.runner.RunWith;
-import org.springframework.http.HttpStatus;
-import retrofit.RetrofitError;
-import retrofit.client.Response;
-import retrofit.mime.TypedByteArray;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 @RunWith(JUnitPlatform.class)
 final class ArtifactDownloaderImplTest {
-  private final ClouddriverService clouddriverService = mock(ClouddriverService.class);
+  private final ClouddriverRetrofit2Service clouddriverService =
+      mock(ClouddriverRetrofit2Service.class);
   private static final Artifact testArtifact =
       Artifact.builder().name("test-artifact").version("3").build();
 
@@ -50,9 +51,13 @@ final class ArtifactDownloaderImplTest {
     String testContent = "abcdefg";
 
     try (ArtifactDownloaderImplTest.AutoDeletingFile file = new AutoDeletingFile()) {
-      when(clouddriverService.fetchArtifact(testArtifact))
-          .thenReturn(successfulResponse(testContent));
-      artifactDownloader.downloadArtifactToFile(testArtifact, file.path);
+      try (MockedStatic<Retrofit2SyncCall> syncCall = Mockito.mockStatic(Retrofit2SyncCall.class)) {
+        syncCall
+            .when(() -> Retrofit2SyncCall.execute(clouddriverService.fetchArtifact(testArtifact)))
+            .thenReturn(successfulResponse(testContent));
+
+        artifactDownloader.downloadArtifactToFile(testArtifact, file.path);
+      }
 
       assertThat(file.path).hasContent(testContent);
     }
@@ -62,12 +67,16 @@ final class ArtifactDownloaderImplTest {
   public void retries() throws IOException {
     ArtifactDownloaderImpl artifactDownloader = new ArtifactDownloaderImpl(clouddriverService);
     String testContent = "abcdefg";
-
     try (ArtifactDownloaderImplTest.AutoDeletingFile file = new AutoDeletingFile()) {
-      when(clouddriverService.fetchArtifact(testArtifact))
-          .thenThrow(RetrofitError.networkError("", new IOException("timeout")))
-          .thenReturn(successfulResponse(testContent));
-      artifactDownloader.downloadArtifactToFile(testArtifact, file.path);
+      try (MockedStatic<Retrofit2SyncCall> syncCall = Mockito.mockStatic(Retrofit2SyncCall.class)) {
+        syncCall
+            .when(() -> Retrofit2SyncCall.execute(clouddriverService.fetchArtifact(testArtifact)))
+            .thenThrow(
+                new SpinnakerNetworkException(
+                    RetrofitException.networkError(new IOException("timeout"))))
+            .thenReturn(successfulResponse(testContent));
+        artifactDownloader.downloadArtifactToFile(testArtifact, file.path);
+      }
 
       assertThat(file.path).hasContent(testContent);
     }
@@ -78,17 +87,21 @@ final class ArtifactDownloaderImplTest {
     ArtifactDownloaderImpl artifactDownloader = new ArtifactDownloaderImpl(clouddriverService);
     SpinnakerException spinnakerException = new SpinnakerException("error from clouddriver");
     try (ArtifactDownloaderImplTest.AutoDeletingFile file = new AutoDeletingFile()) {
-      when(clouddriverService.fetchArtifact(testArtifact)).thenThrow(spinnakerException);
+      try (MockedStatic<Retrofit2SyncCall> syncCall = Mockito.mockStatic(Retrofit2SyncCall.class)) {
+        syncCall
+            .when(() -> Retrofit2SyncCall.execute(clouddriverService.fetchArtifact(testArtifact)))
+            .thenThrow(spinnakerException);
 
-      SpinnakerException thrown =
-          assertThrows(
-              SpinnakerException.class,
-              () -> artifactDownloader.downloadArtifactToFile(testArtifact, file.path));
+        SpinnakerException thrown =
+            assertThrows(
+                SpinnakerException.class,
+                () -> artifactDownloader.downloadArtifactToFile(testArtifact, file.path));
 
-      // Make sure we have the message we expect, and that we wrapped the
-      // underlying exception to not lose any info.
-      assertThat(thrown.getMessage()).contains("Failed to download artifact");
-      assertThat(thrown.getCause()).isEqualTo(spinnakerException);
+        // Make sure we have the message we expect, and that we wrapped the
+        // underlying exception to not lose any info.
+        assertThat(thrown.getMessage()).contains("Failed to download artifact");
+        assertThat(thrown.getCause()).isEqualTo(spinnakerException);
+      }
     }
   }
 
@@ -99,35 +112,34 @@ final class ArtifactDownloaderImplTest {
     ArtifactDownloaderImpl artifactDownloader = new ArtifactDownloaderImpl(clouddriverService);
     SpinnakerHttpException spinnakerHttpException = makeSpinnakerHttpException(404);
     try (ArtifactDownloaderImplTest.AutoDeletingFile file = new AutoDeletingFile()) {
-      when(clouddriverService.fetchArtifact(testArtifact)).thenThrow(spinnakerHttpException);
+      try (MockedStatic<Retrofit2SyncCall> syncCall = Mockito.mockStatic(Retrofit2SyncCall.class)) {
+        syncCall
+            .when(() -> Retrofit2SyncCall.execute(clouddriverService.fetchArtifact(testArtifact)))
+            .thenThrow(spinnakerHttpException);
 
-      // Make sure that the exception from artifactDownloader is also a
-      // SpinnakerHttpException with 404 status since that'll make rosco
-      // eventually respond with a 404 itself, and not log an error/stack trace,
-      // as rosco hasn't done anything wrong.  For this to all work, the code
-      // that calls ArtifactDownloader (e.g. HelmTemplateUtils) has to handle
-      // SpinnakerHttpException properly, but at least this gives a chance for
-      // success.
-      SpinnakerHttpException thrown =
-          assertThrows(
-              SpinnakerHttpException.class,
-              () -> artifactDownloader.downloadArtifactToFile(testArtifact, file.path));
+        // Make sure that the exception from artifactDownloader is also a
+        // SpinnakerHttpException with 404 status since that'll make rosco
+        // eventually respond with a 404 itself, and not log an error/stack trace,
+        // as rosco hasn't done anything wrong.  For this to all work, the code
+        // that calls ArtifactDownloader (e.g. HelmTemplateUtils) has to handle
+        // SpinnakerHttpException properly, but at least this gives a chance for
+        // success.
+        SpinnakerHttpException thrown =
+            assertThrows(
+                SpinnakerHttpException.class,
+                () -> artifactDownloader.downloadArtifactToFile(testArtifact, file.path));
 
-      // Make sure we have the message we expect, and that we wrapped the
-      // underlying exception to not lose any info.
-      assertThat(thrown.getMessage()).contains("Failed to download artifact");
-      assertThat(thrown.getResponseCode()).isEqualTo(404);
-      assertThat(thrown.getCause()).isEqualTo(spinnakerHttpException);
+        // Make sure we have the message we expect, and that we wrapped the
+        // underlying exception to not lose any info.
+        assertThat(thrown.getMessage()).contains("Failed to download artifact");
+        assertThat(thrown.getResponseCode()).isEqualTo(404);
+        assertThat(thrown.getCause()).isEqualTo(spinnakerHttpException);
+      }
     }
   }
 
-  private Response successfulResponse(String content) {
-    return new Response(
-        "",
-        HttpStatus.OK.value(),
-        "",
-        ImmutableList.of(),
-        new TypedByteArray(null, content.getBytes()));
+  private ResponseBody successfulResponse(String content) {
+    return ResponseBody.create(null, content.getBytes());
   }
 
   private static class AutoDeletingFile implements AutoCloseable {
