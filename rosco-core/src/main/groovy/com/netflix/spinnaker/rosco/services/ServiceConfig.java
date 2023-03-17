@@ -32,7 +32,6 @@ import okhttp3.logging.HttpLoggingInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import retrofit.RequestInterceptor;
 import retrofit.RestAdapter;
 import retrofit.converter.JacksonConverter;
@@ -52,25 +51,6 @@ public class ServiceConfig {
     return new Ok3Client(okHttpClientConfig.create().build());
   }
 
-  /*OkHttpClient is creatig by calling {OkHttp3ClientConfiguration}.create() which has set all the properties.
-   * As part this OkHttpClient builder  OkHttp3MetricsInterceptor added as first interceptor, but this interceptor needs spinnaker
-   * headers but interceptor in okhttp are sequential, so altering the position of interceptor and resetting to client. */
-  @Bean
-  @Primary
-  OkHttpClient okHttpClient(
-      OkHttp3ClientConfiguration okHttpClientConfig,
-      SpinnakerRequestHeaderInterceptor spinnakerRequestHeaderInterceptor) {
-    OkHttpClient.Builder okHttpClientBuilder = okHttpClientConfig.create();
-    List<Interceptor> interceptors = new ArrayList<>(okHttpClientBuilder.interceptors());
-    interceptors.add(0, spinnakerRequestHeaderInterceptor);
-    interceptors.add(
-        new HttpLoggingInterceptor()
-            .setLevel(HttpLoggingInterceptor.Level.valueOf(retrofitLogLevel)));
-    okHttpClientBuilder.interceptors().removeAll(okHttpClientBuilder.interceptors());
-    okHttpClientBuilder.interceptors().addAll(interceptors);
-    return okHttpClientBuilder.build();
-  }
-
   @Bean
   RetrySupport retrySupport() {
     return new RetrySupport();
@@ -80,37 +60,49 @@ public class ServiceConfig {
   @Bean
   ClouddriverService clouddriverService(
       Ok3Client ok3Client, RequestInterceptor spinnakerRequestInterceptor) {
-    ObjectMapper objectMapper =
-        new ObjectMapper()
-            .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
     return new RestAdapter.Builder()
         .setEndpoint(clouddriverBaseUrl)
         .setRequestInterceptor(spinnakerRequestInterceptor)
         .setClient(ok3Client)
-        .setConverter(new JacksonConverter(objectMapper))
+        .setConverter(new JacksonConverter(getObjectMapper()))
         .setLogLevel(RestAdapter.LogLevel.valueOf(retrofitLogLevel))
         .setErrorHandler(SpinnakerRetrofitErrorHandler.getInstance())
         .build()
         .create(ClouddriverService.class);
   }
 
+  private ObjectMapper getObjectMapper() {
+    return new ObjectMapper()
+        .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
+        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+  }
+
   /*As part of retrofit2 changes, creating clouddriverservice with retrofit2 API changes */
   @Bean
-  ClouddriverRetrofit2Service clouddriverRetrofit2Service(OkHttpClient okHttpClient) {
-    ObjectMapper objectMapper =
-        new ObjectMapper()
-            .enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL)
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+  ClouddriverRetrofit2Service clouddriverRetrofit2Service(
+      OkHttp3ClientConfiguration okHttpClientConfig,
+      SpinnakerRequestHeaderInterceptor spinnakerRequestHeaderInterceptor) {
+    /*.
+     * As part this OkHttpClient builder  OkHttp3MetricsInterceptor added as first interceptor, but this interceptor needs spinnaker
+     * headers but interceptor in okhttp are sequential, so altering the position of interceptor and resetting to client. */
+    OkHttpClient.Builder okHttpClientBuilder = okHttpClientConfig.create();
+    List<Interceptor> interceptors = new ArrayList<>(okHttpClientBuilder.interceptors());
+    interceptors.add(0, spinnakerRequestHeaderInterceptor);
+    interceptors.add(
+        new HttpLoggingInterceptor()
+            .setLevel(HttpLoggingInterceptor.Level.valueOf(retrofitLogLevel)));
+    okHttpClientBuilder.interceptors().removeAll(okHttpClientBuilder.interceptors());
+    okHttpClientBuilder.interceptors().addAll(interceptors);
 
+    /*
+     * ErrorHandlingExecutorCallAdapterFactory helps to achieve similar logic as retrofit and handle exceptions globally in retrofit2.
+     * */
     return new Retrofit.Builder()
         .baseUrl(clouddriverBaseUrl)
-        .client(okHttpClient)
-        .addCallAdapterFactory(
-            ErrorHandlingExecutorCallAdapterFactory.getInstance(
-                new ErrorHandlingExecutorCallAdapterFactory.MainThreadExecutor()))
-        .addConverterFactory(JacksonConverterFactory.create(objectMapper))
+        .client(okHttpClientBuilder.build())
+        .addCallAdapterFactory(ErrorHandlingExecutorCallAdapterFactory.getInstance(null))
+        .addConverterFactory(JacksonConverterFactory.create(getObjectMapper()))
         .build()
         .create(ClouddriverRetrofit2Service.class);
   }

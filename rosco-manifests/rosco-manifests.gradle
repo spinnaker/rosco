@@ -20,7 +20,6 @@ dependencies {
   testImplementation "org.junit.jupiter:junit-jupiter-params"
   testImplementation "org.junit.platform:junit-platform-runner"
   testImplementation "org.mockito:mockito-core"
-  testImplementation "org.mockito:mockito-inline"
   testImplementation "org.spockframework:spock-core"
   testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
   testImplementation "com.squareup.retrofit2:converter-jackson"
