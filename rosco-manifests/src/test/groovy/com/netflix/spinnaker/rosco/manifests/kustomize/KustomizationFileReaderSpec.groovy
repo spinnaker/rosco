@@ -18,11 +18,14 @@ package com.netflix.spinnaker.rosco.manifests.kustomize
 
 import com.netflix.spinnaker.kork.artifacts.model.Artifact
 import com.netflix.spinnaker.kork.retrofit.Retrofit2SyncCall
+import com.netflix.spinnaker.kork.retrofit.exceptions.SpinnakerServerException
 import com.netflix.spinnaker.rosco.manifests.kustomize.mapping.Kustomization
 import com.netflix.spinnaker.rosco.services.ClouddriverRetrofit2Service
 import okhttp3.MediaType
 import okhttp3.ResponseBody
 import org.mockito.Mockito
+import retrofit2.Call
+import retrofit2.Response
 import spock.lang.Specification
 
 class KustomizationFileReaderSpec extends Specification {
@@ -36,8 +39,16 @@ class KustomizationFileReaderSpec extends Specification {
         
         namePrefix: demo-
         """
-        def mockRetrofit = Mockito.mockStatic(Retrofit2SyncCall.class)
-        def clouddriverService = Mock(ClouddriverRetrofit2Service)
+        def mockCall = Mock(Call.class) {
+            execute() >> {
+                return  Response.success(200, ResponseBody.create(MediaType.parse("text/plain"), kustomizationYaml.stripMargin()));
+            }
+        }
+        def clouddriverService = Mock(ClouddriverRetrofit2Service) {
+            fetchArtifact(_) >> {
+                return mockCall
+            }
+        }
         def kustomizationFileReader = new KustomizationFileReader(clouddriverService)
         def baseArtifact = Artifact.builder()
             .name("base")
@@ -46,23 +57,26 @@ class KustomizationFileReaderSpec extends Specification {
             .type("github/file")
             .build()
 
-        mockRetrofit.when(Retrofit2SyncCall.execute(clouddriverService.fetchArtifact(baseArtifact)))
-                .thenReturn(ResponseBody.create(MediaType.parse("text/plain"), kustomizationYaml.stripMargin()))
-
         when:
         Kustomization k = kustomizationFileReader.getKustomization(baseArtifact,"kustomization.yml")
 
         then:
         k.getResources().sort() == ["deployment.yml", "service.yml"].sort()
         k.getSelfReference() == "https://api.github.com/repos/org/repo/contents/base/kustomization.yml"
-
-        cleanup:
-        mockRetrofit?.close()
     }
 
     def "getKustomization throws an exception if it can't find a valid kustomization file"() {
         given:
-        def clouddriverService = Mock(ClouddriverRetrofit2Service)
+        def mockCall = Mock(Call.class) {
+            execute() >> {
+                 return Response.error(404, ResponseBody.create(null, ""))
+            }
+        }
+        def clouddriverService = Mock(ClouddriverRetrofit2Service) {
+            fetchArtifact(_) >> {
+                return mockCall
+            }
+        }
         def kustomizationFileReader = new KustomizationFileReader(clouddriverService)
         def invalidArtifact = Artifact.builder()
             .reference("https://api.github.com/repos/org/repo/contents/production")
