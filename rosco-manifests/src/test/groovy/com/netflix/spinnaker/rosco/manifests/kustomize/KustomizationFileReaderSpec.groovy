@@ -17,13 +17,10 @@
 package com.netflix.spinnaker.rosco.manifests.kustomize
 
 import com.netflix.spinnaker.kork.artifacts.model.Artifact
-import com.netflix.spinnaker.kork.retrofit.Retrofit2SyncCall
-import com.netflix.spinnaker.kork.retrofit.exceptions.SpinnakerServerException
 import com.netflix.spinnaker.rosco.manifests.kustomize.mapping.Kustomization
 import com.netflix.spinnaker.rosco.services.ClouddriverRetrofit2Service
 import okhttp3.MediaType
 import okhttp3.ResponseBody
-import org.mockito.Mockito
 import retrofit2.Call
 import retrofit2.Response
 import spock.lang.Specification

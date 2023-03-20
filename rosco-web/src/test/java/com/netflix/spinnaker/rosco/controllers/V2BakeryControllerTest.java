@@ -127,7 +127,6 @@ class V2BakeryControllerTest {
             .addConverterFactory(JacksonConverterFactory.create())
             .build();
 
-    return new SpinnakerHttpException(
-        RetrofitException.httpError(url, retrofit2Response, retrofit));
+    return new SpinnakerHttpException(RetrofitException.httpError(retrofit2Response, retrofit));
   }
 }
