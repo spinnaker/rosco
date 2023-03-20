@@ -85,7 +85,7 @@ public class ServiceConfig {
       SpinnakerRequestHeaderInterceptor spinnakerRequestHeaderInterceptor) {
     /*.
      * As part this OkHttpClient builder  OkHttp3MetricsInterceptor added as first interceptor, but this interceptor needs spinnaker
-     * headers but interceptor in okhttp are sequential, so altering the position of interceptor and resetting to client. */
+     * headers.  Interceptors in okhttp are sequential, so insert spinnakerRequestHeaderInterceptor before it. */
     OkHttpClient.Builder okHttpClientBuilder = okHttpClientConfig.create();
     List<Interceptor> interceptors = new ArrayList<>(okHttpClientBuilder.interceptors());
     interceptors.add(0, spinnakerRequestHeaderInterceptor);
@@ -96,7 +96,7 @@ public class ServiceConfig {
     okHttpClientBuilder.interceptors().addAll(interceptors);
 
     /*
-     * ErrorHandlingExecutorCallAdapterFactory helps to achieve similar logic as retrofit and handle exceptions globally in retrofit2.
+     * ErrorHandlingExecutorCallAdapterFactory handles exceptions globally in retrofit2, similar to SpinnakerRetrofitErrorHandler with retrofit.
      * */
     return new Retrofit.Builder()
         .baseUrl(clouddriverBaseUrl)
