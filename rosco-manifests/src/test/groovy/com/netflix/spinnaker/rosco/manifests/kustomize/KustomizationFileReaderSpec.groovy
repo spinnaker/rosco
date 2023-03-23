@@ -66,7 +66,7 @@ class KustomizationFileReaderSpec extends Specification {
         given:
         def mockCall = Mock(Call.class) {
             execute() >> {
-                 return Response.error(404, ResponseBody.create(null, ""))
+                 return Response.error(500, ResponseBody.create(null, ""))
             }
         }
         def clouddriverService = Mock(ClouddriverRetrofit2Service) {

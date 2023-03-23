@@ -34,7 +34,7 @@ public class ManifestTestUtils {
     // would be sufficient, except in the chained case, where the return value
     // of this method is the cause of a real SpinnakerHttpException object.
     // There, getResponseCode needs a real underlying response, at least real
-    // enough for response.getStatus() to work.  So, go ahead and build one.
+    // enough for retrofit2Response.code() to work.  So, go ahead and build one.
     String url = "https://some-url";
     retrofit2.Response retrofit2Response =
         retrofit2.Response.error(

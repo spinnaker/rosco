@@ -53,7 +53,7 @@ final class ArtifactDownloaderImplTest {
 
     try (ArtifactDownloaderImplTest.AutoDeletingFile file = new AutoDeletingFile()) {
       when(clouddriverService.fetchArtifact(testArtifact)).thenReturn(mockCall);
-      when(mockCall.execute()).thenReturn(Response.success(200, successfulResponse(testContent)));
+      when(mockCall.execute()).thenReturn(successfulResponse(testContent));
       artifactDownloader.downloadArtifactToFile(testArtifact, file.path);
 
       assertThat(file.path).hasContent(testContent);
@@ -70,7 +70,7 @@ final class ArtifactDownloaderImplTest {
           .thenThrow(
               new SpinnakerNetworkException(
                   RetrofitException.networkError(new IOException("timeout"))))
-          .thenReturn(Response.success(200, successfulResponse(testContent)));
+          .thenReturn(successfulResponse(testContent));
       artifactDownloader.downloadArtifactToFile(testArtifact, file.path);
 
       assertThat(file.path).hasContent(testContent);
@@ -126,8 +126,8 @@ final class ArtifactDownloaderImplTest {
     }
   }
 
-  private ResponseBody successfulResponse(String content) {
-    return ResponseBody.create(null, content.getBytes());
+  private Response successfulResponse(String content) {
+    return Response.success(200, ResponseBody.create(null, content.getBytes()));
   }
 
   private static class AutoDeletingFile implements AutoCloseable {
