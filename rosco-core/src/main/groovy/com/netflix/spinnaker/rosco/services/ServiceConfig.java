@@ -23,8 +23,6 @@ import com.netflix.spinnaker.config.OkHttp3ClientConfiguration;
 import com.netflix.spinnaker.kork.core.RetrySupport;
 import com.netflix.spinnaker.kork.retrofit.ErrorHandlingExecutorCallAdapterFactory;
 import com.netflix.spinnaker.kork.retrofit.exceptions.SpinnakerRetrofitErrorHandler;
-import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -79,17 +77,12 @@ public class ServiceConfig {
   ClouddriverRetrofit2Service clouddriverRetrofit2Service(
       OkHttp3ClientConfiguration okHttpClientConfig) {
 
-    OkHttpClient.Builder okHttpClientBuilder = okHttpClientConfig.createForRetrofit2();
-    okHttpClientBuilder.addInterceptor(
-        new HttpLoggingInterceptor()
-            .setLevel(HttpLoggingInterceptor.Level.valueOf(retrofitLogLevel)));
-
     /*
      * ErrorHandlingExecutorCallAdapterFactory handles exceptions globally in retrofit2, similar to SpinnakerRetrofitErrorHandler with retrofit.
      * */
     return new Retrofit.Builder()
         .baseUrl(clouddriverBaseUrl)
-        .client(okHttpClientBuilder.build())
+        .client(okHttpClientConfig.createForRetrofit2().build())
         .addCallAdapterFactory(ErrorHandlingExecutorCallAdapterFactory.getInstance())
         .addConverterFactory(JacksonConverterFactory.create(getObjectMapper()))
         .build()
