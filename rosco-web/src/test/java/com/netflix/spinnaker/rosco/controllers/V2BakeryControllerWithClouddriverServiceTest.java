@@ -36,7 +36,6 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.jakewharton.retrofit.Ok3Client;
 import com.netflix.spinnaker.filters.AuthenticatedRequestFilter;
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 import com.netflix.spinnaker.rosco.Main;
@@ -44,7 +43,6 @@ import com.netflix.spinnaker.rosco.api.BakeStatus;
 import com.netflix.spinnaker.rosco.jobs.JobExecutor;
 import com.netflix.spinnaker.rosco.jobs.JobRequest;
 import com.netflix.spinnaker.rosco.manifests.helm.HelmBakeManifestRequest;
-import com.netflix.spinnaker.rosco.services.ClouddriverRetrofit2Service;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -70,11 +68,6 @@ class V2BakeryControllerWithClouddriverServiceTest {
   private static WireMockServer wireMockServer;
 
   @Autowired private WebApplicationContext webApplicationContext;
-
-  @Autowired ClouddriverRetrofit2Service clouddriverService;
-
-  /** So it's possible to verify e.g. request headers sent to clouddriver */
-  @MockBean Ok3Client ok3Client;
 
   @Autowired ObjectMapper objectMapper;
 
