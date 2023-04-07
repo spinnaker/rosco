@@ -40,6 +40,7 @@ import com.netflix.spinnaker.filters.AuthenticatedRequestFilter;
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 import com.netflix.spinnaker.rosco.Main;
 import com.netflix.spinnaker.rosco.api.BakeStatus;
+import com.netflix.spinnaker.rosco.executor.BakePoller;
 import com.netflix.spinnaker.rosco.jobs.JobExecutor;
 import com.netflix.spinnaker.rosco.jobs.JobRequest;
 import com.netflix.spinnaker.rosco.manifests.helm.HelmBakeManifestRequest;
@@ -68,6 +69,8 @@ class V2BakeryControllerWithClouddriverServiceTest {
   private static WireMockServer wireMockServer;
 
   @Autowired private WebApplicationContext webApplicationContext;
+
+  @MockBean BakePoller bakePoller;
 
   @Autowired ObjectMapper objectMapper;
 
