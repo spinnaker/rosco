@@ -72,7 +72,6 @@ public class ServiceConfig {
         .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
   }
 
-  /*As part of retrofit2 changes, creating clouddriverservice with retrofit2 API changes */
   @Bean
   ClouddriverRetrofit2Service clouddriverRetrofit2Service(
       OkHttp3ClientConfiguration okHttpClientConfig) {
