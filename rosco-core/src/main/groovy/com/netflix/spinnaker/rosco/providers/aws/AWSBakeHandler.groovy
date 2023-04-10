@@ -26,8 +26,8 @@ import com.netflix.spinnaker.rosco.api.BakeRequest.VmType
 import com.netflix.spinnaker.rosco.providers.CloudProviderBakeHandler
 import com.netflix.spinnaker.rosco.providers.aws.config.RoscoAWSConfiguration
 import com.netflix.spinnaker.rosco.providers.util.ImageNameFactory
-import com.netflix.spinnaker.rosco.services.ClouddriverRetrofit2Service
 import com.netflix.spinnaker.rosco.services.ClouddriverService
+
 import com.netflix.spinnaker.security.AuthenticatedRequest
 import groovy.util.logging.Slf4j
 import org.springframework.beans.factory.annotation.Autowired
@@ -57,7 +57,7 @@ public class AWSBakeHandler extends CloudProviderBakeHandler {
   RoscoAWSConfiguration.AWSBakeryDefaults awsBakeryDefaults
 
   @Autowired
-  ClouddriverRetrofit2Service clouddriverService
+  ClouddriverService clouddriverService
 
   @Autowired
   RetrySupport retrySupport

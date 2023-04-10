@@ -26,8 +26,8 @@ import com.netflix.spinnaker.rosco.providers.util.ImageNameFactory
 import com.netflix.spinnaker.rosco.providers.util.PackageNameConverter
 import com.netflix.spinnaker.rosco.providers.util.PackerCommandFactory
 import com.netflix.spinnaker.rosco.providers.util.TestDefaults
-import com.netflix.spinnaker.rosco.services.ClouddriverRetrofit2Service
 import com.netflix.spinnaker.rosco.services.ClouddriverService
+
 import retrofit2.Call
 import retrofit2.Response
 import spock.lang.Shared
@@ -506,7 +506,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
       }
     }
 
-    def clouddriverService = Mock(ClouddriverRetrofit2Service) {
+    def clouddriverService = Mock(ClouddriverService) {
       findAmazonImageByName(_, _, _) >> {
           return mockCall
       }
@@ -585,7 +585,7 @@ class AWSBakeHandlerSpec extends Specification implements TestDefaults {
         }
       }
 
-      def clouddriverService = Mock(ClouddriverRetrofit2Service) {
+      def clouddriverService = Mock(ClouddriverService) {
         findAmazonImageByName(_, _, _) >> {
             return mockCall
         }
