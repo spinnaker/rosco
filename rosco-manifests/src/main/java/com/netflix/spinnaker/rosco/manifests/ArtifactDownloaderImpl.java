@@ -50,10 +50,8 @@ public final class ArtifactDownloaderImpl implements ArtifactDownloader {
                 artifact, e.getMessage()),
             e);
       }
-    } catch (SpinnakerHttpException e) {
-      throw new SpinnakerHttpException(downloadFailureMessage(artifact, e), e);
     } catch (SpinnakerException e) {
-      throw new SpinnakerException(downloadFailureMessage(artifact, e), e);
+      throw e.newInstance(downloadFailureMessage(artifact, e));
     }
   }
 
