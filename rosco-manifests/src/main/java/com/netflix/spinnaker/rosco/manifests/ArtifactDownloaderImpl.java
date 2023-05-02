@@ -4,7 +4,6 @@ import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 import com.netflix.spinnaker.kork.core.RetrySupport;
 import com.netflix.spinnaker.kork.exceptions.SpinnakerException;
 import com.netflix.spinnaker.kork.retrofit.Retrofit2SyncCall;
-import com.netflix.spinnaker.kork.retrofit.exceptions.SpinnakerHttpException;
 import com.netflix.spinnaker.rosco.services.ClouddriverService;
 import java.io.IOException;
 import java.io.InputStream;
