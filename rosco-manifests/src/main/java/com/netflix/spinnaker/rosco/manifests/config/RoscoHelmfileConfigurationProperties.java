@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Grab Holdings, Inc.
+ * Copyright 2023 Grab Holdings, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,5 +22,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties("helmfile")
 @Data
 public class RoscoHelmfileConfigurationProperties {
-  private String ExecutablePath = "helmfile";
+  private String executablePath = "helmfile";
 }
