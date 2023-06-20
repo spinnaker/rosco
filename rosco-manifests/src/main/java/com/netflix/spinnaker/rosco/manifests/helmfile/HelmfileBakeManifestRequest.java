@@ -26,9 +26,27 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class HelmfileBakeManifestRequest extends BakeManifestRequest {
   private String helmfileFilePath;
+
+  /**
+   * The environment name used to customize the content of the helmfile manifest.
+   * The environment name defaults to default.
+   */
   private String environment;
+
+  /**
+   * The namespace to be released into.
+   */
   private String namespace;
 
+  /**
+   * The 0th element is (or contains) the helmfile template. The rest (possibly none) are values
+   * files.
+   */
   List<Artifact> inputArtifacts;
+
+  /**
+   * Include custom resource definition manifests in the templated output.
+   * Helmfile uses Helm v3 only which provides the option to include CRDs as part of the rendered output.
+   */
   boolean includeCRDs;
 }
