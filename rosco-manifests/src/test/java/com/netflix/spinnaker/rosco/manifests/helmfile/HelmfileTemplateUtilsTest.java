@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Google, LLC
+ * Copyright 2023 Grab Holdings, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
@@ -62,11 +62,8 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.platform.runner.JUnitPlatform;
-import org.junit.runner.RunWith;
 import org.springframework.http.HttpStatus;
 
-@RunWith(JUnitPlatform.class)
 final class HelmfileTemplateUtilsTest {
 
   private ArtifactDownloader artifactDownloader;
