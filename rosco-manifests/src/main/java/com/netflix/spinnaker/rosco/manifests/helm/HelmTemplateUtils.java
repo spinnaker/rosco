@@ -7,34 +7,27 @@ import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
 import com.netflix.spinnaker.rosco.manifests.ArtifactDownloader;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestEnvironment;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestRequest;
+import com.netflix.spinnaker.rosco.manifests.HelmBakeTemplateUtils;
 import com.netflix.spinnaker.rosco.manifests.config.RoscoHelmConfigurationProperties;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
-public class HelmTemplateUtils {
-  private static final String MANIFEST_SEPARATOR = "---\n";
-  private static final Pattern REGEX_TESTS_MANIFESTS =
-      Pattern.compile("# Source: .*/templates/tests/.*");
-
-  private final ArtifactDownloader artifactDownloader;
+public class HelmTemplateUtils extends HelmBakeTemplateUtils<HelmBakeManifestRequest> {
   private final RoscoHelmConfigurationProperties helmConfigurationProperties;
 
   public HelmTemplateUtils(
       ArtifactDownloader artifactDownloader,
       RoscoHelmConfigurationProperties helmConfigurationProperties) {
-    this.artifactDownloader = artifactDownloader;
+    super(artifactDownloader);
     this.helmConfigurationProperties = helmConfigurationProperties;
   }
 
@@ -53,7 +46,7 @@ public class HelmTemplateUtils {
     Artifact helmTemplateArtifact = inputArtifacts.get(0);
     String artifactType = Optional.ofNullable(helmTemplateArtifact.getType()).orElse("");
     if ("git/repo".equals(artifactType)) {
-      env.downloadArtifactTarballAndExtract(artifactDownloader, helmTemplateArtifact);
+      env.downloadArtifactTarballAndExtract(super.getArtifactDownloader(), helmTemplateArtifact);
 
       log.info("helmChartFilePath: '{}'", request.getHelmChartFilePath());
 
@@ -134,25 +127,11 @@ public class HelmTemplateUtils {
     return result;
   }
 
-  private String fetchFailureMessage(String description, Exception e) {
+  public String fetchFailureMessage(String description, Exception e) {
     return "Failed to fetch helm " + description + ": " + e.getMessage();
   }
 
-  public String removeTestsDirectoryTemplates(String inputString) {
-    return Arrays.stream(inputString.split(MANIFEST_SEPARATOR))
-        .filter(manifest -> !REGEX_TESTS_MANIFESTS.matcher(manifest).find())
-        .collect(Collectors.joining(MANIFEST_SEPARATOR));
-  }
-
-  private Path downloadArtifactToTmpFile(BakeManifestEnvironment env, Artifact artifact)
-      throws IOException {
-    String fileName = UUID.randomUUID().toString();
-    Path targetPath = env.resolvePath(fileName);
-    artifactDownloader.downloadArtifactToFile(artifact, targetPath);
-    return targetPath;
-  }
-
-  private String getHelmExecutableForRequest(HelmBakeManifestRequest request) {
+  public String getHelmExecutableForRequest(HelmBakeManifestRequest request) {
     if (BakeManifestRequest.TemplateRenderer.HELM2.equals(request.getTemplateRenderer())) {
       return helmConfigurationProperties.getV2ExecutablePath();
     }

@@ -22,29 +22,23 @@ import com.netflix.spinnaker.kork.retrofit.exceptions.SpinnakerHttpException;
 import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
 import com.netflix.spinnaker.rosco.manifests.ArtifactDownloader;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestEnvironment;
+import com.netflix.spinnaker.rosco.manifests.HelmBakeTemplateUtils;
 import com.netflix.spinnaker.rosco.manifests.config.RoscoHelmConfigurationProperties;
 import com.netflix.spinnaker.rosco.manifests.config.RoscoHelmfileConfigurationProperties;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
-public class HelmfileTemplateUtils {
-  private static final String MANIFEST_SEPARATOR = "---\n";
-  private static final Pattern REGEX_TESTS_MANIFESTS =
-      Pattern.compile("# Source: .*/templates/tests/.*");
-
-  private final ArtifactDownloader artifactDownloader;
+public class HelmfileTemplateUtils extends HelmBakeTemplateUtils<HelmfileBakeManifestRequest> {
   private final RoscoHelmfileConfigurationProperties helmfileConfigurationProperties;
   private final RoscoHelmConfigurationProperties helmConfigurationProperties =
       new RoscoHelmConfigurationProperties();
@@ -52,7 +46,7 @@ public class HelmfileTemplateUtils {
   public HelmfileTemplateUtils(
       ArtifactDownloader artifactDownloader,
       RoscoHelmfileConfigurationProperties helmfileConfigurationProperties) {
-    this.artifactDownloader = artifactDownloader;
+    super(artifactDownloader);
     this.helmfileConfigurationProperties = helmfileConfigurationProperties;
   }
 
@@ -73,7 +67,7 @@ public class HelmfileTemplateUtils {
     Artifact helmfileTemplateArtifact = inputArtifacts.get(0);
     String artifactType = Optional.ofNullable(helmfileTemplateArtifact.getType()).orElse("");
     if ("git/repo".equals(artifactType)) {
-      env.downloadArtifactTarballAndExtract(artifactDownloader, helmfileTemplateArtifact);
+      env.downloadArtifactTarballAndExtract(super.getArtifactDownloader(), helmfileTemplateArtifact);
 
       // If there's no helmfile path specified, assume it lives in the root of
       // the git/repo artifact.
@@ -111,7 +105,7 @@ public class HelmfileTemplateUtils {
     command.add(helmfileFilePath.toString());
 
     command.add("--helm-binary");
-    command.add(getHelm3ExecutablePath());
+    command.add(getHelmExecutableForRequest(null));
 
     String environment = request.getEnvironment();
     if (environment != null && !environment.isEmpty()) {
@@ -149,25 +143,11 @@ public class HelmfileTemplateUtils {
     return result;
   }
 
-  private String fetchFailureMessage(String description, Exception e) {
+  public String fetchFailureMessage(String description, Exception e) {
     return "Failed to fetch helmfile " + description + ": " + e.getMessage();
   }
 
-  public String removeTestsDirectoryTemplates(String inputString) {
-    return Arrays.stream(inputString.split(MANIFEST_SEPARATOR))
-        .filter(manifest -> !REGEX_TESTS_MANIFESTS.matcher(manifest).find())
-        .collect(Collectors.joining(MANIFEST_SEPARATOR));
-  }
-
-  private Path downloadArtifactToTmpFile(BakeManifestEnvironment env, Artifact artifact)
-      throws IOException {
-    String fileName = UUID.randomUUID().toString();
-    Path targetPath = env.resolvePath(fileName);
-    artifactDownloader.downloadArtifactToFile(artifact, targetPath);
-    return targetPath;
-  }
-
-  private String getHelm3ExecutablePath() {
+  public String getHelmExecutableForRequest(HelmfileBakeManifestRequest request) {
     return helmConfigurationProperties.getV3ExecutablePath();
   }
 }
