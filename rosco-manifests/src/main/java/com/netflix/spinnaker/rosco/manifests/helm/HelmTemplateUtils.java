@@ -37,7 +37,8 @@ public class HelmTemplateUtils extends HelmBakeTemplateUtils<HelmBakeManifestReq
     result.setName(request.getOutputName());
 
     Path templatePath;
-    List<Path> valuePaths = new ArrayList<>();
+    List<Path> valuePaths;
+
     List<Artifact> inputArtifacts = request.getInputArtifacts();
     if (inputArtifacts == null || inputArtifacts.isEmpty()) {
       throw new IllegalArgumentException("At least one input artifact must be provided to bake");
@@ -66,16 +67,7 @@ public class HelmTemplateUtils extends HelmBakeTemplateUtils<HelmBakeManifestReq
 
     log.info("path to Chart.yaml: {}", templatePath);
 
-    try {
-      // not a stream to keep exception handling cleaner
-      for (Artifact valueArtifact : inputArtifacts.subList(1, inputArtifacts.size())) {
-        valuePaths.add(downloadArtifactToTmpFile(env, valueArtifact));
-      }
-    } catch (SpinnakerHttpException e) {
-      throw new SpinnakerHttpException(fetchFailureMessage("values file", e), e);
-    } catch (IOException | SpinnakerException e) {
-      throw new IllegalStateException(fetchFailureMessage("values file", e), e);
-    }
+    valuePaths = getValuePaths(inputArtifacts, env);
 
     List<String> command = new ArrayList<>();
     String executable = getHelmExecutableForRequest(request);

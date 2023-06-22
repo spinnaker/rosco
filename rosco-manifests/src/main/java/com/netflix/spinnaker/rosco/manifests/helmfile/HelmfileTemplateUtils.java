@@ -56,8 +56,8 @@ public class HelmfileTemplateUtils extends HelmBakeTemplateUtils<HelmfileBakeMan
     result.setName(request.getOutputName());
 
     Path helmfileFilePath;
+    List<Path> valuePaths;
 
-    List<Path> valuePaths = new ArrayList<>();
     List<Artifact> inputArtifacts = request.getInputArtifacts();
     if (inputArtifacts == null || inputArtifacts.isEmpty()) {
       throw new IllegalArgumentException("At least one input artifact must be provided to bake");
@@ -85,16 +85,7 @@ public class HelmfileTemplateUtils extends HelmBakeTemplateUtils<HelmfileBakeMan
 
     log.info("path to helmfile: {}", helmfileFilePath);
 
-    try {
-      // not a stream to keep exception handling cleaner
-      for (Artifact valueArtifact : inputArtifacts.subList(1, inputArtifacts.size())) {
-        valuePaths.add(downloadArtifactToTmpFile(env, valueArtifact));
-      }
-    } catch (SpinnakerHttpException e) {
-      throw new SpinnakerHttpException(fetchFailureMessage("values file", e), e);
-    } catch (IOException | SpinnakerException e) {
-      throw new IllegalStateException(fetchFailureMessage("values file", e), e);
-    }
+    valuePaths = getValuePaths(inputArtifacts, env);
 
     List<String> command = new ArrayList<>();
     String executable = helmfileConfigurationProperties.getExecutablePath();

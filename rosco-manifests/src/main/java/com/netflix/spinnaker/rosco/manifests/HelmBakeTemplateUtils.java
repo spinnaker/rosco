@@ -58,4 +58,21 @@ public abstract class HelmBakeTemplateUtils<T extends BakeManifestRequest> {
     }
 
     public abstract String getHelmExecutableForRequest(T request);
+
+    protected List<Path> getValuePaths(List<Artifact> artifacts, BakeManifestEnvironment env) {
+        List<Path> valuePaths = new ArrayList<>();
+
+        try {
+            // not a stream to keep exception handling cleaner
+            for (Artifact valueArtifact : artifacts.subList(1, artifacts.size())) {
+                valuePaths.add(downloadArtifactToTmpFile(env, valueArtifact));
+            }
+        } catch (SpinnakerHttpException e) {
+            throw new SpinnakerHttpException(fetchFailureMessage("values file", e), e);
+        } catch (IOException | SpinnakerException e) {
+            throw new IllegalStateException(fetchFailureMessage("values file", e), e);
+        }
+
+        return valuePaths;
+    }
 }
