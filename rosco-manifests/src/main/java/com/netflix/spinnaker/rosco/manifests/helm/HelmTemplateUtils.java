@@ -1,8 +1,6 @@
 package com.netflix.spinnaker.rosco.manifests.helm;
 
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
-import com.netflix.spinnaker.kork.exceptions.SpinnakerException;
-import com.netflix.spinnaker.kork.retrofit.exceptions.SpinnakerHttpException;
 import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
 import com.netflix.spinnaker.rosco.manifests.ArtifactDownloader;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestEnvironment;
@@ -14,7 +12,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -33,11 +30,7 @@ public class HelmTemplateUtils extends HelmBakeTemplateUtils<HelmBakeManifestReq
 
   public BakeRecipe buildBakeRecipe(BakeManifestEnvironment env, HelmBakeManifestRequest request)
       throws IOException {
-    BakeRecipe result = new BakeRecipe();
-    result.setName(request.getOutputName());
-
     Path templatePath;
-    List<Path> valuePaths;
 
     List<Artifact> inputArtifacts = request.getInputArtifacts();
     if (inputArtifacts == null || inputArtifacts.isEmpty()) {
@@ -47,8 +40,25 @@ public class HelmTemplateUtils extends HelmBakeTemplateUtils<HelmBakeManifestReq
     templatePath = getHelmTypePathFromArtifact(env, inputArtifacts, request.getHelmChartFilePath());
 
     log.info("path to Chart.yaml: {}", templatePath);
+    return buildCommand(
+            request, getValuePaths(inputArtifacts, env), templatePath);
+  }
 
-    valuePaths = getValuePaths(inputArtifacts, env);
+  public String fetchFailureMessage(String description, Exception e) {
+    return "Failed to fetch helm " + description + ": " + e.getMessage();
+  }
+
+  public String getHelmExecutableForRequest(HelmBakeManifestRequest request) {
+    if (BakeManifestRequest.TemplateRenderer.HELM2.equals(request.getTemplateRenderer())) {
+      return helmConfigurationProperties.getV2ExecutablePath();
+    }
+    return helmConfigurationProperties.getV3ExecutablePath();
+  }
+
+  public BakeRecipe buildCommand(
+          HelmBakeManifestRequest request, List<Path> valuePaths, Path templatePath) {
+    BakeRecipe result = new BakeRecipe();
+    result.setName(request.getOutputName());
 
     List<String> command = new ArrayList<>();
     String executable = getHelmExecutableForRequest(request);
@@ -75,7 +85,7 @@ public class HelmTemplateUtils extends HelmBakeTemplateUtils<HelmBakeManifestReq
     }
 
     if (request.isIncludeCRDs()
-        && request.getTemplateRenderer() == BakeManifestRequest.TemplateRenderer.HELM3) {
+            && request.getTemplateRenderer() == BakeManifestRequest.TemplateRenderer.HELM3) {
       command.add("--include-crds");
     }
 
@@ -98,16 +108,5 @@ public class HelmTemplateUtils extends HelmBakeTemplateUtils<HelmBakeManifestReq
     result.setCommand(command);
 
     return result;
-  }
-
-  public String fetchFailureMessage(String description, Exception e) {
-    return "Failed to fetch helm " + description + ": " + e.getMessage();
-  }
-
-  public String getHelmExecutableForRequest(HelmBakeManifestRequest request) {
-    if (BakeManifestRequest.TemplateRenderer.HELM2.equals(request.getTemplateRenderer())) {
-      return helmConfigurationProperties.getV2ExecutablePath();
-    }
-    return helmConfigurationProperties.getV3ExecutablePath();
   }
 }

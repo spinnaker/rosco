@@ -17,8 +17,6 @@
 package com.netflix.spinnaker.rosco.manifests.helmfile;
 
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
-import com.netflix.spinnaker.kork.exceptions.SpinnakerException;
-import com.netflix.spinnaker.kork.retrofit.exceptions.SpinnakerHttpException;
 import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
 import com.netflix.spinnaker.rosco.manifests.ArtifactDownloader;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestEnvironment;
@@ -30,7 +28,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
@@ -52,11 +49,7 @@ public class HelmfileTemplateUtils extends HelmBakeTemplateUtils<HelmfileBakeMan
 
   public BakeRecipe buildBakeRecipe(
       BakeManifestEnvironment env, HelmfileBakeManifestRequest request) throws IOException {
-    BakeRecipe result = new BakeRecipe();
-    result.setName(request.getOutputName());
-
     Path helmfileFilePath;
-    List<Path> valuePaths;
 
     List<Artifact> inputArtifacts = request.getInputArtifacts();
     if (inputArtifacts == null || inputArtifacts.isEmpty()) {
@@ -67,8 +60,22 @@ public class HelmfileTemplateUtils extends HelmBakeTemplateUtils<HelmfileBakeMan
     helmfileFilePath = getHelmTypePathFromArtifact(env, inputArtifacts, request.getHelmfileFilePath());
 
     log.info("path to helmfile: {}", helmfileFilePath);
+    return buildCommand(
+            request, getValuePaths(inputArtifacts, env), helmfileFilePath);
+  }
 
-    valuePaths = getValuePaths(inputArtifacts, env);
+  public String fetchFailureMessage(String description, Exception e) {
+    return "Failed to fetch helmfile " + description + ": " + e.getMessage();
+  }
+
+  public String getHelmExecutableForRequest(HelmfileBakeManifestRequest request) {
+    return helmConfigurationProperties.getV3ExecutablePath();
+  }
+
+  public BakeRecipe buildCommand(
+          HelmfileBakeManifestRequest request, List<Path> valuePaths, Path helmfileFilePath) {
+    BakeRecipe result = new BakeRecipe();
+    result.setName(request.getOutputName());
 
     List<String> command = new ArrayList<>();
     String executable = helmfileConfigurationProperties.getExecutablePath();
@@ -115,13 +122,5 @@ public class HelmfileTemplateUtils extends HelmBakeTemplateUtils<HelmfileBakeMan
     result.setCommand(command);
 
     return result;
-  }
-
-  public String fetchFailureMessage(String description, Exception e) {
-    return "Failed to fetch helmfile " + description + ": " + e.getMessage();
-  }
-
-  public String getHelmExecutableForRequest(HelmfileBakeManifestRequest request) {
-    return helmConfigurationProperties.getV3ExecutablePath();
   }
 }
