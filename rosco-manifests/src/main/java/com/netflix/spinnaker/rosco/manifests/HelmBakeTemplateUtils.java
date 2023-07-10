@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -77,5 +78,29 @@ public abstract class HelmBakeTemplateUtils<T extends BakeManifestRequest> {
         }
 
         return valuePaths;
+    }
+
+    protected Path getHelmTypePathFromArtifact(BakeManifestEnvironment env, List<Artifact> inputArtifacts , String filePath) throws IOException {
+        Path helmTypeFilePath;
+
+        Artifact helmTypeTemplateArtifact = inputArtifacts.get(0);
+        String artifactType = Optional.ofNullable(helmTypeTemplateArtifact.getType()).orElse("");
+
+        if ("git/repo".equals(artifactType)) {
+            env.downloadArtifactTarballAndExtract(getArtifactDownloader(), helmTypeTemplateArtifact);
+
+            helmTypeFilePath =
+                    env.resolvePath(Optional.ofNullable(filePath).orElse(""));
+        } else {
+            try {
+                helmTypeFilePath = downloadArtifactToTmpFile(env, helmTypeTemplateArtifact);
+            } catch (SpinnakerHttpException e) {
+                throw new SpinnakerHttpException(fetchFailureMessage("template", e), e);
+            } catch (IOException | SpinnakerException e) {
+                throw new IllegalStateException(fetchFailureMessage("template", e), e);
+            }
+        }
+
+        return helmTypeFilePath;
     }
 }

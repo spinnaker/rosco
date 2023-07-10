@@ -44,26 +44,7 @@ public class HelmTemplateUtils extends HelmBakeTemplateUtils<HelmBakeManifestReq
       throw new IllegalArgumentException("At least one input artifact must be provided to bake");
     }
 
-    Artifact helmTemplateArtifact = inputArtifacts.get(0);
-    String artifactType = Optional.ofNullable(helmTemplateArtifact.getType()).orElse("");
-    if ("git/repo".equals(artifactType)) {
-      env.downloadArtifactTarballAndExtract(super.getArtifactDownloader(), helmTemplateArtifact);
-
-      log.info("helmChartFilePath: '{}'", request.getHelmChartFilePath());
-
-      // If there's no helm chart path specified, assume it lives in the root of
-      // the git/repo artifact.
-      templatePath =
-          env.resolvePath(Optional.ofNullable(request.getHelmChartFilePath()).orElse(""));
-    } else {
-      try {
-        templatePath = downloadArtifactToTmpFile(env, helmTemplateArtifact);
-      } catch (SpinnakerHttpException e) {
-        throw new SpinnakerHttpException(fetchFailureMessage("template", e), e);
-      } catch (IOException | SpinnakerException e) {
-        throw new IllegalStateException(fetchFailureMessage("template", e), e);
-      }
-    }
+    templatePath = getHelmTypePathFromArtifact(env, inputArtifacts, request.getHelmChartFilePath());
 
     log.info("path to Chart.yaml: {}", templatePath);
 

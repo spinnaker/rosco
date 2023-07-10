@@ -64,24 +64,7 @@ public class HelmfileTemplateUtils extends HelmBakeTemplateUtils<HelmfileBakeMan
     }
 
     log.info("helmfileFilePath: '{}'", request.getHelmfileFilePath());
-    Artifact helmfileTemplateArtifact = inputArtifacts.get(0);
-    String artifactType = Optional.ofNullable(helmfileTemplateArtifact.getType()).orElse("");
-    if ("git/repo".equals(artifactType)) {
-      env.downloadArtifactTarballAndExtract(super.getArtifactDownloader(), helmfileTemplateArtifact);
-
-      // If there's no helmfile path specified, assume it lives in the root of
-      // the git/repo artifact.
-      helmfileFilePath =
-          env.resolvePath(Optional.ofNullable(request.getHelmfileFilePath()).orElse(""));
-    } else {
-      try {
-        helmfileFilePath = downloadArtifactToTmpFile(env, helmfileTemplateArtifact);
-      } catch (SpinnakerHttpException e) {
-        throw new SpinnakerHttpException(fetchFailureMessage("template", e), e);
-      } catch (IOException | SpinnakerException e) {
-        throw new IllegalStateException(fetchFailureMessage("template", e), e);
-      }
-    }
+    helmfileFilePath = getHelmTypePathFromArtifact(env, inputArtifacts, request.getHelmfileFilePath());
 
     log.info("path to helmfile: {}", helmfileFilePath);
 
