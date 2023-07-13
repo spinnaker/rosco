@@ -40,8 +40,7 @@ public class HelmTemplateUtils extends HelmBakeTemplateUtils<HelmBakeManifestReq
     templatePath = getHelmTypePathFromArtifact(env, inputArtifacts, request.getHelmChartFilePath());
 
     log.info("path to Chart.yaml: {}", templatePath);
-    return buildCommand(
-            request, getValuePaths(inputArtifacts, env), templatePath);
+    return buildCommand(request, getValuePaths(inputArtifacts, env), templatePath);
   }
 
   public String fetchFailureMessage(String description, Exception e) {
@@ -56,7 +55,7 @@ public class HelmTemplateUtils extends HelmBakeTemplateUtils<HelmBakeManifestReq
   }
 
   public BakeRecipe buildCommand(
-          HelmBakeManifestRequest request, List<Path> valuePaths, Path templatePath) {
+      HelmBakeManifestRequest request, List<Path> valuePaths, Path templatePath) {
     BakeRecipe result = new BakeRecipe();
     result.setName(request.getOutputName());
 
@@ -85,7 +84,7 @@ public class HelmTemplateUtils extends HelmBakeTemplateUtils<HelmBakeManifestReq
     }
 
     if (request.isIncludeCRDs()
-            && request.getTemplateRenderer() == BakeManifestRequest.TemplateRenderer.HELM3) {
+        && request.getTemplateRenderer() == BakeManifestRequest.TemplateRenderer.HELM3) {
       command.add("--include-crds");
     }
 
