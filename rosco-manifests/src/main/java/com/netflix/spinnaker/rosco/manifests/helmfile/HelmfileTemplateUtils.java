@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -57,11 +56,11 @@ public class HelmfileTemplateUtils extends HelmBakeTemplateUtils<HelmfileBakeMan
     }
 
     log.info("helmfileFilePath: '{}'", request.getHelmfileFilePath());
-    helmfileFilePath = getHelmTypePathFromArtifact(env, inputArtifacts, request.getHelmfileFilePath());
+    helmfileFilePath =
+        getHelmTypePathFromArtifact(env, inputArtifacts, request.getHelmfileFilePath());
 
     log.info("path to helmfile: {}", helmfileFilePath);
-    return buildCommand(
-            request, getValuePaths(inputArtifacts, env), helmfileFilePath);
+    return buildCommand(request, getValuePaths(inputArtifacts, env), helmfileFilePath);
   }
 
   public String fetchFailureMessage(String description, Exception e) {
@@ -73,7 +72,7 @@ public class HelmfileTemplateUtils extends HelmBakeTemplateUtils<HelmfileBakeMan
   }
 
   public BakeRecipe buildCommand(
-          HelmfileBakeManifestRequest request, List<Path> valuePaths, Path helmfileFilePath) {
+      HelmfileBakeManifestRequest request, List<Path> valuePaths, Path helmfileFilePath) {
     BakeRecipe result = new BakeRecipe();
     result.setName(request.getOutputName());
 
