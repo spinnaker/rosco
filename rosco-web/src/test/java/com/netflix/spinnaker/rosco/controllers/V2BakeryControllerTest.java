@@ -32,7 +32,7 @@ import com.netflix.spinnaker.rosco.Main;
 import com.netflix.spinnaker.rosco.manifests.helm.HelmBakeManifestRequest;
 import com.netflix.spinnaker.rosco.services.ClouddriverService;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
+import okhttp3.ResponseBody;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -43,8 +43,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
-import retrofit.client.Response;
-import retrofit.mime.TypedString;
+import retrofit2.Retrofit;
+import retrofit2.converter.jackson.JacksonConverterFactory;
 
 @SpringBootTest(classes = Main.class)
 @TestPropertySource(properties = "spring.application.name = rosco")
@@ -103,20 +103,29 @@ class V2BakeryControllerTest {
   }
 
   private static SpinnakerHttpException makeSpinnakerHttpException(int status) {
-    SpinnakerHttpException spinnakerHttpException = mock(SpinnakerHttpException.class);
-    when(spinnakerHttpException.getMessage()).thenReturn("message");
-
-    // Response is a final class, so straightforward mocking fails.
+    // SpinnakerHttpException spinnakerHttpException = mock(SpinnakerHttpException.class);
+    // when(spinnakerHttpException.getMessage()).thenReturn("message");
+    // when(spinnakerHttpException.getResponseCode()).thenReturn(status);
+    // return spinnakerHttpException;
+    //
+    // would be sufficient, except in the chained case, where the return value
+    // of this method is the cause of a real SpinnakerHttpException object.
+    // There, getResponseCode needs a real underlying response, at least real
+    // enough for response.getStatus() to work.  So, go ahead and build one.
     String url = "https://some-url";
-    Response response =
-        new Response(
-            url,
+    retrofit2.Response retrofit2Response =
+        retrofit2.Response.error(
             status,
-            "arbitrary reason",
-            List.of(),
-            new TypedString("{ message: \"unused message due to above mock\" }"));
+            ResponseBody.create(
+                okhttp3.MediaType.parse("application/json"),
+                "{ \"message\": \"arbitrary message\" }"));
 
-    when(spinnakerHttpException.getResponse()).thenReturn(response);
-    return spinnakerHttpException;
+    Retrofit retrofit =
+        new Retrofit.Builder()
+            .baseUrl(url)
+            .addConverterFactory(JacksonConverterFactory.create())
+            .build();
+
+    return new SpinnakerHttpException(retrofit2Response, retrofit);
   }
 }
