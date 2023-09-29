@@ -113,6 +113,18 @@ public class HelmTemplateUtils {
       command.add("--include-crds");
     }
 
+    String apiVersions = request.getApiVersions();
+    if (apiVersions != null && !apiVersions.isEmpty()) {
+      command.add("--api-versions");
+      command.add(apiVersions);
+    }
+
+    String kubeVersion = request.getKubeVersion();
+    if (kubeVersion != null && !kubeVersion.isEmpty()) {
+      command.add("--kube-version");
+      command.add(kubeVersion);
+    }
+
     Map<String, Object> overrides = request.getOverrides();
     if (!overrides.isEmpty()) {
       List<String> overrideList = new ArrayList<>();

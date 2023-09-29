@@ -9,6 +9,11 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class HelmBakeManifestRequest extends BakeManifestRequest {
+
+  String apiVersions;
+
+  String kubeVersion;
+
   String namespace;
 
   /**
