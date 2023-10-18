@@ -20,6 +20,7 @@ import static com.netflix.spinnaker.rosco.manifests.ManifestTestUtils.makeSpinna
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doThrow;
@@ -343,8 +344,6 @@ final class HelmTemplateUtilsTest {
   }
 
   @Test
-<<<<<<< HEAD
-=======
   public void buildBakeRecipeIncludingHelmVersionsOptionsWithHelm3() throws IOException {
     ArtifactDownloader artifactDownloader = mock(ArtifactDownloader.class);
     RoscoHelmConfigurationProperties helmConfigurationProperties =
@@ -450,7 +449,6 @@ final class HelmTemplateUtilsTest {
   }
 
   @Test
->>>>>>> 4a12958 (feat(helm/bake): Add additional input fields where we can fill in details of the APIs versions (#1020))
   public void httpExceptionDownloading() throws IOException {
     // When artifactDownloader throws a SpinnakerHttpException, make sure we
     // wrap it and get a chance to include our own message, so the exception

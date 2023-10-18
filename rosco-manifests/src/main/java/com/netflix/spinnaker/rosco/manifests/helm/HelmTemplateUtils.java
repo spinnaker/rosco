@@ -109,8 +109,6 @@ public class HelmTemplateUtils {
       command.add(namespace);
     }
 
-<<<<<<< HEAD
-=======
     if (request.isIncludeCRDs()
         && request.getTemplateRenderer() == BakeManifestRequest.TemplateRenderer.HELM3) {
       command.add("--include-crds");
@@ -128,7 +126,6 @@ public class HelmTemplateUtils {
       command.add(kubeVersion);
     }
 
->>>>>>> 4a12958 (feat(helm/bake): Add additional input fields where we can fill in details of the APIs versions (#1020))
     Map<String, Object> overrides = request.getOverrides();
     if (!overrides.isEmpty()) {
       List<String> overrideList = new ArrayList<>();
