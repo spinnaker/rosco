@@ -20,6 +20,7 @@ import static com.netflix.spinnaker.rosco.manifests.ManifestTestUtils.makeSpinna
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doThrow;
@@ -340,6 +341,111 @@ final class HelmTemplateUtilsTest {
       // 2 - the path to Chart.yaml
       assertEquals(env.resolvePath(subDirName).toString(), recipe.getCommand().get(2));
     }
+  }
+
+  @Test
+  public void buildBakeRecipeIncludingHelmVersionsOptionsWithHelm3() throws IOException {
+    ArtifactDownloader artifactDownloader = mock(ArtifactDownloader.class);
+    RoscoHelmConfigurationProperties helmConfigurationProperties =
+        new RoscoHelmConfigurationProperties();
+    HelmTemplateUtils helmTemplateUtils =
+        new HelmTemplateUtils(artifactDownloader, helmConfigurationProperties);
+
+    HelmBakeManifestRequest request = new HelmBakeManifestRequest();
+    Artifact artifact = Artifact.builder().build();
+    request.setTemplateRenderer(BakeManifestRequest.TemplateRenderer.HELM3);
+    request.setApiVersions("customApiVersion");
+    request.setKubeVersion("customKubernetesVersion");
+    request.setInputArtifacts(Collections.singletonList(artifact));
+    request.setOverrides(Collections.emptyMap());
+
+    try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
+      BakeRecipe bakeRecipe = helmTemplateUtils.buildBakeRecipe(env, request);
+      assertTrue(bakeRecipe.getCommand().contains("--api-versions"));
+      assertTrue(bakeRecipe.getCommand().indexOf("--api-versions") > 3);
+      assertTrue(bakeRecipe.getCommand().contains("--kube-version"));
+      assertTrue(bakeRecipe.getCommand().indexOf("--kube-version") > 5);
+    }
+  }
+
+  @Test
+  public void buildBakeRecipeIncludingHelmVersionsOptionsWithHelm2() throws IOException {
+    ArtifactDownloader artifactDownloader = mock(ArtifactDownloader.class);
+    RoscoHelmConfigurationProperties helmConfigurationProperties =
+        new RoscoHelmConfigurationProperties();
+    HelmTemplateUtils helmTemplateUtils =
+        new HelmTemplateUtils(artifactDownloader, helmConfigurationProperties);
+
+    HelmBakeManifestRequest request = new HelmBakeManifestRequest();
+    Artifact artifact = Artifact.builder().build();
+    request.setTemplateRenderer(BakeManifestRequest.TemplateRenderer.HELM2);
+    request.setApiVersions("customApiVersion");
+    request.setKubeVersion("customKubernetesVersion");
+    request.setInputArtifacts(Collections.singletonList(artifact));
+    request.setOverrides(Collections.emptyMap());
+
+    try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
+      BakeRecipe bakeRecipe = helmTemplateUtils.buildBakeRecipe(env, request);
+      assertTrue(bakeRecipe.getCommand().contains("--api-versions"));
+      assertTrue(bakeRecipe.getCommand().indexOf("--api-versions") > 3);
+      assertTrue(bakeRecipe.getCommand().contains("--kube-version"));
+      assertTrue(bakeRecipe.getCommand().indexOf("--kube-version") > 5);
+    }
+  }
+
+  @Test
+  public void buildBakeRecipeIncludingCRDsWithHelm3() throws IOException {
+    ArtifactDownloader artifactDownloader = mock(ArtifactDownloader.class);
+    RoscoHelmConfigurationProperties helmConfigurationProperties =
+        new RoscoHelmConfigurationProperties();
+    HelmTemplateUtils helmTemplateUtils =
+        new HelmTemplateUtils(artifactDownloader, helmConfigurationProperties);
+
+    HelmBakeManifestRequest request = new HelmBakeManifestRequest();
+    Artifact artifact = Artifact.builder().build();
+    request.setTemplateRenderer(BakeManifestRequest.TemplateRenderer.HELM3);
+    request.setIncludeCRDs(true);
+    request.setInputArtifacts(Collections.singletonList(artifact));
+    request.setOverrides(Collections.emptyMap());
+
+    try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
+      BakeRecipe recipe = helmTemplateUtils.buildBakeRecipe(env, request);
+      assertTrue(recipe.getCommand().contains("--include-crds"));
+      // Assert that the flag position goes after 'helm template' subcommand
+      assertTrue(recipe.getCommand().indexOf("--include-crds") > 1);
+    }
+  }
+
+  @ParameterizedTest
+  @MethodSource("helmRendererArgsCRDs")
+  public void buildBakeRecipeNotIncludingCRDs(
+      boolean includeCRDs, BakeManifestRequest.TemplateRenderer templateRenderer)
+      throws IOException {
+    ArtifactDownloader artifactDownloader = mock(ArtifactDownloader.class);
+    RoscoHelmConfigurationProperties helmConfigurationProperties =
+        new RoscoHelmConfigurationProperties();
+    HelmTemplateUtils helmTemplateUtils =
+        new HelmTemplateUtils(artifactDownloader, helmConfigurationProperties);
+
+    HelmBakeManifestRequest request = new HelmBakeManifestRequest();
+    Artifact artifact = Artifact.builder().build();
+    request.setInputArtifacts(Collections.singletonList(artifact));
+    request.setOverrides(Collections.emptyMap());
+
+    request.setTemplateRenderer(templateRenderer);
+    request.setIncludeCRDs(includeCRDs);
+
+    try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
+      BakeRecipe recipe = helmTemplateUtils.buildBakeRecipe(env, request);
+      assertFalse(recipe.getCommand().contains("--include-crds"));
+    }
+  }
+
+  private static Stream<Arguments> helmRendererArgsCRDs() {
+    return Stream.of(
+        Arguments.of(true, BakeManifestRequest.TemplateRenderer.HELM2),
+        Arguments.of(false, BakeManifestRequest.TemplateRenderer.HELM2),
+        Arguments.of(false, BakeManifestRequest.TemplateRenderer.HELM3));
   }
 
   @Test

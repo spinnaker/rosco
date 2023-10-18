@@ -3,12 +3,16 @@ package com.netflix.spinnaker.rosco.manifests.helm;
 import com.netflix.spinnaker.kork.artifacts.model.Artifact;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestRequest;
 import java.util.List;
+import javax.annotation.Nullable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class HelmBakeManifestRequest extends BakeManifestRequest {
+  @Nullable String apiVersions;
+  @Nullable String kubeVersion;
+
   String namespace;
 
   /**
@@ -18,6 +22,13 @@ public class HelmBakeManifestRequest extends BakeManifestRequest {
   List<Artifact> inputArtifacts;
 
   boolean rawOverrides;
+
+  /**
+   * Helm v3 adds a new flag to include custom resource definition manifests in the templated
+   * output. In the previous versions crds were usually included as part of templates, so the `helm
+   * template` command always included them in the rendered output.
+   */
+  boolean includeCRDs;
 
   /**
    * When the helm chart is (in) a git/repo artifact, the path to the chart.
