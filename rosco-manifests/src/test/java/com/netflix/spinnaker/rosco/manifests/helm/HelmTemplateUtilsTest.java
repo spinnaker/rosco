@@ -28,6 +28,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.netflix.spinnaker.kork.artifacts.artifactstore.ArtifactStore;
@@ -69,6 +72,7 @@ import org.springframework.http.HttpStatus;
 
 final class HelmTemplateUtilsTest {
 
+  private RoscoHelmConfigurationProperties helmConfigurationProperties;
   private ArtifactDownloader artifactDownloader;
 
   private HelmTemplateUtils helmTemplateUtils;
@@ -83,8 +87,7 @@ final class HelmTemplateUtilsTest {
     System.out.println("--------------- Test " + testInfo.getDisplayName());
 
     artifactDownloader = mock(ArtifactDownloader.class);
-    RoscoHelmConfigurationProperties helmConfigurationProperties =
-        new RoscoHelmConfigurationProperties();
+    helmConfigurationProperties = new RoscoHelmConfigurationProperties();
     artifactStoreConfig = new ArtifactStoreConfigurationProperties();
     ArtifactStoreConfigurationProperties.HelmConfig helmConfig =
         new ArtifactStoreConfigurationProperties.HelmConfig();
@@ -453,7 +456,8 @@ final class HelmTemplateUtilsTest {
       Map<String, Object> overrides,
       String expected,
       Boolean artifactStoreNull,
-      Boolean expandOverrides) {
+      Boolean expandOverrides)
+      throws IOException {
     ArtifactStore artifactStore = null;
     if (!artifactStoreNull) {
       artifactStore = mock(ArtifactStore.class);
@@ -481,10 +485,11 @@ final class HelmTemplateUtilsTest {
     request.setOutputName("output_name");
     request.setTemplateRenderer(BakeManifestRequest.TemplateRenderer.HELM3);
     request.setOverrides(overrides);
-    BakeRecipe recipe =
-        helmTemplateUtils.buildCommand(request, List.of(), Path.of("template_path"));
-
-    assertThat(recipe.getCommand().contains(expected)).isTrue();
+    try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
+      BakeRecipe recipe =
+          helmTemplateUtils.buildCommand(request, List.of(), Path.of("template_path"), env);
+      assertThat(recipe.getCommand().contains(expected)).isTrue();
+    }
   }
 
   private static Stream<Arguments> ensureOverrides() {
@@ -556,6 +561,88 @@ final class HelmTemplateUtilsTest {
     }
   }
 
+  @Test
+  public void testOverrideThresholdShortEnough() throws IOException {
+    bakeManifestRequest.setOverrides(ImmutableMap.of("key1", "value1", "key2", "value2"));
+    bakeManifestRequest.setRawOverrides(false);
+    helmConfigurationProperties.setOverridesFileThreshold(100);
+
+    try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
+      BakeRecipe recipe = helmTemplateUtils.buildBakeRecipe(env, bakeManifestRequest);
+
+      assertThat(recipe.getCommand()).contains("--set-string");
+      assertThat(recipe.getCommand()).doesNotContain("--values");
+    }
+  }
+
+  @Test
+  public void testOverrideThresholdShortEnoughWithRawOverrides() throws IOException {
+    bakeManifestRequest.setOverrides(ImmutableMap.of("key1", "value1", "key2", "value2"));
+    bakeManifestRequest.setRawOverrides(true);
+    helmConfigurationProperties.setOverridesFileThreshold(100);
+
+    try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
+      BakeRecipe recipe = helmTemplateUtils.buildBakeRecipe(env, bakeManifestRequest);
+
+      assertThat(recipe.getCommand()).contains("--set");
+      assertThat(recipe.getCommand()).doesNotContain("--values");
+    }
+  }
+
+  @Test
+  public void testOverrideThresholdExceedsLimitWithRawOverridesAsFalse() throws IOException {
+    bakeManifestRequest.setOverrides(
+        ImmutableMap.of("key1", "valu&e1", "key2", "value2:", "key3", 1, "key4", true));
+    bakeManifestRequest.setRawOverrides(false);
+    helmConfigurationProperties.setOverridesFileThreshold(10);
+    try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
+      BakeRecipe recipe = helmTemplateUtils.buildBakeRecipe(env, bakeManifestRequest);
+      List<String> yamlContents =
+          Files.readAllLines(
+              Path.of(recipe.getCommand().get(recipe.getCommand().indexOf("--values") + 1)));
+      assertThat(recipe.getCommand()).doesNotContain("--set");
+      assertThat(recipe.getCommand()).doesNotContain("--set-string");
+      assertThat(recipe.getCommand()).contains("--values");
+      assertThat(
+              new ObjectMapper(new YAMLFactory())
+                  .readValue(
+                      String.join(System.lineSeparator(), yamlContents),
+                      new TypeReference<Map<String, Object>>() {}))
+          .isEqualTo(
+              ImmutableMap.of("key1", "valu&e1", "key2", "value2:", "key3", "1", "key4", "true"));
+
+      assertThat(yamlContents)
+          .containsExactly(
+              "---", "key1: \"valu&e1\"", "key2: \"value2:\"", "key3: \"1\"", "key4: \"true\"");
+    }
+  }
+
+  @Test
+  public void testOverrideThresholdExceedsLimitWithRawOverridesAsTrue() throws IOException {
+    bakeManifestRequest.setOverrides(
+        ImmutableMap.of("key1", "valu&e1", "key2", "value2:", "key3", 1, "key4", true));
+    bakeManifestRequest.setRawOverrides(true);
+    helmConfigurationProperties.setOverridesFileThreshold(10);
+    try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
+      BakeRecipe recipe = helmTemplateUtils.buildBakeRecipe(env, bakeManifestRequest);
+      List<String> yamlContents =
+          Files.readAllLines(
+              Path.of(recipe.getCommand().get(recipe.getCommand().indexOf("--values") + 1)));
+      assertThat(recipe.getCommand()).doesNotContain("--set");
+      assertThat(recipe.getCommand()).doesNotContain("--set-string");
+      assertThat(recipe.getCommand()).contains("--values");
+      assertThat(
+              new ObjectMapper(new YAMLFactory())
+                  .readValue(
+                      String.join(System.lineSeparator(), yamlContents),
+                      new TypeReference<Map<String, Object>>() {}))
+          .isEqualTo(bakeManifestRequest.getOverrides());
+
+      assertThat(yamlContents)
+          .containsExactly(
+              "---", "key1: \"valu&e1\"", "key2: \"value2:\"", "key3: 1", "key4: true");
+    }
+  }
   /**
    * Add a helm chart for testing
    *
