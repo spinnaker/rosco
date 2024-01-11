@@ -16,6 +16,7 @@
 
 package com.netflix.spinnaker.rosco.manifests;
 
+import com.netflix.spinnaker.kork.annotations.VisibleForTesting;
 import com.netflix.spinnaker.kork.artifacts.artifactstore.ArtifactReferenceURI;
 import com.netflix.spinnaker.kork.artifacts.artifactstore.ArtifactStore;
 import com.netflix.spinnaker.kork.artifacts.artifactstore.ArtifactStoreConfigurationProperties;
@@ -70,7 +71,8 @@ public abstract class HelmBakeTemplateUtils<T extends BakeManifestRequest> {
 
   public abstract String getHelmExecutableForRequest(T request);
 
-  protected List<Path> getValuePaths(List<Artifact> artifacts, BakeManifestEnvironment env) {
+  @VisibleForTesting
+  public List<Path> getValuePaths(List<Artifact> artifacts, BakeManifestEnvironment env) {
     List<Path> valuePaths = new ArrayList<>();
 
     try {

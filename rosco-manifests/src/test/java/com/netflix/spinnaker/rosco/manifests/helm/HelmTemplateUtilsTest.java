@@ -72,6 +72,8 @@ import org.springframework.http.HttpStatus;
 
 final class HelmTemplateUtilsTest {
 
+  public static final String OVERRIDES_FILE_PATH_PATTERN =
+      ".*/overrides_[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\.yml$";
   private RoscoHelmConfigurationProperties helmConfigurationProperties;
   private ArtifactDownloader artifactDownloader;
 
@@ -591,27 +593,34 @@ final class HelmTemplateUtilsTest {
 
   @Test
   public void testOverrideThresholdExceedsLimitWithRawOverridesAsFalse() throws IOException {
+    Artifact chartArtifact = Artifact.builder().name("test-artifact").build();
+    Artifact valuesArtifact = Artifact.builder().name("test-artifact_values").build();
+    bakeManifestRequest = new HelmBakeManifestRequest();
+    bakeManifestRequest.setInputArtifacts(ImmutableList.of(chartArtifact, valuesArtifact));
     bakeManifestRequest.setOverrides(
         ImmutableMap.of("key1", "valu&e1", "key2", "value2:", "key3", 1, "key4", true));
     bakeManifestRequest.setRawOverrides(false);
     helmConfigurationProperties.setOverridesFileThreshold(10);
     try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
       BakeRecipe recipe = helmTemplateUtils.buildBakeRecipe(env, bakeManifestRequest);
-      List<String> yamlContents =
-          Files.readAllLines(
-              Path.of(recipe.getCommand().get(recipe.getCommand().indexOf("--values") + 1)));
-      assertThat(recipe.getCommand()).doesNotContain("--set");
-      assertThat(recipe.getCommand()).doesNotContain("--set-string");
-      assertThat(recipe.getCommand()).contains("--values");
+      List<String> helmTemplateCommand = recipe.getCommand();
+      assertThat(Collections.frequency(helmTemplateCommand, "--values")).isEqualTo(2);
+      String lastValuesArgument =
+          helmTemplateCommand.get(helmTemplateCommand.lastIndexOf("--values") + 1);
+      assertThat(lastValuesArgument).matches(OVERRIDES_FILE_PATH_PATTERN);
+      List<String> overridesYamlContents = Files.readAllLines(Path.of(lastValuesArgument));
+      assertThat(helmTemplateCommand).doesNotContain("--set");
+      assertThat(helmTemplateCommand).doesNotContain("--set-string");
+      assertThat(helmTemplateCommand).contains("--values");
       assertThat(
               new ObjectMapper(new YAMLFactory())
                   .readValue(
-                      String.join(System.lineSeparator(), yamlContents),
+                      String.join(System.lineSeparator(), overridesYamlContents),
                       new TypeReference<Map<String, Object>>() {}))
           .isEqualTo(
               ImmutableMap.of("key1", "valu&e1", "key2", "value2:", "key3", "1", "key4", "true"));
 
-      assertThat(yamlContents)
+      assertThat(overridesYamlContents)
           .containsExactly(
               "---", "key1: \"valu&e1\"", "key2: \"value2:\"", "key3: \"1\"", "key4: \"true\"");
     }
@@ -619,26 +628,32 @@ final class HelmTemplateUtilsTest {
 
   @Test
   public void testOverrideThresholdExceedsLimitWithRawOverridesAsTrue() throws IOException {
+    Artifact chartArtifact = Artifact.builder().name("test-artifact").build();
+    Artifact valuesArtifact = Artifact.builder().name("test-artifact_values").build();
+    bakeManifestRequest = new HelmBakeManifestRequest();
+    bakeManifestRequest.setInputArtifacts(ImmutableList.of(chartArtifact, valuesArtifact));
     bakeManifestRequest.setOverrides(
         ImmutableMap.of("key1", "valu&e1", "key2", "value2:", "key3", 1, "key4", true));
     bakeManifestRequest.setRawOverrides(true);
     helmConfigurationProperties.setOverridesFileThreshold(10);
     try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
       BakeRecipe recipe = helmTemplateUtils.buildBakeRecipe(env, bakeManifestRequest);
-      List<String> yamlContents =
-          Files.readAllLines(
-              Path.of(recipe.getCommand().get(recipe.getCommand().indexOf("--values") + 1)));
-      assertThat(recipe.getCommand()).doesNotContain("--set");
-      assertThat(recipe.getCommand()).doesNotContain("--set-string");
-      assertThat(recipe.getCommand()).contains("--values");
+      List<String> helmTemplateCommand = recipe.getCommand();
+      String lastValuesArgument =
+          helmTemplateCommand.get(helmTemplateCommand.lastIndexOf("--values") + 1);
+      assertThat(Collections.frequency(helmTemplateCommand, "--values")).isEqualTo(2);
+      assertThat(lastValuesArgument).matches(OVERRIDES_FILE_PATH_PATTERN);
+      List<String> overridesYamlContents = Files.readAllLines(Path.of(lastValuesArgument));
+      assertThat(helmTemplateCommand).doesNotContain("--set");
+      assertThat(helmTemplateCommand).doesNotContain("--set-string");
+      assertThat(helmTemplateCommand).contains("--values");
       assertThat(
               new ObjectMapper(new YAMLFactory())
                   .readValue(
-                      String.join(System.lineSeparator(), yamlContents),
+                      String.join(System.lineSeparator(), overridesYamlContents),
                       new TypeReference<Map<String, Object>>() {}))
           .isEqualTo(bakeManifestRequest.getOverrides());
-
-      assertThat(yamlContents)
+      assertThat(overridesYamlContents)
           .containsExactly(
               "---", "key1: \"valu&e1\"", "key2: \"value2:\"", "key3: 1", "key4: true");
     }

@@ -124,6 +124,7 @@ public class HelmTemplateUtils extends HelmBakeTemplateUtils<HelmBakeManifestReq
     }
 
     Map<String, Object> overrides = request.getOverrides();
+    Path overridesFile = null;
     if (overrides != null && !overrides.isEmpty()) {
       String overridesString = getOverridesAsString(overrides);
       if (overridesString.length() < helmConfigurationProperties.getOverridesFileThreshold()
@@ -132,16 +133,22 @@ public class HelmTemplateUtils extends HelmBakeTemplateUtils<HelmBakeManifestReq
         command.add(overrideOption);
         command.add(overridesString);
       } else {
-        Path overridesFile =
-            writeOverridesToFile(env, request.getOverrides(), request.isRawOverrides());
-        command.add("--values");
-        command.add(overridesFile.toString());
+        overridesFile = writeOverridesToFile(env, request.getOverrides(), request.isRawOverrides());
       }
     }
 
     if (!valuePaths.isEmpty()) {
       command.add("--values");
       command.add(valuePaths.stream().map(Path::toString).collect(Collectors.joining(",")));
+    }
+    // For shorter overrides, --set/--set-string are used.
+    // Since --set/--set-string have higher precedence over --values in Helm versions 2.16.1 and
+    // 3.4.1, and later --values arguments override earlier ones,
+    // it's important to add override values at the end of the command. This ensures their
+    // precedence, especially when multiple --values are used.
+    if (overridesFile != null) {
+      command.add("--values");
+      command.add(overridesFile.toString());
     }
 
     result.setCommand(command);
