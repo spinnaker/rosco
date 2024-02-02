@@ -16,32 +16,42 @@
 
 package com.netflix.spinnaker.rosco.manifests;
 
-import com.netflix.spinnaker.kork.artifacts.model.Artifact;
-import com.netflix.spinnaker.kork.exceptions.SpinnakerException;
-import com.netflix.spinnaker.kork.retrofit.exceptions.SpinnakerHttpException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import com.netflix.spinnaker.kork.artifacts.artifactstore.ArtifactReferenceURI;
+import com.netflix.spinnaker.kork.artifacts.artifactstore.ArtifactStore;
+import com.netflix.spinnaker.kork.artifacts.artifactstore.ArtifactStoreConfigurationProperties;
+import com.netflix.spinnaker.kork.artifacts.model.Artifact;
+import com.netflix.spinnaker.kork.exceptions.SpinnakerException;
+import com.netflix.spinnaker.kork.retrofit.exceptions.SpinnakerHttpException;
+
+import lombok.Getter;
 
 public abstract class HelmBakeTemplateUtils<T extends BakeManifestRequest> {
   private static final String MANIFEST_SEPARATOR = "---\n";
   private static final Pattern REGEX_TESTS_MANIFESTS =
       Pattern.compile("# Source: .*/templates/tests/.*");
 
-  private final ArtifactDownloader artifactDownloader;
+  @Getter private final ArtifactDownloader artifactDownloader;
+  private final ArtifactStore artifactStore;
+  private final ArtifactStoreConfigurationProperties.HelmConfig helmConfig;
 
-  protected HelmBakeTemplateUtils(ArtifactDownloader artifactDownloader) {
+  protected HelmBakeTemplateUtils(
+      ArtifactDownloader artifactDownloader,
+      Optional<ArtifactStore> artifactStore,
+      ArtifactStoreConfigurationProperties.HelmConfig helmConfig) {
     this.artifactDownloader = artifactDownloader;
-  }
-
-  public ArtifactDownloader getArtifactDownloader() {
-    return artifactDownloader;
+    this.artifactStore = artifactStore.orElse(null);
+    this.helmConfig = helmConfig;
   }
 
   public abstract String fetchFailureMessage(String description, Exception e);
@@ -102,5 +112,33 @@ public abstract class HelmBakeTemplateUtils<T extends BakeManifestRequest> {
     }
 
     return helmTypeFilePath;
+  }
+
+  /**
+   * This is a helper method to build the appropriate overrides in the event that an
+   * ArtifactReferenceURI was passed in an override
+   */
+  protected List<String> buildOverrideList(Map<String, Object> overrides) {
+    return overrides.entrySet().stream()
+            .map(entry -> entry.getKey() + "=" + expandArtifactReferenceURIs(entry.getValue()).toString())
+            .collect(Collectors.toList());
+  }
+
+  /**
+   * In the event that we encounter and ArtifactReferenceURI, we want to pull
+   * down that artifact instead of using the raw URI as a value for helm.
+   */
+  private Object expandArtifactReferenceURIs(Object value) {
+    if (artifactStore == null || !(helmConfig.isExpandOverrides() && value instanceof String)) {
+      return value;
+    }
+
+    String ref = (String) value;
+    if (ArtifactReferenceURI.is(ref)) {
+      Artifact artifact = artifactStore.get(ArtifactReferenceURI.parse(ref));
+      return artifact.getReference();
+    }
+
+    return ref;
   }
 }
