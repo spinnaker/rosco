@@ -133,6 +133,17 @@ public abstract class HelmBakeTemplateUtils<T extends BakeManifestRequest> {
       return value;
     }
 
+    // It is important to note, since we do not have an object, but just a
+    // String, we can only check if the format matches an artifact reference
+    // URI.
+    //
+    // This means if a user is explicitly trying to pass a string with the same
+    // format, it will attempt to retrieve it and fail. SpEL handles this
+    // similar problem by returning the raw expression back, but that allows
+    // for intentional SpEL expressions to silently fail, which is why this is
+    // not done. Rather than fixing this potential issue now, we can address
+    // it once someone has reported it, since matching this format seems
+    // unlikely, but possible.
     String ref = (String) value;
     if (ArtifactReferenceURI.is(ref)) {
       Artifact artifact = artifactStore.get(ArtifactReferenceURI.parse(ref));
