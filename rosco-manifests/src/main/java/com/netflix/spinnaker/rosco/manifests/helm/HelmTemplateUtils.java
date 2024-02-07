@@ -182,11 +182,22 @@ public class HelmTemplateUtils extends HelmBakeTemplateUtils<HelmBakeManifestReq
       BakeManifestEnvironment env, Map<String, Object> overrides, boolean rawOverrides) {
     String fileName = OVERRIDES_FILE_PREFIX + UUID.randomUUID().toString() + YML_FILE_EXTENSION;
     Path filePath = env.resolvePath(fileName);
-    if (!rawOverrides) {
+
+    // If rawOverrides is true and expansion of artifact store references is
+    // disabled, there's no need to traverse the overrides map.  Use it as is.
+    //
+    // In other words, if we're meant to stringify overrides, or expand
+    // references, traverse the overrides map and do so.
+    if (!rawOverrides || isExpandArtifactReferenceURIs()) {
       overrides =
           overrides.entrySet().stream()
               .collect(
-                  Collectors.toMap(Map.Entry::getKey, entry -> String.valueOf(entry.getValue())));
+                  Collectors.toMap(
+                      Map.Entry::getKey,
+                      entry -> {
+                        Object newValue = expandArtifactReferenceURIs(entry.getValue());
+                        return rawOverrides ? newValue : String.valueOf(newValue);
+                      }));
     }
     try (Writer writer = Files.newBufferedWriter(filePath)) {
       yamlObjectMapper.writeValue(writer, overrides);

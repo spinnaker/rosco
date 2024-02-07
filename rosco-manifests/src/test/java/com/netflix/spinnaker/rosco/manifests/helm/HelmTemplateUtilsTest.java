@@ -68,6 +68,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpStatus;
 
 final class HelmTemplateUtilsTest {
@@ -84,6 +85,8 @@ final class HelmTemplateUtilsTest {
   /** Configuration for the default values in the event artifact store had been turned off. */
   private ArtifactStoreConfigurationProperties artifactStoreConfig;
 
+  private ArtifactStoreConfigurationProperties.HelmConfig helmConfig;
+
   @BeforeEach
   void init(TestInfo testInfo) {
     System.out.println("--------------- Test " + testInfo.getDisplayName());
@@ -91,8 +94,7 @@ final class HelmTemplateUtilsTest {
     artifactDownloader = mock(ArtifactDownloader.class);
     helmConfigurationProperties = new RoscoHelmConfigurationProperties();
     artifactStoreConfig = new ArtifactStoreConfigurationProperties();
-    ArtifactStoreConfigurationProperties.HelmConfig helmConfig =
-        new ArtifactStoreConfigurationProperties.HelmConfig();
+    helmConfig = new ArtifactStoreConfigurationProperties.HelmConfig();
     artifactStoreConfig.setHelm(helmConfig);
     helmConfig.setExpandOverrides(false);
     helmTemplateUtils =
@@ -451,15 +453,25 @@ final class HelmTemplateUtilsTest {
     }
   }
 
-  @ParameterizedTest
+  @ParameterizedTest(
+      name =
+          "ensureOverrides reference: {0} overrides: {1} expected: {2} artifactStoreNull: {3}, expandOverrides: {4}, overridesInValuesFile: {5}")
   @MethodSource("ensureOverrides")
   public void ensureOverridesGetEvaluated(
       String reference,
       Map<String, Object> overrides,
-      String expected,
+      Map<String, Object> expectedMap,
       Boolean artifactStoreNull,
-      Boolean expandOverrides)
+      Boolean expandOverrides,
+      Boolean overridesInValuesFile)
       throws IOException {
+
+    // Assume that expectedMap has one element, and turn it into an expected argument for
+    // --set/--set-string
+    assertThat(expectedMap).hasSize(1);
+    Map.Entry<String, Object> entry = expectedMap.entrySet().iterator().next();
+    String expected = entry.getKey() + "=" + entry.getValue();
+
     ArtifactStore artifactStore = null;
     if (!artifactStoreNull) {
       artifactStore = mock(ArtifactStore.class);
@@ -467,6 +479,12 @@ final class HelmTemplateUtilsTest {
     }
     RoscoHelmConfigurationProperties helmConfigurationProperties =
         new RoscoHelmConfigurationProperties();
+
+    if (overridesInValuesFile) {
+      // Set the threshold so that rosco always uses a values file for
+      // overrides, no matter their size.
+      helmConfigurationProperties.setOverridesFileThreshold(1);
+    }
 
     // do not use the artifactStoreConfig field as we are trying to test various
     // values of expandOverrides
@@ -490,15 +508,62 @@ final class HelmTemplateUtilsTest {
     try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
       BakeRecipe recipe =
           helmTemplateUtils.buildCommand(request, List.of(), Path.of("template_path"), env);
-      assertThat(recipe.getCommand().contains(expected)).isTrue();
+      if (overridesInValuesFile) {
+        List<String> helmTemplateCommand = recipe.getCommand();
+        assertThat(Collections.frequency(helmTemplateCommand, "--values")).isEqualTo(1);
+        String lastValuesArgument =
+            helmTemplateCommand.get(helmTemplateCommand.lastIndexOf("--values") + 1);
+        assertThat(lastValuesArgument).matches(OVERRIDES_FILE_PATH_PATTERN);
+        List<String> overridesYamlContents = Files.readAllLines(Path.of(lastValuesArgument));
+        assertThat(helmTemplateCommand).doesNotContain("--set");
+        assertThat(helmTemplateCommand).doesNotContain("--set-string");
+        assertThat(helmTemplateCommand).contains("--values");
+        assertThat(
+                new ObjectMapper(new YAMLFactory())
+                    .readValue(
+                        String.join(System.lineSeparator(), overridesYamlContents),
+                        new TypeReference<Map<String, Object>>() {}))
+            .isEqualTo(expectedMap);
+      } else {
+        assertThat(recipe.getCommand().contains(expected)).isTrue();
+      }
     }
   }
 
   private static Stream<Arguments> ensureOverrides() {
     return Stream.of(
-        Arguments.of("test", Map.of("foo", "ref://bar/baz"), "foo=test", false, true),
-        Arguments.of("test", Map.of("foo", "ref://bar/baz"), "foo=ref://bar/baz", false, false),
-        Arguments.of("test", Map.of("foo", "ref://bar/baz"), "foo=ref://bar/baz", true, false));
+        Arguments.of(
+            "test", Map.of("foo", "ref://bar/baz"), Map.of("foo", "test"), false, true, false),
+        Arguments.of(
+            "test", Map.of("foo", "ref://bar/baz"), Map.of("foo", "test"), false, true, true),
+        Arguments.of(
+            "test",
+            Map.of("foo", "ref://bar/baz"),
+            Map.of("foo", "ref://bar/baz"),
+            false,
+            false,
+            false),
+        Arguments.of(
+            "test",
+            Map.of("foo", "ref://bar/baz"),
+            Map.of("foo", "ref://bar/baz"),
+            false,
+            false,
+            true),
+        Arguments.of(
+            "test",
+            Map.of("foo", "ref://bar/baz"),
+            Map.of("foo", "ref://bar/baz"),
+            true,
+            false,
+            false),
+        Arguments.of(
+            "test",
+            Map.of("foo", "ref://bar/baz"),
+            Map.of("foo", "ref://bar/baz"),
+            true,
+            false,
+            true));
   }
 
   @ParameterizedTest
@@ -626,10 +691,27 @@ final class HelmTemplateUtilsTest {
     }
   }
 
-  @Test
-  public void testOverrideThresholdExceedsLimitWithRawOverridesAsTrue() throws IOException {
+  @ParameterizedTest(
+      name = "testOverrideThresholdExceedsLimitWithRawOverridesAsTrue: expandOverrides {0}")
+  @ValueSource(booleans = {true, false})
+  public void testOverrideThresholdExceedsLimitWithRawOverridesAsTrue(boolean expandOverrides)
+      throws IOException {
     Artifact chartArtifact = Artifact.builder().name("test-artifact").build();
     Artifact valuesArtifact = Artifact.builder().name("test-artifact_values").build();
+
+    ArtifactStore artifactStore = null;
+    if (expandOverrides) {
+      artifactStore = mock(ArtifactStore.class);
+    }
+    helmConfig.setExpandOverrides(expandOverrides);
+
+    helmTemplateUtils =
+        new HelmTemplateUtils(
+            artifactDownloader,
+            Optional.ofNullable(artifactStore),
+            artifactStoreConfig,
+            helmConfigurationProperties);
+
     bakeManifestRequest = new HelmBakeManifestRequest();
     bakeManifestRequest.setInputArtifacts(ImmutableList.of(chartArtifact, valuesArtifact));
     bakeManifestRequest.setOverrides(
