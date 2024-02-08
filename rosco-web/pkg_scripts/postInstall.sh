@@ -40,7 +40,7 @@ install_packer() {
   local packer_status=$?
   if [ $packer_status -ne 0 ] || [ "$packer_version" != "$PACKER_VERSION" ]; then
     wget https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_${ARCH}.zip
-    unzip -o "packer_${PACKER_VERSION}_linux_amd64.zip" -d /usr/bin
+    unzip -o "packer_${PACKER_VERSION}_linux_${ARCH}.zip" -d /usr/bin
   fi
 
   # Install plugins as the "spinnaker" user
