@@ -17,7 +17,7 @@ if [ -z `getent passwd spinnaker` ]; then
 fi
 
 # Get the PACKER_PLUGINS environment variable or set a default value
-PACKER_PLUGINS=${PACKER_PLUGINS:-"amazon azure docker googlecompute"}
+PACKER_PLUGINS=${PACKER_PLUGINS:-"amazon azure googlecompute"}
 
 create_temp_dir() {
   TEMPDIR=$(mktemp -d /tmp/installrosco.XXXX)
