@@ -7,7 +7,7 @@ ENV PACKER_VERSION=1.10.1
 ENV HELMFILE_VERSION=0.153.1
 
 ARG TARGETARCH
-ARG PACKER_PLUGINS="amazon azure docker googlecompute"
+ARG PACKER_PLUGINS="amazon azure googlecompute"
 
 WORKDIR /packer
 

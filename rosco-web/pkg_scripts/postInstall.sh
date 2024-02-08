@@ -16,6 +16,11 @@ if [ -z `getent passwd spinnaker` ]; then
   useradd --gid spinnaker spinnaker -m --home-dir /home/spinnaker
 fi
 
+ARCH=$(uname -m)
+if [ "$ARCH" = "x86_64" ]; then
+  ARCH="amd64"
+fi
+
 # Get the PACKER_PLUGINS environment variable or set a default value
 PACKER_PLUGINS=${PACKER_PLUGINS:-"amazon azure googlecompute"}
 
@@ -34,7 +39,7 @@ install_packer() {
   local packer_version="$(/usr/bin/packer --version)"
   local packer_status=$?
   if [ $packer_status -ne 0 ] || [ "$packer_version" != "$PACKER_VERSION" ]; then
-    wget https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_amd64.zip
+    wget https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_${ARCH}.zip
     unzip -o "packer_${PACKER_VERSION}_linux_amd64.zip" -d /usr/bin
   fi
 
@@ -60,13 +65,16 @@ install_helm3() {
 }
 
 install_aws_cli2() {
-  # Install AWS CLI v2
-  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+  if [ "$ARCH" = "amd64" ]; then
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o "session-manager-plugin.deb"
+  elif [ "$ARCH" = "arm64" ]; then
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip"
+    curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_arm64/session-manager-plugin.deb" -o "session-manager-plugin.deb"
+  fi
   unzip awscliv2.zip
   ./aws/install
   rm -rf awscliv2.zip ./aws
-  # Install the session-manager-plugin
-  curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o "session-manager-plugin.deb"
   dpkg -i session-manager-plugin.deb
   rm session-manager-plugin.deb
 }
