@@ -53,7 +53,6 @@ public class AWSBakeHandler extends CloudProviderBakeHandler {
 
   ImageNameFactory imageNameFactory = new ImageNameFactory()
 
-  @Autowired
   RoscoAWSConfiguration.AWSBakeryDefaults awsBakeryDefaults
 
   @Autowired
