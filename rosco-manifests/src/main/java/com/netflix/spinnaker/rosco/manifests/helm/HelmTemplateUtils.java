@@ -12,6 +12,7 @@ import com.netflix.spinnaker.rosco.manifests.BakeManifestRequest;
 import com.netflix.spinnaker.rosco.manifests.HelmBakeTemplateUtils;
 import com.netflix.spinnaker.rosco.manifests.config.RoscoHelmConfigurationProperties;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -133,7 +134,7 @@ public class HelmTemplateUtils extends HelmBakeTemplateUtils<HelmBakeManifestReq
         command.add(overrideOption);
         command.add(overridesString);
       } else {
-        overridesFile = writeOverridesToFile(env, request.getOverrides(), request.isRawOverrides());
+        overridesFile = writeOverridesToFile(env, overridesString, request.isRawOverrides());
       }
     }
 
@@ -172,35 +173,26 @@ public class HelmTemplateUtils extends HelmBakeTemplateUtils<HelmBakeManifestReq
    * extension), and resolves the file path within the specified environment.
    *
    * @param env The environment providing context for file resolution.
-   * @param overrides A map containing key-value pairs of Helm chart overrides.
+   * @param overridesString helm --set argument string
    * @param rawOverrides If true, preserves the original data types in the overrides map. If false,
    *     converts all values to strings before writing to the YAML file.
    * @return The path to the created YAML file containing the Helm chart overrides.
    * @throws IllegalStateException If an error occurs during the file writing process.
    */
   private Path writeOverridesToFile(
-      BakeManifestEnvironment env, Map<String, Object> overrides, boolean rawOverrides) {
+      BakeManifestEnvironment env, String overridesString, boolean rawOverrides) {
     String fileName = OVERRIDES_FILE_PREFIX + UUID.randomUUID().toString() + YML_FILE_EXTENSION;
     Path filePath = env.resolvePath(fileName);
-
-    // If rawOverrides is true and expansion of artifact store references is
-    // disabled, there's no need to traverse the overrides map.  Use it as is.
-    //
-    // In other words, if we're meant to stringify overrides, or expand
-    // references, traverse the overrides map and do so.
-    if (!rawOverrides || isExpandArtifactReferenceURIs()) {
-      overrides =
-          overrides.entrySet().stream()
-              .collect(
-                  Collectors.toMap(
-                      Map.Entry::getKey,
-                      entry -> {
-                        Object newValue = expandArtifactReferenceURIs(entry.getValue());
-                        return rawOverrides ? newValue : String.valueOf(newValue);
-                      }));
+    Map<String, Object> helmParsedMap = null;
+    HelmSetArgumentParser helmSetArgumentParser =
+        new HelmSetArgumentParser(overridesString, !rawOverrides);
+    try {
+      helmParsedMap = helmSetArgumentParser.parse();
+    } catch (IOException e) {
+      throw new UncheckedIOException("error while parsing overrides string to yaml", e);
     }
     try (Writer writer = Files.newBufferedWriter(filePath)) {
-      yamlObjectMapper.writeValue(writer, overrides);
+      yamlObjectMapper.writeValue(writer, helmParsedMap);
       if (log.isDebugEnabled())
         log.debug(
             "Created overrides file at {} with the following contents:{}{}",

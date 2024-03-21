@@ -39,6 +39,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
@@ -46,14 +48,17 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import lombok.Getter;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.compress.utils.IOUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -81,16 +86,82 @@ import org.springframework.web.context.WebApplicationContext;
 @TestPropertySource(properties = "spring.application.name = rosco")
 class V2BakeryControllerWithArtifactDownloaderTest {
 
-  public static final String FOO_VALUE_DEFAULT = "bar_default";
-  public static final String FOO_VALUE_OVERRIDES = "bar_overrides";
-  public static final String FOO_VALUE_EXTERNAL = "bar_external";
-  public static final String EMPTY_OVERRIDES = "";
-  public static final String TEMPLATE_OUTPUT_FORMAT =
-      "---\n"
-          + "# Source: example/templates/foo.yaml\n"
-          + "labels:\n"
-          + "helm.sh/chart: example-0.1\n"
-          + "foo: %s\n";
+  public static final String SIMPLE_TEMPLATE_VARIABLE_KEY = "foo";
+  public static final String NESTED_TEMPLATE_VARIABLE_KEY = "foo1.test";
+  public static final String INDEXED_TEMPLATE_VARIABLE_KEY = "foo2[0]";
+  public static final String DOTTED_TEMPLATE_VARIABLE_KEY_NON_NESTED = "foo3\\.foo4";
+  public static final String ARRAY_TEMPLATE_VARIABLE = "foo5";
+
+  /**
+   * Enumerates predefined sets of Helm chart values used in testing to verify the precedence and
+   * application of various value sources during the Helm chart rendering process. Each enum value
+   * represents a different scenario, including default values, overrides, and external value files.
+   */
+  @Getter
+  public enum HelmTemplateValues {
+    /**
+     * Represents default values defined within a Helm chart's values.yaml file. These are the
+     * fallback values used when no overrides are provided.
+     */
+    DEFAULT(
+        Map.of(
+            SIMPLE_TEMPLATE_VARIABLE_KEY,
+            "bar_default",
+            NESTED_TEMPLATE_VARIABLE_KEY,
+            "bar1_default",
+            INDEXED_TEMPLATE_VARIABLE_KEY,
+            "bar2_default",
+            DOTTED_TEMPLATE_VARIABLE_KEY_NON_NESTED,
+            "bar3_default",
+            ARRAY_TEMPLATE_VARIABLE,
+            "bar5_default")),
+    /**
+     * Represents user-provided overrides that can be passed to Helm via the '--values' flag or the
+     * '--set' command. These values are meant to override the default values specified in the
+     * chart's values.yaml.
+     */
+    OVERRIDES(
+        Map.of(
+            SIMPLE_TEMPLATE_VARIABLE_KEY,
+            "bar_overrides",
+            NESTED_TEMPLATE_VARIABLE_KEY,
+            "bar1_overrides",
+            INDEXED_TEMPLATE_VARIABLE_KEY,
+            "bar2_overrides",
+            DOTTED_TEMPLATE_VARIABLE_KEY_NON_NESTED,
+            "bar3_overrides",
+            ARRAY_TEMPLATE_VARIABLE,
+            "{bar5_overrides}")),
+    /**
+     * Represents values from an external source, such as a separate values file not included within
+     * the Helm chart itself. These values are meant to simulate the scenario where values are
+     * provided from an external file during the Helm chart rendering process.
+     */
+    EXTERNAL(
+        Map.of(
+            SIMPLE_TEMPLATE_VARIABLE_KEY,
+            "bar_external",
+            NESTED_TEMPLATE_VARIABLE_KEY,
+            "bar1_external",
+            INDEXED_TEMPLATE_VARIABLE_KEY,
+            "bar2_external",
+            DOTTED_TEMPLATE_VARIABLE_KEY_NON_NESTED,
+            "bar3_external",
+            ARRAY_TEMPLATE_VARIABLE,
+            "bar5_external")),
+    /**
+     * Represents an empty map of values, used to test the scenario where no overrides are provided,
+     * and the default values within the chart's values.yaml should prevail.
+     */
+    EMPTY(Collections.emptyMap());
+
+    private final Map<String, Object> values;
+
+    HelmTemplateValues(Map<String, Object> values) {
+      this.values = values;
+    }
+  }
+
   private MockMvc webAppMockMvc;
   @Autowired private WebApplicationContext webApplicationContext;
   @Autowired ObjectMapper objectMapper;
@@ -124,64 +195,127 @@ class V2BakeryControllerWithArtifactDownloaderTest {
 
     */
     return Stream.of(
-        // default values.yml + overrides through --values + no external values yaml -> value of foo
+        // default values.yml + overrides through --values + no external values yaml -> values of
+        // helm variables
         // is from overrides
-        Arguments.of(FOO_VALUE_OVERRIDES, 1, TemplateRenderer.HELM3, FOO_VALUE_OVERRIDES, false),
-        // default values.yml + overrides through --values + no external values yaml -> value of foo
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES,
+            1,
+            TemplateRenderer.HELM3,
+            HelmTemplateValues.OVERRIDES,
+            false),
+        // default values.yml + overrides through --values + no external values yaml -> values of
+        // helm variables
         // is from overrides
-        Arguments.of(FOO_VALUE_OVERRIDES, 1, TemplateRenderer.HELM2, FOO_VALUE_OVERRIDES, false),
-        // default values.yml + overrides through --set-string + no external values yaml -> value of
-        // foo is from overrides
-        Arguments.of(FOO_VALUE_OVERRIDES, 0, TemplateRenderer.HELM3, FOO_VALUE_OVERRIDES, false),
-        Arguments.of(FOO_VALUE_OVERRIDES, 0, TemplateRenderer.HELM2, FOO_VALUE_OVERRIDES, false),
-        // default values.yml + empty overrides + no external values yaml -> value of foo is from
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES,
+            1,
+            TemplateRenderer.HELM2,
+            HelmTemplateValues.OVERRIDES,
+            false),
+        // default values.yml + overrides through --set-string + no external values yaml -> values
+        // of helm variables
+        //  is from overrides
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES,
+            0,
+            TemplateRenderer.HELM3,
+            HelmTemplateValues.OVERRIDES,
+            false),
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES,
+            0,
+            TemplateRenderer.HELM2,
+            HelmTemplateValues.OVERRIDES,
+            false),
+        // default values.yml + empty overrides + no external values yaml -> values of helm
+        // variables is from
         // default
-        Arguments.of(EMPTY_OVERRIDES, 0, TemplateRenderer.HELM3, FOO_VALUE_DEFAULT, false),
-        Arguments.of(EMPTY_OVERRIDES, 0, TemplateRenderer.HELM2, FOO_VALUE_DEFAULT, false),
-        // default values.yml + overrides through --values +  external values yaml -> value of foo
+        Arguments.of(
+            HelmTemplateValues.EMPTY, 0, TemplateRenderer.HELM3, HelmTemplateValues.DEFAULT, false),
+        Arguments.of(
+            HelmTemplateValues.EMPTY, 0, TemplateRenderer.HELM2, HelmTemplateValues.DEFAULT, false),
+        // default values.yml + overrides through --values +  external values yaml -> values of helm
+        // variables
         // is from overrides
-        Arguments.of(FOO_VALUE_OVERRIDES, 1, TemplateRenderer.HELM3, FOO_VALUE_OVERRIDES, true),
-        Arguments.of(FOO_VALUE_OVERRIDES, 1, TemplateRenderer.HELM2, FOO_VALUE_OVERRIDES, true),
-        // default values.yml + overrides through --set-string +  external values yaml -> value of
-        // foo is from overrides
-        Arguments.of(FOO_VALUE_OVERRIDES, 0, TemplateRenderer.HELM3, FOO_VALUE_OVERRIDES, true),
-        Arguments.of(FOO_VALUE_OVERRIDES, 0, TemplateRenderer.HELM2, FOO_VALUE_OVERRIDES, true),
-        // default values.yml + empty overrides +  external values yaml -> value of foo is from
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES,
+            1,
+            TemplateRenderer.HELM3,
+            HelmTemplateValues.OVERRIDES,
+            true),
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES,
+            1,
+            TemplateRenderer.HELM2,
+            HelmTemplateValues.OVERRIDES,
+            true),
+        // default values.yml + overrides through --set-string +  external values yaml -> values of
+        // helm variables
+        // is from overrides
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES,
+            0,
+            TemplateRenderer.HELM3,
+            HelmTemplateValues.OVERRIDES,
+            true),
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES,
+            0,
+            TemplateRenderer.HELM2,
+            HelmTemplateValues.OVERRIDES,
+            true),
+        // default values.yml + empty overrides +  external values yaml -> values of helm variables
+        // is from
         // external values yaml
-        Arguments.of(EMPTY_OVERRIDES, 0, TemplateRenderer.HELM3, FOO_VALUE_EXTERNAL, true),
-        Arguments.of(EMPTY_OVERRIDES, 0, TemplateRenderer.HELM2, FOO_VALUE_EXTERNAL, true));
+        Arguments.of(
+            HelmTemplateValues.EMPTY, 0, TemplateRenderer.HELM3, HelmTemplateValues.EXTERNAL, true),
+        Arguments.of(
+            HelmTemplateValues.EMPTY,
+            0,
+            TemplateRenderer.HELM2,
+            HelmTemplateValues.EXTERNAL,
+            true));
   }
 
   /**
-   * Tests the priority of Helm overrides based on different input scenarios. foo is bar_default in
-   * Chart's values yml, bar_overrides in overrides map and bar_external in external values yml
-   * file.
+   * Tests the priority of Helm overrides based on different input scenarios, using
+   * HelmTemplateValues to define both input and expectedTemplateValues configurations. This method
+   * evaluates how different types of Helm value configurations (default, overrides, and external)
+   * are applied and prioritized during the Helm chart rendering process.
    *
-   * @param overrideValue the value to override in the Helm chart. If blank, no overrides are set.
-   * @param overridesFileThreshold Please refer
-   *     RoscoHelmConfigurationProperties#overridesFileThreshold doc
-   * @param helmVersion the version of Helm being tested (e.g., HELM2, HELM3).
-   * @param expectedHelmTemplateOutputValue the expected value of 'foo' in the Helm template output.
-   * @param addExternalValuesFile flag to turn off/on the inclusion of external values yml file in
-   *     helm template command
-   * @throws Exception if any error occurs during file handling, or processing the Helm template.
+   * @param inputOverrides The HelmTemplateValues enum representing the set of values to be used as
+   *     input for the Helm chart baking process. This includes any overrides or default values that
+   *     should be applied to the template rendering.
+   * @param overridesFileThreshold An integer representing the threshold size for overrides files,
+   *     as defined in RoscoHelmConfigurationProperties. This influences how overrides are
+   *     processed.
+   * @param helmVersion The version of Helm being tested (e.g., TemplateRenderer.HELM2,
+   *     TemplateRenderer.HELM3), which may affect the rendering behavior and the handling of values
+   *     and overrides.
+   * @param expectedTemplateValues The HelmTemplateValues enum representing the
+   *     expectedTemplateValues set of values after the Helm chart rendering process. This is used
+   *     to verify that the correct values are applied based on the input configuration and Helm
+   *     version.
+   * @param addExternalValuesFile A boolean flag indicating whether an external values YAML file
+   *     should be included in the helm template command. This allows testing the effect of external
+   *     value files on the rendering outcome.
+   * @throws Exception if any error occurs during file handling, processing the Helm template, or if
+   *     assertions fail due to unexpected rendering results.
    */
   @ParameterizedTest(name = "{displayName} - [{index}] {arguments}")
   @MethodSource("helmOverridesPriorityTestData")
   void testHelmOverridesPriority(
-      String overrideValue,
+      HelmTemplateValues inputOverrides,
       int overridesFileThreshold,
       TemplateRenderer helmVersion,
-      String expectedHelmTemplateOutputValue,
+      HelmTemplateValues expectedTemplateValues,
       boolean addExternalValuesFile)
       throws Exception {
-    if (!overrideValue.isBlank()) {
-      bakeManifestRequest.setOverrides(Map.of("foo", overrideValue));
-    }
+    bakeManifestRequest.setOverrides(inputOverrides.values);
     bakeManifestRequest.setTemplateRenderer(helmVersion);
     Path tempDir = Files.createTempDirectory("tempDir");
-    Path external_values_path =
-        Paths.get(getClass().getClassLoader().getResource("values_external.yaml").toURI());
+    Path external_values_path = getFilePathFromClassPath("values_external.yaml");
 
     addTestHelmChartToPath(tempDir);
     roscoHelmConfigurationProperties.setOverridesFileThreshold(overridesFileThreshold);
@@ -206,7 +340,30 @@ class V2BakeryControllerWithArtifactDownloaderTest {
     Map<String, String> map =
         objectMapper.readValue(result.getResponse().getContentAsString(), Map.class);
     assertThat(new String(Base64.getDecoder().decode(map.get("reference"))))
-        .isEqualTo(String.format(TEMPLATE_OUTPUT_FORMAT, expectedHelmTemplateOutputValue));
+        .isEqualTo(
+            String.format(
+                readFileFromClasspath("expected_template.yaml") + "\n",
+                expectedTemplateValues.getValues().get(SIMPLE_TEMPLATE_VARIABLE_KEY),
+                expectedTemplateValues.getValues().get(NESTED_TEMPLATE_VARIABLE_KEY),
+                expectedTemplateValues.getValues().get(INDEXED_TEMPLATE_VARIABLE_KEY),
+                expectedTemplateValues.getValues().get(DOTTED_TEMPLATE_VARIABLE_KEY_NON_NESTED),
+                expectedTemplateValues
+                            .getValues()
+                            .get(ARRAY_TEMPLATE_VARIABLE)
+                            .toString()
+                            .startsWith("{")
+                        && expectedTemplateValues
+                            .getValues()
+                            .get(ARRAY_TEMPLATE_VARIABLE)
+                            .toString()
+                            .endsWith("}")
+                    ? "bar5_overrides"
+                    : expectedTemplateValues.getValues().get(ARRAY_TEMPLATE_VARIABLE).toString()));
+  }
+
+  @NotNull
+  private Path getFilePathFromClassPath(String fileName) throws URISyntaxException {
+    return Paths.get(getClass().getClassLoader().getResource(fileName).toURI());
   }
 
   /**
@@ -252,21 +409,10 @@ class V2BakeryControllerWithArtifactDownloaderTest {
    * @throws IOException If there is an issue creating the files i/o in the specified path.
    */
   static void addTestHelmChartToPath(Path path) throws IOException {
-    addFile(
-        path,
-        "Chart.yaml",
-        "apiVersion: v1\n"
-            + "name: example\n"
-            + "description: chart for testing\n"
-            + "version: 0.1\n"
-            + "engine: gotpl\n");
-    addFile(path, "values.yaml", "foo: " + FOO_VALUE_DEFAULT + "\n");
-    addFile(
-        path,
-        "templates/foo.yaml",
-        "labels:\n"
-            + "helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}\n"
-            + "foo: {{.Values.foo}}");
+
+    addFile(path, "Chart.yaml", readFileFromClasspath("Chart.yaml"));
+    addFile(path, "values.yaml", readFileFromClasspath("values.yaml"));
+    addFile(path, "templates/foo.yaml", readFileFromClasspath("foo.yaml"));
   }
 
   /**
@@ -279,5 +425,17 @@ class V2BakeryControllerWithArtifactDownloaderTest {
     Path pathToCreate = tempDir.resolve(path);
     pathToCreate.toFile().getParentFile().mkdirs();
     Files.write(pathToCreate, content.getBytes());
+  }
+
+  private static String readFileFromClasspath(String fileName) throws IOException {
+    // Obtain the URL of the file from the classpath
+    URL fileUrl = Thread.currentThread().getContextClassLoader().getResource(fileName);
+    if (fileUrl == null) {
+      throw new IOException("File not found in classpath: " + fileName);
+    }
+
+    // Convert URL to a Path and read the file content
+    return Files.lines(Paths.get(fileUrl.getPath()), StandardCharsets.UTF_8)
+        .collect(Collectors.joining("\n"));
   }
 }
