@@ -699,6 +699,8 @@ final class HelmTemplateUtilsTest {
     Artifact chartArtifact = Artifact.builder().name("test-artifact").build();
     Artifact valuesArtifact = Artifact.builder().name("test-artifact_values").build();
 
+    Map<String, Object> expectedOverrides =
+        ImmutableMap.of("key1", "valu&e1", "key2", "value2:", "key4", true);
     ArtifactStore artifactStore = null;
     if (expandOverrides) {
       artifactStore = mock(ArtifactStore.class);
@@ -715,7 +717,7 @@ final class HelmTemplateUtilsTest {
     bakeManifestRequest = new HelmBakeManifestRequest();
     bakeManifestRequest.setInputArtifacts(ImmutableList.of(chartArtifact, valuesArtifact));
     bakeManifestRequest.setOverrides(
-        ImmutableMap.of("key1", "valu&e1", "key2", "value2:", "key3", 1, "key4", true));
+        ImmutableMap.of("key1", "valu&e1", "key2", "value2:", "key3", 100000000, "key4", true));
     bakeManifestRequest.setRawOverrides(true);
     helmConfigurationProperties.setOverridesFileThreshold(10);
     try (BakeManifestEnvironment env = BakeManifestEnvironment.create()) {
@@ -726,7 +728,8 @@ final class HelmTemplateUtilsTest {
       assertThat(Collections.frequency(helmTemplateCommand, "--values")).isEqualTo(2);
       assertThat(lastValuesArgument).matches(OVERRIDES_FILE_PATH_PATTERN);
       List<String> overridesYamlContents = Files.readAllLines(Path.of(lastValuesArgument));
-      assertThat(helmTemplateCommand).doesNotContain("--set");
+      assertThat(helmTemplateCommand).contains("--set");
+      assertThat(helmTemplateCommand).contains("key3=100000000");
       assertThat(helmTemplateCommand).doesNotContain("--set-string");
       assertThat(helmTemplateCommand).contains("--values");
       assertThat(
@@ -734,10 +737,9 @@ final class HelmTemplateUtilsTest {
                   .readValue(
                       String.join(System.lineSeparator(), overridesYamlContents),
                       new TypeReference<Map<String, Object>>() {}))
-          .isEqualTo(bakeManifestRequest.getOverrides());
+          .isEqualTo(expectedOverrides);
       assertThat(overridesYamlContents)
-          .containsExactly(
-              "---", "key1: \"valu&e1\"", "key2: \"value2:\"", "key3: 1", "key4: true");
+          .containsExactly("---", "key1: \"valu&e1\"", "key2: \"value2:\"", "key4: true");
     }
   }
   /**

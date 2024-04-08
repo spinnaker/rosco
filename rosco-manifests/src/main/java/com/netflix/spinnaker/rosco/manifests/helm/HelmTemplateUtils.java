@@ -17,6 +17,7 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,6 +32,8 @@ import org.springframework.util.StringUtils;
 @Slf4j
 @ConfigurationPropertiesScan("com.netflix.spinnaker.kork.artifacts.artifactstore")
 public class HelmTemplateUtils extends HelmBakeTemplateUtils<HelmBakeManifestRequest> {
+  // Threshold for Helm 3, where absolute values >= 1000000 cause scientific notation in overrides.
+  private static final long HELM3_MAX_ABSOLUTE_NUMERIC_VALUE_THRESHOLD = 1_000_000L;
   private static final String OVERRIDES_FILE_PREFIX = "overrides_";
   private static final String YML_FILE_EXTENSION = ".yml";
   private final RoscoHelmConfigurationProperties helmConfigurationProperties;
@@ -130,9 +133,36 @@ public class HelmTemplateUtils extends HelmBakeTemplateUtils<HelmBakeManifestReq
       String overridesString = getOverridesAsString(overrides);
       if (overridesString.length() < helmConfigurationProperties.getOverridesFileThreshold()
           || helmConfigurationProperties.getOverridesFileThreshold() == 0) {
+
         String overrideOption = request.isRawOverrides() ? "--set" : "--set-string";
         command.add(overrideOption);
         command.add(overridesString);
+      } else if (request.isRawOverrides()) {
+
+        // Helm3 treats large numbers as `int64` when passed via `--set` and as `float64` when
+        // passed via `--values`, causing different template outputs.
+        // Specifically, numbers >= 1,000,000 or <= -1,000,000 appear in non-scientific
+        // notation with `--set` and in scientific notation with `--values`.
+        // To ensure consistent Helm3 template behavior, the overrides YAML file
+        // feature should be skipped for values >= or <= this threshold.
+        // In contrast, Helm2 renders large numbers in scientific notation regardless of whether
+        // they are passed via `--set` or `--values`.
+        Map<String, Object> overridesForYaml = new HashMap<>(request.getOverrides());
+        Map<String, Object> largeOverrides =
+            getLargeAbsoluteNumericValuedEntries(
+                request.getOverrides(), HELM3_MAX_ABSOLUTE_NUMERIC_VALUE_THRESHOLD);
+        overridesForYaml.keySet().removeAll(largeOverrides.keySet());
+        // process overrides with larger numeric values as commandline argument
+        if (!largeOverrides.isEmpty()) {
+          command.add("--set");
+          command.add(getOverridesAsString(largeOverrides));
+        }
+        // covert the remaining overrides to yaml
+        if (!overridesForYaml.isEmpty()) {
+          overridesFile =
+              writeOverridesToFile(
+                  env, getOverridesAsString(overridesForYaml), request.isRawOverrides());
+        }
       } else {
         overridesFile = writeOverridesToFile(env, overridesString, request.isRawOverrides());
       }
@@ -155,6 +185,41 @@ public class HelmTemplateUtils extends HelmBakeTemplateUtils<HelmBakeManifestReq
     result.setCommand(command);
 
     return result;
+  }
+
+  /**
+   * Filters and returns entries from the given map where numeric absolute values meet or exceed the
+   * specified threshold.
+   *
+   * @param overrides : A map containing key-value pairs of Helm chart overrides.
+   * @param numericAbsoluteValueThreshold : the minimum absolute value to consider as large.
+   * @return Map<String, Object>: having entries with large absolute numeric values.
+   */
+  public static Map<String, Object> getLargeAbsoluteNumericValuedEntries(
+      Map<String, Object> overrides, long numericAbsoluteValueThreshold) {
+    Map<String, Object> largeMap = new HashMap<>();
+
+    for (Map.Entry<String, Object> entry : overrides.entrySet()) {
+      Object value = entry.getValue();
+      long numericValue = 0;
+
+      if (value instanceof Number) {
+        numericValue = ((Number) value).longValue();
+      } else if (value instanceof String) {
+        try {
+          numericValue = Long.parseLong((String) value);
+        } catch (NumberFormatException e) {
+          // Value is not a number, so we skip this entry
+          continue;
+        }
+      }
+
+      if (Math.abs(numericValue) >= numericAbsoluteValueThreshold) {
+        largeMap.put(entry.getKey(), value);
+      }
+    }
+
+    return largeMap;
   }
   /**
    * Constructs a comma-separated string representation of the given overrides map in the format

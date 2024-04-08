@@ -123,15 +123,89 @@ class V2BakeryControllerWithArtifactDownloaderTest {
     OVERRIDES(
         Map.of(
             SIMPLE_TEMPLATE_VARIABLE_KEY,
-            "bar_overrides",
+            1000000,
             NESTED_TEMPLATE_VARIABLE_KEY,
-            "bar1_overrides",
+            999999,
             INDEXED_TEMPLATE_VARIABLE_KEY,
             "bar2_overrides",
             DOTTED_TEMPLATE_VARIABLE_KEY_NON_NESTED,
             "bar3_overrides",
             ARRAY_TEMPLATE_VARIABLE,
             "{bar5_overrides}")),
+
+    OVERRIDES_STRING_LARGE_NUMBER(
+        Map.of(
+            SIMPLE_TEMPLATE_VARIABLE_KEY,
+            "1000000",
+            NESTED_TEMPLATE_VARIABLE_KEY,
+            999999,
+            INDEXED_TEMPLATE_VARIABLE_KEY,
+            "bar2_overrides",
+            DOTTED_TEMPLATE_VARIABLE_KEY_NON_NESTED,
+            "bar3_overrides",
+            ARRAY_TEMPLATE_VARIABLE,
+            "{bar5_overrides}")),
+
+    OVERRIDES_NO_LARGE_NUMBERS(
+        Map.of(
+            SIMPLE_TEMPLATE_VARIABLE_KEY,
+            999999,
+            NESTED_TEMPLATE_VARIABLE_KEY,
+            999999,
+            INDEXED_TEMPLATE_VARIABLE_KEY,
+            "bar2_overrides",
+            DOTTED_TEMPLATE_VARIABLE_KEY_NON_NESTED,
+            "bar3_overrides",
+            ARRAY_TEMPLATE_VARIABLE,
+            "{bar5_overrides}")),
+    OVERRIDES_NEGATIVE_NUMBERS(
+        Map.of(
+            SIMPLE_TEMPLATE_VARIABLE_KEY,
+            -1000000,
+            NESTED_TEMPLATE_VARIABLE_KEY,
+            -999999,
+            INDEXED_TEMPLATE_VARIABLE_KEY,
+            "bar2_overrides",
+            DOTTED_TEMPLATE_VARIABLE_KEY_NON_NESTED,
+            "bar3_overrides",
+            ARRAY_TEMPLATE_VARIABLE,
+            "{bar5_overrides}")),
+
+    /** Represents expected helm template output with scientific notion. */
+    TEMPLATE_OUTPUT_WITH_SCIENTIFIC_NOTION(
+        Map.of(
+            SIMPLE_TEMPLATE_VARIABLE_KEY,
+            // In helm2, any numeric value greater than or equal to 1,000,000 will be treated as a
+            // float
+            // for both --set and --values. Consequently, the Helm template output value
+            // will be in scientific notation.
+            "1e+06",
+            NESTED_TEMPLATE_VARIABLE_KEY,
+            999999,
+            INDEXED_TEMPLATE_VARIABLE_KEY,
+            "bar2_overrides",
+            DOTTED_TEMPLATE_VARIABLE_KEY_NON_NESTED,
+            "bar3_overrides",
+            ARRAY_TEMPLATE_VARIABLE,
+            "{bar5_overrides}")),
+
+    TEMPLATE_OUTPUT_WITH_NEGATIVE_SCIENTIFIC_NOTION(
+        Map.of(
+            SIMPLE_TEMPLATE_VARIABLE_KEY,
+            // In helm2, any numeric value greater than or equal to 1,000,000 will be treated as a
+            // float
+            // for both --set and --values. Consequently, the Helm template output value
+            // will be in scientific notation.
+            "-1e+06",
+            NESTED_TEMPLATE_VARIABLE_KEY,
+            -999999,
+            INDEXED_TEMPLATE_VARIABLE_KEY,
+            "bar2_overrides",
+            DOTTED_TEMPLATE_VARIABLE_KEY_NON_NESTED,
+            "bar3_overrides",
+            ARRAY_TEMPLATE_VARIABLE,
+            "{bar5_overrides}")),
+
     /**
      * Represents values from an external source, such as a separate values file not included within
      * the Helm chart itself. These values are meant to simulate the scenario where values are
@@ -203,7 +277,16 @@ class V2BakeryControllerWithArtifactDownloaderTest {
             1,
             TemplateRenderer.HELM3,
             HelmTemplateValues.OVERRIDES,
+            false,
             false),
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES_NO_LARGE_NUMBERS,
+            1,
+            TemplateRenderer.HELM3,
+            HelmTemplateValues.OVERRIDES_NO_LARGE_NUMBERS,
+            false,
+            false),
+
         // default values.yml + overrides through --values + no external values yaml -> values of
         // helm variables
         // is from overrides
@@ -212,6 +295,7 @@ class V2BakeryControllerWithArtifactDownloaderTest {
             1,
             TemplateRenderer.HELM2,
             HelmTemplateValues.OVERRIDES,
+            false,
             false),
         // default values.yml + overrides through --set-string + no external values yaml -> values
         // of helm variables
@@ -221,20 +305,32 @@ class V2BakeryControllerWithArtifactDownloaderTest {
             0,
             TemplateRenderer.HELM3,
             HelmTemplateValues.OVERRIDES,
+            false,
             false),
         Arguments.of(
             HelmTemplateValues.OVERRIDES,
             0,
             TemplateRenderer.HELM2,
             HelmTemplateValues.OVERRIDES,
+            false,
             false),
         // default values.yml + empty overrides + no external values yaml -> values of helm
         // variables is from
         // default
         Arguments.of(
-            HelmTemplateValues.EMPTY, 0, TemplateRenderer.HELM3, HelmTemplateValues.DEFAULT, false),
+            HelmTemplateValues.EMPTY,
+            0,
+            TemplateRenderer.HELM3,
+            HelmTemplateValues.DEFAULT,
+            false,
+            false),
         Arguments.of(
-            HelmTemplateValues.EMPTY, 0, TemplateRenderer.HELM2, HelmTemplateValues.DEFAULT, false),
+            HelmTemplateValues.EMPTY,
+            0,
+            TemplateRenderer.HELM2,
+            HelmTemplateValues.DEFAULT,
+            false,
+            false),
         // default values.yml + overrides through --values +  external values yaml -> values of helm
         // variables
         // is from overrides
@@ -243,12 +339,148 @@ class V2BakeryControllerWithArtifactDownloaderTest {
             1,
             TemplateRenderer.HELM3,
             HelmTemplateValues.OVERRIDES,
-            true),
+            true,
+            false),
         Arguments.of(
             HelmTemplateValues.OVERRIDES,
             1,
             TemplateRenderer.HELM2,
             HelmTemplateValues.OVERRIDES,
+            true,
+            false),
+        // default values.yml + overrides through --set-string +  external values yaml -> values of
+        // helm variables
+        // is from overrides
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES,
+            0,
+            TemplateRenderer.HELM3,
+            HelmTemplateValues.OVERRIDES,
+            true,
+            false),
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES,
+            0,
+            TemplateRenderer.HELM2,
+            HelmTemplateValues.OVERRIDES,
+            true,
+            false),
+        // default values.yml + empty overrides +  external values yaml -> values of helm variables
+        // is from
+        // external values yaml
+        Arguments.of(
+            HelmTemplateValues.EMPTY,
+            0,
+            TemplateRenderer.HELM3,
+            HelmTemplateValues.EXTERNAL,
+            true,
+            false),
+        Arguments.of(
+            HelmTemplateValues.EMPTY,
+            0,
+            TemplateRenderer.HELM2,
+            HelmTemplateValues.EXTERNAL,
+            true,
+            false),
+
+        // default values.yml + overrides through --values + no external values yaml -> values of
+        // helm variables
+        // is from overrides
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES,
+            1,
+            TemplateRenderer.HELM3,
+            HelmTemplateValues.OVERRIDES,
+            false,
+            true),
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES_STRING_LARGE_NUMBER,
+            1,
+            TemplateRenderer.HELM3,
+            HelmTemplateValues.OVERRIDES_STRING_LARGE_NUMBER,
+            false,
+            true),
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES_NEGATIVE_NUMBERS,
+            1,
+            TemplateRenderer.HELM3,
+            HelmTemplateValues.OVERRIDES_NEGATIVE_NUMBERS,
+            false,
+            true),
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES_NEGATIVE_NUMBERS,
+            1,
+            TemplateRenderer.HELM2,
+            HelmTemplateValues.TEMPLATE_OUTPUT_WITH_NEGATIVE_SCIENTIFIC_NOTION,
+            false,
+            true),
+        // default values.yml + overrides through --values + no external values yaml -> values of
+        // helm variables
+        // is from overrides
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES,
+            1,
+            TemplateRenderer.HELM2,
+            HelmTemplateValues.TEMPLATE_OUTPUT_WITH_SCIENTIFIC_NOTION,
+            false,
+            true),
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES_STRING_LARGE_NUMBER,
+            1,
+            TemplateRenderer.HELM2,
+            HelmTemplateValues.TEMPLATE_OUTPUT_WITH_SCIENTIFIC_NOTION,
+            false,
+            true),
+        // default values.yml + overrides through --set-string + no external values yaml -> values
+        // of helm variables
+        //  is from overrides
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES,
+            0,
+            TemplateRenderer.HELM3,
+            HelmTemplateValues.OVERRIDES,
+            false,
+            true),
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES,
+            0,
+            TemplateRenderer.HELM2,
+            HelmTemplateValues.TEMPLATE_OUTPUT_WITH_SCIENTIFIC_NOTION,
+            false,
+            true),
+        // default values.yml + empty overrides + no external values yaml -> values of helm
+        // variables is from
+        // default
+        Arguments.of(
+            HelmTemplateValues.EMPTY,
+            0,
+            TemplateRenderer.HELM3,
+            HelmTemplateValues.DEFAULT,
+            false,
+            true),
+        Arguments.of(
+            HelmTemplateValues.EMPTY,
+            0,
+            TemplateRenderer.HELM2,
+            HelmTemplateValues.DEFAULT,
+            false,
+            true),
+        // default values.yml + overrides through --values +  external values yaml -> values of helm
+        // variables
+        // is from overrides
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES,
+            1,
+            TemplateRenderer.HELM3,
+            HelmTemplateValues.OVERRIDES,
+            true,
+            true),
+        Arguments.of(
+            HelmTemplateValues.OVERRIDES,
+            1,
+            TemplateRenderer.HELM2,
+            HelmTemplateValues.TEMPLATE_OUTPUT_WITH_SCIENTIFIC_NOTION,
+            true,
             true),
         // default values.yml + overrides through --set-string +  external values yaml -> values of
         // helm variables
@@ -258,23 +490,31 @@ class V2BakeryControllerWithArtifactDownloaderTest {
             0,
             TemplateRenderer.HELM3,
             HelmTemplateValues.OVERRIDES,
+            true,
             true),
         Arguments.of(
             HelmTemplateValues.OVERRIDES,
             0,
             TemplateRenderer.HELM2,
-            HelmTemplateValues.OVERRIDES,
+            HelmTemplateValues.TEMPLATE_OUTPUT_WITH_SCIENTIFIC_NOTION,
+            true,
             true),
         // default values.yml + empty overrides +  external values yaml -> values of helm variables
         // is from
         // external values yaml
         Arguments.of(
-            HelmTemplateValues.EMPTY, 0, TemplateRenderer.HELM3, HelmTemplateValues.EXTERNAL, true),
+            HelmTemplateValues.EMPTY,
+            0,
+            TemplateRenderer.HELM3,
+            HelmTemplateValues.EXTERNAL,
+            true,
+            true),
         Arguments.of(
             HelmTemplateValues.EMPTY,
             0,
             TemplateRenderer.HELM2,
             HelmTemplateValues.EXTERNAL,
+            true,
             true));
   }
 
@@ -310,9 +550,11 @@ class V2BakeryControllerWithArtifactDownloaderTest {
       int overridesFileThreshold,
       TemplateRenderer helmVersion,
       HelmTemplateValues expectedTemplateValues,
-      boolean addExternalValuesFile)
+      boolean addExternalValuesFile,
+      boolean rawOverrides)
       throws Exception {
     bakeManifestRequest.setOverrides(inputOverrides.values);
+    bakeManifestRequest.setRawOverrides(rawOverrides);
     bakeManifestRequest.setTemplateRenderer(helmVersion);
     Path tempDir = Files.createTempDirectory("tempDir");
     Path external_values_path = getFilePathFromClassPath("values_external.yaml");
