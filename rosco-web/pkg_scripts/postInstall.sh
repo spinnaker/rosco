@@ -16,6 +16,14 @@ if [ -z `getent passwd spinnaker` ]; then
   useradd --gid spinnaker spinnaker -m --home-dir /home/spinnaker
 fi
 
+ARCH=$(uname -m)
+if [ "$ARCH" = "x86_64" ]; then
+  ARCH="amd64"
+fi
+
+# Get the PACKER_PLUGINS environment variable or set a default value
+PACKER_PLUGINS=${PACKER_PLUGINS:-"amazon azure googlecompute"}
+
 create_temp_dir() {
   TEMPDIR=$(mktemp -d /tmp/installrosco.XXXX)
   cd $TEMPDIR
@@ -27,13 +35,18 @@ remove_temp_dir() {
 }
 
 install_packer() {
-  PACKER_VERSION="1.8.1"
-  local packer_version=$(/usr/bin/packer --version)
+  PACKER_VERSION="1.10.1"
+  local packer_version="$(/usr/bin/packer --version)"
   local packer_status=$?
   if [ $packer_status -ne 0 ] || [ "$packer_version" != "$PACKER_VERSION" ]; then
-    wget https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_amd64.zip
-    unzip -o "packer_${PACKER_VERSION}_linux_amd64.zip" -d /usr/bin
+    wget https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_${ARCH}.zip
+    unzip -o "packer_${PACKER_VERSION}_linux_${ARCH}.zip" -d /usr/bin
   fi
+
+  # Install plugins as the "spinnaker" user
+  for plugin in $PACKER_PLUGINS; do
+    su - spinnaker -c "/usr/bin/packer plugins install \"github.com/hashicorp/$plugin\""
+  done
 }
 
 install_helm() {

@@ -16,12 +16,18 @@ subprojects {
     dependencies {
       implementation enforcedPlatform("io.spinnaker.kork:kork-bom:$korkVersion")
 
-      annotationProcessor platform("io.spinnaker.kork:kork-bom:$korkVersion")
+      compileOnly "org.projectlombok:lombok"
+
+      annotationProcessor enforcedPlatform("io.spinnaker.kork:kork-bom:$korkVersion")
       annotationProcessor "org.projectlombok:lombok"
       annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
-      testAnnotationProcessor platform("io.spinnaker.kork:kork-bom:$korkVersion")
+
+      testCompileOnly "org.projectlombok:lombok"
+
+      testAnnotationProcessor enforcedPlatform("io.spinnaker.kork:kork-bom:$korkVersion")
       testAnnotationProcessor "org.projectlombok:lombok"
-      testRuntimeOnly "org.junit.vintage:junit-vintage-engine"
+
+      testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
     }
 
     test {
@@ -42,6 +48,17 @@ subprojects {
   tasks.withType(JavaExec) {
     if (System.getProperty('DEBUG', 'false') == 'true') {
       jvmArgs '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8187'
+    }
+  }
+
+  tasks.withType(JavaCompile).configureEach {
+    javaCompiler = javaToolchains.compilerFor {
+      languageVersion = JavaLanguageVersion.of(11)
+    }
+  }
+  tasks.withType(Test).configureEach {
+    javaLauncher = javaToolchains.launcherFor {
+      languageVersion = JavaLanguageVersion.of(17)
     }
   }
 }
