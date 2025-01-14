@@ -1,0 +1,14 @@
+dependencies {
+  implementation platform(project(":rosco-bom"))
+  implementation project(":rosco-core")
+
+  implementation 'io.kubernetes:client-java:12.0.0'
+  implementation "io.kubernetes:client-java-api-fluent:13.0.2"
+  implementation "io.spinnaker.kork:kork-web"
+}
+
+sourceCompatibility = '17'
+targetCompatibility = '17'
+test {
+  jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED'
+}
