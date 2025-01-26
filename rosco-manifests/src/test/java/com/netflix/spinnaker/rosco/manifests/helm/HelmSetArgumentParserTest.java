@@ -160,7 +160,9 @@ public class HelmSetArgumentParserTest {
             Map.of("name1", Map.of("name2", Arrays.asList(null, Map.of("foo", "bar")))),
             true),
         Arguments.of("key[0]=value,key=value", Map.of("key", "value"), true),
-        Arguments.of("key1.key2=value,key1=value", Map.of("key1", "value"), true));
+        Arguments.of("key1.key2=value,key1=value", Map.of("key1", "value"), true),
+        Arguments.of("key=1.234", Map.of("key", "1.234"), true),
+        Arguments.of("key=1.234", Map.of("key", 1.234), false));
   }
 
   private static Stream<Arguments> helmParseArgsError() {

@@ -536,7 +536,13 @@ public class HelmSetArgumentParser {
       try {
         return Long.parseLong(value);
       } catch (NumberFormatException e) {
-        // Not a Long, return the string itself
+        // Not a Long, let's see if it's a Double
+      }
+
+      try {
+        return Double.parseDouble(value);
+      } catch (NumberFormatException e) {
+        // Not a Double either, return the string itself.
       }
     }
 
