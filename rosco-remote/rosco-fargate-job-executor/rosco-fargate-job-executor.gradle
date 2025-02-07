@@ -1,0 +1,32 @@
+dependencies {
+  implementation platform(project(":rosco-bom"))
+  implementation project(":rosco-core")
+
+  implementation "io.spinnaker.kork:kork-web"
+
+  implementation 'com.bettercloud:vault-java-driver:5.1.0'
+  implementation "software.amazon.awssdk:ecs:${awsSdk2Version}"
+  implementation "software.amazon.awssdk:sts:${awsSdk2Version}"
+  implementation "com.amazonaws:aws-java-sdk-logs"
+  implementation 'javax.validation:validation-api'
+
+  testImplementation 'org.mockito:mockito-all:1.10.19'
+  testImplementation "org.springframework.boot:spring-boot-starter-test"
+  testImplementation "org.spockframework:spock-core"
+  testImplementation "org.spockframework:spock-spring"
+  testImplementation "org.hamcrest:hamcrest-core"
+  testImplementation "org.apache.groovy:groovy"
+
+  test {
+    testLogging {
+      exceptionFormat = 'full'
+    }
+    useJUnitPlatform()
+  }
+}
+
+sourceCompatibility = '17'
+targetCompatibility = '17'
+test {
+  jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED'
+}

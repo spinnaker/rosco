@@ -10,6 +10,8 @@ rootProject.name = 'rosco'
 
 include 'rosco-bom',
   'rosco-core',
+  ':rosco-remote:rosco-k8s-job-executor',
+  ':rosco-remote:rosco-fargate-job-executor',
   'rosco-integration',
   'rosco-manifests',
   'rosco-web'
