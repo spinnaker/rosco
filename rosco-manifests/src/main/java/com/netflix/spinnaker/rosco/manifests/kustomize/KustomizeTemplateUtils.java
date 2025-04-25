@@ -23,6 +23,7 @@ import com.netflix.spinnaker.kork.web.exceptions.InvalidRequestException;
 import com.netflix.spinnaker.rosco.jobs.BakeRecipe;
 import com.netflix.spinnaker.rosco.manifests.ArtifactDownloader;
 import com.netflix.spinnaker.rosco.manifests.BakeManifestEnvironment;
+import com.netflix.spinnaker.rosco.manifests.BakeManifestRequest;
 import com.netflix.spinnaker.rosco.manifests.config.RoscoKustomizeConfigurationProperties;
 import com.netflix.spinnaker.rosco.manifests.kustomize.mapping.Kustomization;
 import java.io.File;
@@ -132,6 +133,12 @@ public class KustomizeTemplateUtils {
     List<String> command = new ArrayList<>();
     command.add(executable);
     command.add("build");
+
+    if (request.isEnableHelm()
+        && request.getTemplateRenderer() == BakeManifestRequest.TemplateRenderer.KUSTOMIZE4) {
+      command.add("--enable-helm");
+    }
+
     command.add(env.resolvePath(kustomizeFilePath).getParent().toString());
 
     BakeRecipe result = new BakeRecipe();

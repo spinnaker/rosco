@@ -26,4 +26,5 @@ import lombok.EqualsAndHashCode;
 public class KustomizeBakeManifestRequest extends BakeManifestRequest {
   private Artifact inputArtifact;
   private String kustomizeFilePath;
+  private boolean enableHelm;
 }
