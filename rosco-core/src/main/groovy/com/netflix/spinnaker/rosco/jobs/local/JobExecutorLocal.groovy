@@ -175,9 +175,7 @@ class JobExecutorLocal implements JobExecutor {
           bakeStatus.state = BakeStatus.State.RUNNING
         }
 
-        if (outputContent) {
-          bakeStatus.outputContent = outputContent
-        }
+        bakeStatus.outputContent = outputContent
 
         if (logsContent) {
           bakeStatus.logsContent = logsContent
